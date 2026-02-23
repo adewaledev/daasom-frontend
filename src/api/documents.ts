@@ -88,7 +88,13 @@ export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
 }
 
-function triggerBrowserDownload(blob: Blob, filename: string) {
+/**
+ * Download through axios so Authorization headers are attached when needed.
+ * Works for both relative API paths and absolute URLs.
+ */
+export async function downloadDocumentByUrl(url: string, filename: string): Promise<void> {
+  const res = await http.get(url, { responseType: "blob" })
+  const blob = res.data as Blob
   const blobUrl = window.URL.createObjectURL(blob)
 
   const a = document.createElement("a")
@@ -99,13 +105,4 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
   a.remove()
 
   window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
-}
-
-/**
- * Download document through authenticated API endpoint:
- * GET /documents/{id}/download/
- */
-export async function downloadDocument(input: { id: string; filename: string }): Promise<void> {
-  const res = await http.get(`/documents/${input.id}/download/`, { responseType: "blob" })
-  triggerBrowserDownload(res.data as Blob, input.filename)
 }
