@@ -73,19 +73,13 @@ export async function uploadDocument(input: {
   receipt_id?: string
 }): Promise<Document> {
   const useSignedUpload = import.meta.env.VITE_DOCUMENT_USE_SIGNED_UPLOAD === "true"
-  const allowSignedFallback = import.meta.env.VITE_DOCUMENT_SIGNED_UPLOAD_FALLBACK === "true"
 
   if (useSignedUpload) {
-    if (allowSignedFallback) {
-      try {
-        return await uploadDocumentSigned(input)
-      } catch {
-        // Optional fallback for transitional environments.
-      }
-      return uploadDocumentMultipart(input)
+    try {
+      return await uploadDocumentSigned(input)
+    } catch {
+      // Fallback to legacy multipart path when signed upload is unavailable.
     }
-
-    return uploadDocumentSigned(input)
   }
 
   return uploadDocumentMultipart(input)
@@ -194,7 +188,13 @@ export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
 }
 
-function triggerBrowserDownload(blob: Blob, filename: string) {
+/**
+ * Download through axios so Authorization headers are attached when needed.
+ * Works for both relative API paths and absolute URLs.
+ */
+export async function downloadDocumentByUrl(url: string, filename: string): Promise<void> {
+  const res = await http.get(url, { responseType: "blob" })
+  const blob = res.data as Blob
   const blobUrl = window.URL.createObjectURL(blob)
 
   const a = document.createElement("a")
@@ -205,13 +205,4 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
   a.remove()
 
   window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
-}
-
-/**
- * Download document through authenticated API endpoint:
- * GET /documents/{id}/download/
- */
-export async function downloadDocument(input: { id: string; filename: string }): Promise<void> {
-  const res = await http.get(`/documents/${input.id}/download/`, { responseType: "blob" })
-  triggerBrowserDownload(res.data as Blob, input.filename)
 }

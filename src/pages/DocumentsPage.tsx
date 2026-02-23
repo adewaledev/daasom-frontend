@@ -6,7 +6,7 @@ import { listInvoices } from "../api/invoices"
 import type { Receipt } from "../api/receipts"
 import { listReceipts } from "../api/receipts"
 import type { Document, DocumentType } from "../api/documents"
-import { deleteDocument, downloadDocument, listDocumentsByJob, uploadDocument } from "../api/documents"
+import { deleteDocument, downloadDocumentByUrl, listDocumentsByJob, uploadDocument } from "../api/documents"
 
 type UploadForm = {
   doc_type: DocumentType
@@ -220,7 +220,7 @@ export default function DocumentsPage() {
     setInfo("")
     setBusy(true)
     try {
-      await downloadDocument({ id: d.id, filename: d.filename })
+      await downloadDocumentByUrl(d.url, d.filename)
       setInfo("Download started.")
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
