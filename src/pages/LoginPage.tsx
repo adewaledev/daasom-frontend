@@ -76,24 +76,6 @@ export default function LoginPage() {
               Sign in to manage clients, jobs, tracking milestones, and billing — all in one clean workflow.
             </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-xs text-white/60">Auth</div>
-                <div className="text-sm font-semibold text-white">JWT</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-xs text-white/60">Backend</div>
-                <div className="text-sm font-semibold text-white">DRF</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-xs text-white/60">Brand</div>
-                <div className="text-sm font-semibold text-white">Blue + Black</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-xs text-white/60">Deploy</div>
-                <div className="text-sm font-semibold text-white">Render</div>
-              </div>
-            </div>
           </div>
 
           <div className="text-xs text-white/60">© DAASOM</div>
