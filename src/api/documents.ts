@@ -23,6 +23,15 @@ export interface Document {
   uploaded_at: string
 }
 
+type SignedUploadInitResponse = {
+  upload_url: string
+  method?: "PUT" | "POST"
+  headers?: Record<string, string>
+  fields?: Record<string, string>
+  upload_key?: string
+  finalize_token?: string
+}
+
 type Paginated<T> = {
   count: number
   next: string | null
@@ -63,6 +72,33 @@ export async function uploadDocument(input: {
   invoice_id?: string
   receipt_id?: string
 }): Promise<Document> {
+  const useSignedUpload = import.meta.env.VITE_DOCUMENT_USE_SIGNED_UPLOAD === "true"
+  const allowSignedFallback = import.meta.env.VITE_DOCUMENT_SIGNED_UPLOAD_FALLBACK === "true"
+
+  if (useSignedUpload) {
+    if (allowSignedFallback) {
+      try {
+        return await uploadDocumentSigned(input)
+      } catch {
+        // Optional fallback for transitional environments.
+      }
+      return uploadDocumentMultipart(input)
+    }
+
+    return uploadDocumentSigned(input)
+  }
+
+  return uploadDocumentMultipart(input)
+}
+
+async function uploadDocumentMultipart(input: {
+  doc_type: DocumentType
+  file: File
+
+  job_id?: string
+  invoice_id?: string
+  receipt_id?: string
+}): Promise<Document> {
   const fd = new FormData()
 
   fd.append("doc_type", input.doc_type)
@@ -79,6 +115,76 @@ export async function uploadDocument(input: {
   return res.data
 }
 
+async function uploadDocumentSigned(input: {
+  doc_type: DocumentType
+  file: File
+  job_id?: string
+  invoice_id?: string
+  receipt_id?: string
+}): Promise<Document> {
+  const initPayload = {
+    doc_type: input.doc_type,
+    filename: input.file.name,
+    content_type: input.file.type || "application/octet-stream",
+    size_bytes: input.file.size,
+    job_id: input.job_id,
+    invoice_id: input.invoice_id,
+    receipt_id: input.receipt_id,
+  }
+
+  const initRes = await http.post<SignedUploadInitResponse>("/documents/upload-url/", initPayload)
+  const signed = initRes.data
+
+  if (!signed?.upload_url) {
+    throw new Error("Signed upload URL missing.")
+  }
+
+  if ((signed.method || "PUT") === "POST") {
+    const formData = new FormData()
+    Object.entries(signed.fields || {}).forEach(([k, v]) => formData.append(k, v))
+    formData.append("file", input.file)
+
+    const uploadRes = await fetch(signed.upload_url, {
+      method: "POST",
+      body: formData,
+    })
+
+    if (!uploadRes.ok) {
+      throw new Error(`Signed upload failed with ${uploadRes.status}.`)
+    }
+  } else {
+    const uploadHeaders = new Headers(signed.headers || {})
+    if (!uploadHeaders.has("Content-Type")) {
+      uploadHeaders.set("Content-Type", input.file.type || "application/octet-stream")
+    }
+
+    const uploadRes = await fetch(signed.upload_url, {
+      method: "PUT",
+      headers: uploadHeaders,
+      body: input.file,
+    })
+
+    if (!uploadRes.ok) {
+      throw new Error(`Signed upload failed with ${uploadRes.status}.`)
+    }
+  }
+
+  const finalizePayload = {
+    doc_type: input.doc_type,
+    filename: input.file.name,
+    content_type: input.file.type || "application/octet-stream",
+    size_bytes: input.file.size,
+    job_id: input.job_id,
+    invoice_id: input.invoice_id,
+    receipt_id: input.receipt_id,
+    upload_key: signed.upload_key,
+    finalize_token: signed.finalize_token,
+  }
+
+  const finalizeRes = await http.post<Document>("/documents/complete-upload/", finalizePayload)
+  return finalizeRes.data
+}
+
 export async function getDocument(id: string): Promise<Document> {
   const res = await http.get(`/documents/${id}/`)
   return res.data
@@ -86,4 +192,26 @@ export async function getDocument(id: string): Promise<Document> {
 
 export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
+}
+
+function triggerBrowserDownload(blob: Blob, filename: string) {
+  const blobUrl = window.URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = blobUrl
+  a.download = filename || "document"
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+
+  window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
+}
+
+/**
+ * Download document through authenticated API endpoint:
+ * GET /documents/{id}/download/
+ */
+export async function downloadDocument(input: { id: string; filename: string }): Promise<void> {
+  const res = await http.get(`/documents/${input.id}/download/`, { responseType: "blob" })
+  triggerBrowserDownload(res.data as Blob, input.filename)
 }
