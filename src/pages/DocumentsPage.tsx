@@ -6,7 +6,7 @@ import { listInvoices } from "../api/invoices"
 import type { Receipt } from "../api/receipts"
 import { listReceipts } from "../api/receipts"
 import type { Document, DocumentType } from "../api/documents"
-import { deleteDocument, listDocumentsByJob, uploadDocument } from "../api/documents"
+import { deleteDocument, downloadDocumentByUrl, listDocumentsByJob, uploadDocument } from "../api/documents"
 
 type UploadForm = {
   doc_type: DocumentType
@@ -208,6 +208,23 @@ export default function DocumentsPage() {
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Upload failed.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+
+
+  async function onDownload(d: Document) {
+    setError("")
+    setInfo("")
+    setBusy(true)
+    try {
+      await downloadDocumentByUrl(d.url, d.filename)
+      setInfo("Download started.")
+      window.setTimeout(() => setInfo(""), 1200)
+    } catch (err: any) {
+      setError(extractErrorMessage(err) || "Download failed.")
     } finally {
       setBusy(false)
     }
@@ -431,9 +448,14 @@ export default function DocumentsPage() {
                     <td className="px-4 py-3 text-white/70">{String(d.uploaded_at).slice(0, 19).replace("T", " ")}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-3">
-                        <a href={d.url} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200 font-semibold">
-                          Open
-                        </a>
+                        <button
+                          type="button"
+                          onClick={() => onDownload(d)}
+                          disabled={busy}
+                          className="text-blue-300 hover:text-blue-200 font-semibold disabled:opacity-60"
+                        >
+                          Download
+                        </button>
                         <button
                           type="button"
                           onClick={() => onDelete(d)}
