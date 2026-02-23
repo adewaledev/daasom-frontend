@@ -87,3 +87,25 @@ export async function getDocument(id: string): Promise<Document> {
 export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
 }
+
+function triggerBrowserDownload(blob: Blob, filename: string) {
+  const blobUrl = window.URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = blobUrl
+  a.download = filename || "document"
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+
+  window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
+}
+
+/**
+ * Download document through authenticated API endpoint:
+ * GET /documents/{id}/download/
+ */
+export async function downloadDocument(input: { id: string; filename: string }): Promise<void> {
+  const res = await http.get(`/documents/${input.id}/download/`, { responseType: "blob" })
+  triggerBrowserDownload(res.data as Blob, input.filename)
+}
