@@ -382,7 +382,6 @@ export default function InvoicesPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                placeholder="NGN"
               />
             </div>
           </div>
@@ -394,7 +393,6 @@ export default function InvoicesPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.invoice_number}
                 onChange={(e) => setForm((f) => ({ ...f, invoice_number: e.target.value }))}
-                placeholder="Unique"
                 required
                 disabled={!!editing && !canEditInvoiceFields(editing.status)}
               />
@@ -429,7 +427,6 @@ export default function InvoicesPage() {
               className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              placeholder="Optional"
               disabled={!!editing && !canEditInvoiceFields(editing.status)}
             />
           </div>
@@ -650,7 +647,6 @@ export default function InvoicesPage() {
                       className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                       value={addonForm.description}
                       onChange={(e) => setAddonForm((f) => ({ ...f, description: e.target.value }))}
-                      placeholder="e.g. Documentation fee"
                     />
                   </div>
 
@@ -660,7 +656,6 @@ export default function InvoicesPage() {
                       className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                       value={addonForm.amount}
                       onChange={(e) => setAddonForm((f) => ({ ...f, amount: e.target.value }))}
-                      placeholder="e.g. 15000.00"
                     />
                   </div>
 
