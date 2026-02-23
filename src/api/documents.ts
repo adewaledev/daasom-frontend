@@ -88,7 +88,13 @@ export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
 }
 
-function triggerBrowserDownload(blob: Blob, filename: string) {
+/**
+ * Download through axios so Authorization headers are attached when needed.
+ * Works for both relative API paths and absolute URLs.
+ */
+export async function downloadDocumentByUrl(url: string, filename: string): Promise<void> {
+  const res = await http.get(url, { responseType: "blob" })
+  const blob = res.data as Blob
   const blobUrl = window.URL.createObjectURL(blob)
 
   const a = document.createElement("a")
@@ -99,38 +105,4 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
   a.remove()
 
   window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
-}
-
-/**
- * Download document with fallback order:
- * 1) Dedicated API endpoint: GET /documents/{id}/download/
- * 2) Authenticated fetch of provided URL through axios client
- * 3) Direct browser navigation to provided URL (useful for signed/public links)
- */
-export async function downloadDocument(input: { id: string; url: string; filename: string }): Promise<void> {
-  try {
-    const res = await http.get(`/documents/${input.id}/download/`, { responseType: "blob" })
-    triggerBrowserDownload(res.data as Blob, input.filename)
-    return
-  } catch (err: any) {
-    if (err?.response?.status !== 404) {
-      // for non-404 errors, continue with URL fallback
-    }
-  }
-
-  try {
-    const res = await http.get(input.url, { responseType: "blob" })
-    triggerBrowserDownload(res.data as Blob, input.filename)
-    return
-  } catch {
-    // final fallback: let browser open direct URL
-  }
-
-  const a = document.createElement("a")
-  a.href = input.url
-  a.target = "_blank"
-  a.rel = "noreferrer"
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
 }
