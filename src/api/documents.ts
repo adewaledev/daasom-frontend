@@ -87,3 +87,22 @@ export async function getDocument(id: string): Promise<Document> {
 export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
 }
+
+/**
+ * Download through axios so Authorization headers are attached when needed.
+ * Works for both relative API paths and absolute URLs.
+ */
+export async function downloadDocumentByUrl(url: string, filename: string): Promise<void> {
+  const res = await http.get(url, { responseType: "blob" })
+  const blob = res.data as Blob
+  const blobUrl = window.URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = blobUrl
+  a.download = filename || "document"
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+
+  window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
+}
