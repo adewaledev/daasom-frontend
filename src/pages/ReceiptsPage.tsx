@@ -262,7 +262,6 @@ export default function ReceiptsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="50000.00"
                 required
               />
             </div>
@@ -273,7 +272,6 @@ export default function ReceiptsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                placeholder="NGN"
               />
             </div>
 
@@ -283,7 +281,6 @@ export default function ReceiptsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.method}
                 onChange={(e) => setForm((f) => ({ ...f, method: e.target.value }))}
-                placeholder="transfer"
               />
             </div>
 
@@ -293,7 +290,6 @@ export default function ReceiptsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.reference}
                 onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
           </div>
@@ -304,7 +300,6 @@ export default function ReceiptsPage() {
               className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              placeholder="Optional"
             />
           </div>
 

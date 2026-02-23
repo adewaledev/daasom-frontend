@@ -63,7 +63,7 @@ export default function HomePage() {
     }
   }, [])
 
-  const trackerBadge = useMemo(() => (pendingJobCount > 0 ? `${pendingJobCount} pending` : "Ready"), [pendingJobCount])
+  const trackerBadge = useMemo(() => (pendingJobCount > 0 ? `${pendingJobCount} pending` : undefined), [pendingJobCount])
   const trackerTone: BadgeTone = pendingJobCount > 0 ? "amber" : "blue"
 
   return (
@@ -79,16 +79,16 @@ export default function HomePage() {
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <Tile title="Clients" description="Manage client profiles and status." to="/clients" badge="Ready" />
-        <Tile title="Jobs" description="Create and manage jobs linked to clients." to="/jobs" badge="Ready" />
+        <Tile title="Clients" description="Manage client profiles and status." to="/clients" />
+        <Tile title="Jobs" description="Create and manage jobs linked to clients." to="/jobs" />
         <Tile title="Tracker" description="Milestones and progress per job." to="/tracker" badge={trackerBadge} badgeTone={trackerTone} />
 
-        <Tile title="Expenses" description="Record operational expenses per job." to="/expenses" badge="Ready" />
-        <Tile title="Invoices" description="Create, issue, and manage job invoices." to="/invoices" badge="Ready" />
-        <Tile title="Receipts" description="Record payments against invoices." to="/receipts" badge="Ready" />
+        <Tile title="Expenses" description="Record operational expenses per job." to="/expenses" />
+        <Tile title="Invoices" description="Create, issue, and manage job invoices." to="/invoices" />
+        <Tile title="Receipts" description="Record payments against invoices." to="/receipts" />
 
-        <Tile title="Ledger" description="Read-only debits vs credits per job." to="/ledger" badge="Ready" />
-        <Tile title="Documents" description="Upload and manage files linked to records." to="/documents" badge="Ready" />
+        <Tile title="Ledger" description="Read-only debits vs credits per job." to="/ledger" />
+        <Tile title="Documents" description="Upload and manage files linked to records." to="/documents" />
       </section>
     </div>
   )
