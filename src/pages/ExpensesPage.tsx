@@ -277,7 +277,6 @@ export default function ExpensesPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.category}
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                placeholder="e.g. Terminal Charges"
                 required
               />
             </div>
@@ -288,7 +287,6 @@ export default function ExpensesPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="e.g. 25000.00"
                 required
               />
             </div>
@@ -299,7 +297,6 @@ export default function ExpensesPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                placeholder="NGN"
               />
             </div>
           </div>
@@ -311,7 +308,6 @@ export default function ExpensesPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
 

@@ -1,5 +1,24 @@
 # React + TypeScript + Vite
 
+## Cloudflare Pages deployment
+
+This app is configured for SPA hosting on Cloudflare Pages:
+
+- Build command: `pnpm build`
+- Output directory: `dist`
+- Required env var: `VITE_API_BASE_URL`
+- Optional signed upload env vars:
+  - `VITE_DOCUMENT_USE_SIGNED_UPLOAD=true`
+  - `VITE_DOCUMENT_SIGNED_UPLOAD_FALLBACK=true` (only if you want multipart fallback)
+
+Routing fallback is configured via `public/_redirects`:
+
+```
+/* /index.html 200
+```
+
+A basic `wrangler.toml` is included with `pages_build_output_dir = "dist"`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

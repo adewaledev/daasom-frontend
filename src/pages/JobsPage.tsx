@@ -312,7 +312,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.file_number}
                 onChange={(e) => setForm((f) => ({ ...f, file_number: e.target.value }))}
-                placeholder="Unique"
                 required
               />
             </div>
@@ -335,7 +334,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.bl_awb}
                 onChange={(e) => setForm((f) => ({ ...f, bl_awb: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
 
@@ -345,7 +343,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.weight_kg}
                 onChange={(e) => setForm((f) => ({ ...f, weight_kg: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
           </div>
@@ -377,7 +374,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.others}
                 onChange={(e) => setForm((f) => ({ ...f, others: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
           </div>
@@ -389,7 +385,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
 
@@ -399,7 +394,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.container_number}
                 onChange={(e) => setForm((f) => ({ ...f, container_number: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
           </div>
@@ -412,7 +406,6 @@ export default function JobsPage() {
                 value={form.transit_days}
                 onChange={(e) => setForm((f) => ({ ...f, transit_days: e.target.value }))}
                 inputMode="numeric"
-                placeholder="Optional"
               />
             </div>
 
@@ -423,7 +416,6 @@ export default function JobsPage() {
                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                   value={form.duty_amount}
                   onChange={(e) => setForm((f) => ({ ...f, duty_amount: e.target.value }))}
-                  placeholder="DUTY only"
                 />
               </div>
             ) : (
@@ -436,7 +428,6 @@ export default function JobsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.refund_amount}
                 onChange={(e) => setForm((f) => ({ ...f, refund_amount: e.target.value }))}
-                placeholder="Optional"
               />
             </div>
 
