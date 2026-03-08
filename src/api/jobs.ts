@@ -23,6 +23,9 @@ export interface Job {
   container_number: string
   transit_days: number | null
 
+  port: string
+  vessel: string
+
   duty_amount: string | null
   refund_amount: string | null
 
@@ -91,6 +94,9 @@ export function buildJobPayload(input: Partial<Job>): Record<string, any> {
   if (input.container_number !== undefined) out.container_number = String(input.container_number ?? "").trim()
 
   if (input.transit_days !== undefined) out.transit_days = toIntOrNull(input.transit_days)
+
+  if (input.port !== undefined) out.port = String(input.port ?? "").trim()
+  if (input.vessel !== undefined) out.vessel = String(input.vessel ?? "").trim()
 
   if (input.duty_amount !== undefined) out.duty_amount = toDecimalStringOrNull(input.duty_amount)
   if (input.refund_amount !== undefined) out.refund_amount = toDecimalStringOrNull(input.refund_amount)

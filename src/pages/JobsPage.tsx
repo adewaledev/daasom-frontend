@@ -22,6 +22,9 @@ type JobForm = {
   container_number: string
   transit_days: string
 
+  port: string
+  vessel: string
+
   duty_amount: string
   refund_amount: string
 
@@ -45,6 +48,9 @@ const emptyForm: JobForm = {
   description: "",
   container_number: "",
   transit_days: "",
+
+  port: "",
+  vessel: "",
 
   duty_amount: "",
   refund_amount: "",
@@ -147,6 +153,9 @@ export default function JobsPage() {
       container_number: job.container_number ?? "",
       transit_days: job.transit_days === null || job.transit_days === undefined ? "" : String(job.transit_days),
 
+      port: job.port ?? "",
+      vessel: job.vessel ?? "",
+
       duty_amount: job.duty_amount ?? "",
       refund_amount: job.refund_amount ?? "",
 
@@ -198,6 +207,9 @@ export default function JobsPage() {
         description: form.description,
         container_number: form.container_number,
         transit_days: form.transit_days ? Number(form.transit_days) : undefined,
+
+        port: form.port,
+        vessel: form.vessel,
 
         duty_amount: form.zone === "DUTY" ? form.duty_amount : "",
         refund_amount: form.refund_amount,
@@ -398,7 +410,7 @@ export default function JobsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-semibold text-white/80 mb-1">Transit Days</label>
               <input
@@ -409,6 +421,26 @@ export default function JobsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-semibold text-white/80 mb-1">Port</label>
+              <input
+                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={form.port}
+                onChange={(e) => setForm((f) => ({ ...f, port: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-white/80 mb-1">Vessel</label>
+              <input
+                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={form.vessel}
+                onChange={(e) => setForm((f) => ({ ...f, vessel: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {showDutyFields ? (
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Duty Amount</label>
@@ -487,6 +519,8 @@ export default function JobsPage() {
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Qty</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">BL/AWB</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Port</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Vessel</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">40FT</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">20FT</th>
                   {showDutyColumn ? (
@@ -514,6 +548,8 @@ export default function JobsPage() {
                       </td>
                       <td className="px-4 py-3 text-white/90">{j.quantity}</td>
                       <td className="px-4 py-3 text-white/80">{j.bl_awb || "-"}</td>
+                      <td className="px-4 py-3 text-white/80">{j.port || "-"}</td>
+                      <td className="px-4 py-3 text-white/80">{j.vessel || "-"}</td>
                       <td className="px-4 py-3 text-white/90">{j.container_40ft}</td>
                       <td className="px-4 py-3 text-white/90">{j.container_20ft}</td>
 
