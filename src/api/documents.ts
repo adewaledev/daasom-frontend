@@ -32,27 +32,6 @@ type SignedUploadInitResponse = {
   finalize_token?: string
 }
 
-async function initSignedUpload(payload: {
-  doc_type: DocumentType
-  filename: string
-  content_type: string
-  size_bytes: number
-  job_id?: string
-  invoice_id?: string
-  receipt_id?: string
-}): Promise<SignedUploadInitResponse> {
-  try {
-    const postRes = await http.post<SignedUploadInitResponse>("/documents/upload-url/", payload)
-    return postRes.data
-  } catch (err: any) {
-    if (err?.response?.status !== 405) throw err
-
-    // Some backends expose signed URL init as GET query params instead of POST body.
-    const getRes = await http.get<SignedUploadInitResponse>("/documents/upload-url/", { params: payload })
-    return getRes.data
-  }
-}
-
 type Paginated<T> = {
   count: number
   next: string | null
@@ -94,19 +73,13 @@ export async function uploadDocument(input: {
   receipt_id?: string
 }): Promise<Document> {
   const useSignedUpload = import.meta.env.VITE_DOCUMENT_USE_SIGNED_UPLOAD === "true"
-  const allowSignedFallback = import.meta.env.VITE_DOCUMENT_SIGNED_UPLOAD_FALLBACK === "true"
 
   if (useSignedUpload) {
-    if (allowSignedFallback) {
-      try {
-        return await uploadDocumentSigned(input)
-      } catch {
-        // Optional fallback for transitional environments.
-      }
-      return uploadDocumentMultipart(input)
+    try {
+      return await uploadDocumentSigned(input)
+    } catch {
+      // Fallback to legacy multipart path when signed upload is unavailable.
     }
-
-    return uploadDocumentSigned(input)
   }
 
   return uploadDocumentMultipart(input)
@@ -153,7 +126,8 @@ async function uploadDocumentSigned(input: {
     receipt_id: input.receipt_id,
   }
 
-  const signed = await initSignedUpload(initPayload)
+  const initRes = await http.post<SignedUploadInitResponse>("/documents/upload-url/", initPayload)
+  const signed = initRes.data
 
   if (!signed?.upload_url) {
     throw new Error("Signed upload URL missing.")
@@ -214,7 +188,13 @@ export async function deleteDocument(id: string): Promise<void> {
   await http.delete(`/documents/${id}/`)
 }
 
-function triggerBrowserDownload(blob: Blob, filename: string) {
+/**
+ * Download through axios so Authorization headers are attached when needed.
+ * Works for both relative API paths and absolute URLs.
+ */
+export async function downloadDocumentByUrl(url: string, filename: string): Promise<void> {
+  const res = await http.get(url, { responseType: "blob" })
+  const blob = res.data as Blob
   const blobUrl = window.URL.createObjectURL(blob)
 
   const a = document.createElement("a")
@@ -225,13 +205,4 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
   a.remove()
 
   window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 0)
-}
-
-/**
- * Download document through authenticated API endpoint:
- * GET /documents/{id}/download/
- */
-export async function downloadDocument(input: { id: string; filename: string }): Promise<void> {
-  const res = await http.get(`/documents/${input.id}/download/`, { responseType: "blob" })
-  triggerBrowserDownload(res.data as Blob, input.filename)
 }
