@@ -183,7 +183,6 @@ export default function ClientsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.client_code}
                 onChange={(e) => setForm((f) => ({ ...f, client_code: e.target.value }))}
-                placeholder="e.g. CL001"
                 required
               />
             </div>
@@ -194,7 +193,6 @@ export default function ClientsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.client_prefix}
                 onChange={(e) => setForm((f) => ({ ...f, client_prefix: e.target.value }))}
-                placeholder="e.g. ABC"
                 required
               />
             </div>
@@ -205,7 +203,6 @@ export default function ClientsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.client_name}
                 onChange={(e) => setForm((f) => ({ ...f, client_name: e.target.value }))}
-                placeholder="e.g. Alpha Beta Company Ltd"
                 required
               />
             </div>
@@ -219,7 +216,6 @@ export default function ClientsPage() {
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 type="email"
-                placeholder="optional"
               />
             </div>
 
@@ -229,7 +225,6 @@ export default function ClientsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                placeholder="optional"
               />
             </div>
 
@@ -239,7 +234,6 @@ export default function ClientsPage() {
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-                placeholder="optional"
               />
             </div>
           </div>
