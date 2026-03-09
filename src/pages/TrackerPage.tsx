@@ -58,6 +58,10 @@ export default function TrackerPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
 
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "COMPLETED">("ALL")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
   const clientMap = useMemo(() => {
     const m = new Map<string, Client>()
     for (const c of clients as any[]) m.set(String(c.id), c)
@@ -116,16 +120,41 @@ export default function TrackerPage() {
     return suggestions.slice(0, 10)
   }, [searchTerm, jobs, clients])
 
-  // Get top 10 pending jobs by creation date (most recent first)
-  const topPendingJobs = useMemo(() => {
-    const pendingJobs = jobs.filter((j) => j.is_active)
-    pendingJobs.sort((a, b) => {
+  // Filter and paginate jobs
+  const filteredAndPaginatedJobs = useMemo(() => {
+    let result = jobs
+
+    // Apply status filter
+    if (statusFilter === "PENDING") {
+      result = result.filter((j) => j.is_active)
+    } else if (statusFilter === "COMPLETED") {
+      result = result.filter((j) => !j.is_active)
+    }
+
+    // Sort: active (pending) first, then by date (newest first)
+    result = [...result].sort((a, b) => {
+      // Active (pending) jobs come first
+      if (a.is_active !== b.is_active) {
+        return a.is_active ? -1 : 1
+      }
+      // Then sort by created_at descending (newest first)
       const dateA = new Date(a.created_at).getTime()
       const dateB = new Date(b.created_at).getTime()
       return dateB - dateA
     })
-    return pendingJobs.slice(0, 10)
-  }, [jobs])
+
+    // Calculate pagination
+    const totalPages = Math.ceil(result.length / itemsPerPage)
+    const startIdx = (Math.max(1, Math.min(currentPage, totalPages)) - 1) * itemsPerPage
+    const paginatedResult = result.slice(startIdx, startIdx + itemsPerPage)
+
+    return {
+      items: paginatedResult,
+      total: result.length,
+      totalPages,
+      currentPage: Math.max(1, Math.min(currentPage, totalPages)),
+    }
+  }, [jobs, statusFilter, currentPage, itemsPerPage])
 
   async function refreshBase() {
     setError("")
@@ -311,8 +340,8 @@ export default function TrackerPage() {
                 >
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
-                        ? "bg-blue-600/20 text-blue-300"
-                        : "bg-green-600/20 text-green-300"
+                      ? "bg-blue-600/20 text-blue-300"
+                      : "bg-green-600/20 text-green-300"
                       }`}
                   >
                     {suggestion.type === "file" ? "FILE" : "CLIENT"}
@@ -389,64 +418,151 @@ export default function TrackerPage() {
         </div>
       </section>
 
-      {/* Top 10 Pending Jobs Section */}
+      {/* All Jobs with Pagination and Filters */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Top 10 Pending Active Jobs</h2>
-          <span className="text-sm text-white/60">{topPendingJobs.length} shown</span>
+          <h2 className="font-semibold text-white">All Jobs</h2>
+          <span className="text-sm text-white/60">
+            {filteredAndPaginatedJobs.total} total
+          </span>
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("ALL")
+              setCurrentPage(1)
+            }}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${statusFilter === "ALL"
+                ? "bg-blue-600 text-white border border-blue-500/30"
+                : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+              }`}
+          >
+            All Files
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("PENDING")
+              setCurrentPage(1)
+            }}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${statusFilter === "PENDING"
+                ? "bg-amber-600 text-white border border-amber-500/30"
+                : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+              }`}
+          >
+            Pending
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("COMPLETED")
+              setCurrentPage(1)
+            }}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${statusFilter === "COMPLETED"
+                ? "bg-green-600 text-white border border-green-500/30"
+                : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+              }`}
+          >
+            Completed
+          </button>
         </div>
 
         {loading ? (
           <div className="p-5 text-sm text-white/60">Loading jobs...</div>
-        ) : topPendingJobs.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No active jobs found.</div>
+        ) : filteredAndPaginatedJobs.total === 0 ? (
+          <div className="p-5 text-sm text-white/60">No jobs found.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>
-                </tr>
-              </thead>
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {topPendingJobs.map((j) => {
-                  const c = clientMap.get(String(j.client))
-                  const clientLabel = c
-                    ? `${(c as any).client_code} — ${(c as any).client_name}`
-                    : `Client ${String(j.client)}`
+                <tbody>
+                  {filteredAndPaginatedJobs.items.map((j) => {
+                    const c = clientMap.get(String(j.client))
+                    const clientLabel = c
+                      ? `${(c as any).client_code} — ${(c as any).client_name}`
+                      : `Client ${String(j.client)}`
 
-                  return (
-                    <tr
-                      key={j.id}
-                      className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === j.id ? "bg-white/10" : ""
-                        }`}
-                    >
-                      <td className="px-4 py-3 text-white/90">{j.file_number}</td>
-                      <td className="px-4 py-3 text-white/80">{clientLabel}</td>
-                      <td className="px-4 py-3 text-white/70 text-xs">{formatDate(j.created_at)}</td>
-                      <td className="px-4 py-3">
-                        <span className={zoneBadge(j.zone)}>{j.zone}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedJobId(j.id)}
-                          className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
-                        >
-                          Track
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr
+                        key={j.id}
+                        className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === j.id ? "bg-white/10" : ""
+                          }`}
+                      >
+                        <td className="px-4 py-3 text-white/90">{j.file_number}</td>
+                        <td className="px-4 py-3 text-white/80">{clientLabel}</td>
+                        <td className="px-4 py-3 text-white/70 text-xs">{formatDate(j.created_at)}</td>
+                        <td className="px-4 py-3">
+                          <span className={zoneBadge(j.zone)}>{j.zone}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${j.is_active
+                                ? "bg-amber-500/10 text-amber-200 border-amber-500/20"
+                                : "bg-green-500/10 text-green-200 border-green-500/20"
+                              }`}
+                          >
+                            {j.is_active ? "PENDING" : "COMPLETED"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedJobId(j.id)}
+                            className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                          >
+                            Track
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {filteredAndPaginatedJobs.totalPages > 1 && (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {filteredAndPaginatedJobs.currentPage} of {filteredAndPaginatedJobs.totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage(Math.min(filteredAndPaginatedJobs.totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === filteredAndPaginatedJobs.totalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 
