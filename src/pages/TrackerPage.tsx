@@ -49,6 +49,7 @@ export default function TrackerPage() {
 
   const [selectedJobId, setSelectedJobId] = useState<string>("")
   const [milestones, setMilestones] = useState<JobMilestone[]>([])
+  const [allJobMilestones, setAllJobMilestones] = useState<JobMilestone[]>([])
 
   const [loading, setLoading] = useState(true)
   const [loadingMilestones, setLoadingMilestones] = useState(false)
@@ -68,14 +69,16 @@ export default function TrackerPage() {
     return m
   }, [clients])
 
-  const selectedJob = useMemo(() => jobs.find((j) => j.id === selectedJobId) ?? null, [jobs, selectedJobId])
-
-  const selectedJobLabel = useMemo(() => {
-    if (!selectedJob) return ""
-    const c = clientMap.get(String(selectedJob.client))
-    const clientLabel = c ? `${(c as any).client_code} — ${(c as any).client_name}` : `Client ${String(selectedJob.client)}`
-    return `${selectedJob.file_number} • ${clientLabel}`
-  }, [selectedJob, clientMap])
+  // Check if a job has any pending milestones
+  const jobHasPendingMilestones = useMemo(() => {
+    const map = new Map<string, boolean>()
+    for (const job of jobs) {
+      const jobMilestones = allJobMilestones.filter((m) => m.job === job.id)
+      const hasPending = jobMilestones.some((m) => m.status === "PENDING")
+      map.set(job.id, hasPending)
+    }
+    return map
+  }, [jobs, allJobMilestones])
 
   // Generate search suggestions
   const searchSuggestions = useMemo(() => {
@@ -124,18 +127,20 @@ export default function TrackerPage() {
   const filteredAndPaginatedJobs = useMemo(() => {
     let result = jobs
 
-    // Apply status filter
+    // Apply status filter based on milestone status
     if (statusFilter === "PENDING") {
-      result = result.filter((j) => j.is_active)
+      result = result.filter((j) => jobHasPendingMilestones.get(j.id) === true)
     } else if (statusFilter === "COMPLETED") {
-      result = result.filter((j) => !j.is_active)
+      result = result.filter((j) => jobHasPendingMilestones.get(j.id) === false)
     }
 
-    // Sort: active (pending) first, then by date (newest first)
+    // Sort: jobs with pending milestones first, then by date (newest first)
     result = [...result].sort((a, b) => {
-      // Active (pending) jobs come first
-      if (a.is_active !== b.is_active) {
-        return a.is_active ? -1 : 1
+      const aPending = jobHasPendingMilestones.get(a.id) === true
+      const bPending = jobHasPendingMilestones.get(b.id) === true
+      // Pending jobs come first
+      if (aPending !== bPending) {
+        return aPending ? -1 : 1
       }
       // Then sort by created_at descending (newest first)
       const dateA = new Date(a.created_at).getTime()
@@ -154,16 +159,17 @@ export default function TrackerPage() {
       totalPages,
       currentPage: Math.max(1, Math.min(currentPage, totalPages)),
     }
-  }, [jobs, statusFilter, currentPage, itemsPerPage])
+  }, [jobs, statusFilter, currentPage, itemsPerPage, jobHasPendingMilestones])
 
   async function refreshBase() {
     setError("")
     setInfo("")
     setLoading(true)
     try {
-      const [c, j] = await Promise.all([listClients(), listJobs()])
+      const [c, j, allMs] = await Promise.all([listClients(), listJobs(), listJobMilestones()])
       setClients(c)
       setJobs(j)
+      setAllJobMilestones(allMs)
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to load tracker data.")
     } finally {
@@ -192,11 +198,6 @@ export default function TrackerPage() {
   function selectSuggestion(value: string) {
     setSearchTerm(value)
     setShowSuggestions(false)
-    // Also select the job if it's a file number match
-    const job = jobs.find((j) => j.file_number === value)
-    if (job) {
-      setSelectedJobId(job.id)
-    }
   }
 
   function clearSearch() {
@@ -254,6 +255,7 @@ export default function TrackerPage() {
     try {
       const updated = await updateJobMilestone(id, { status, date: date ? date : null })
       setMilestones((prev) => prev.map((m) => (m.id === id ? { ...m, ...updated } : m)))
+      setAllJobMilestones((prev) => prev.map((m) => (m.id === id ? { ...m, ...updated } : m)))
       setInfo("Saved.")
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
@@ -354,69 +356,17 @@ export default function TrackerPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        {error ? (
-          <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
-            {error}
-          </div>
-        ) : null}
+      {error ? (
+        <section className="rounded-2xl border border-red-500/20 bg-red-500/10 backdrop-blur p-4">
+          <div className="text-sm text-red-200">{error}</div>
+        </section>
+      ) : null}
 
-        {info ? (
-          <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">
-            {info}
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-semibold text-white/80 mb-1">Select Job</label>
-            <select
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              disabled={loading}
-            >
-              <option value="">Choose a job…</option>
-              {jobs.map((j) => {
-                const c = clientMap.get(String(j.client))
-                const clientLabel = c ? `${(c as any).client_code} — ${(c as any).client_name}` : `Client ${String(j.client)}`
-                return (
-                  <option key={j.id} value={j.id}>
-                    {j.file_number} — {clientLabel}
-                  </option>
-                )
-              })}
-            </select>
-          </div>
-
-          <div className="md:col-span-1">
-            <div className="text-sm text-white/60">Selected</div>
-            <div className="mt-1 text-sm font-semibold text-white/90 truncate">{selectedJobLabel || "—"}</div>
-            {selectedJob ? (
-              <div className="mt-2 flex items-center gap-2">
-                <span className={zoneBadge(selectedJob.zone)}>{selectedJob.zone}</span>
-                <span className="text-xs text-white/50">•</span>
-                <span className="text-xs text-white/60">
-                  {milestones.length ? (
-                    <>
-                      <span className="text-white/80 font-semibold">
-                        {milestones.filter((m) => m.status === "DONE").length}
-                      </span>{" "}
-                      done /{" "}
-                      <span className="text-white/80 font-semibold">
-                        {milestones.filter((m) => m.status === "PENDING").length}
-                      </span>{" "}
-                      pending
-                    </>
-                  ) : (
-                    "No milestones loaded"
-                  )}
-                </span>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
+      {info ? (
+        <section className="rounded-2xl border border-blue-500/20 bg-blue-600/10 backdrop-blur p-4">
+          <div className="text-sm text-blue-200">{info}</div>
+        </section>
+      ) : null}
 
       {/* All Jobs with Pagination and Filters */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
@@ -436,8 +386,8 @@ export default function TrackerPage() {
               setCurrentPage(1)
             }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${statusFilter === "ALL"
-                ? "bg-blue-600 text-white border border-blue-500/30"
-                : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+              ? "bg-blue-600 text-white border border-blue-500/30"
+              : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
               }`}
           >
             All Files
@@ -449,8 +399,8 @@ export default function TrackerPage() {
               setCurrentPage(1)
             }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${statusFilter === "PENDING"
-                ? "bg-amber-600 text-white border border-amber-500/30"
-                : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+              ? "bg-amber-600 text-white border border-amber-500/30"
+              : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
               }`}
           >
             Pending
@@ -462,8 +412,8 @@ export default function TrackerPage() {
               setCurrentPage(1)
             }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${statusFilter === "COMPLETED"
-                ? "bg-green-600 text-white border border-green-500/30"
-                : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+              ? "bg-green-600 text-white border border-green-500/30"
+              : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
               }`}
           >
             Completed
@@ -499,8 +449,7 @@ export default function TrackerPage() {
                     return (
                       <tr
                         key={j.id}
-                        className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === j.id ? "bg-white/10" : ""
-                          }`}
+                        className={`border-b border-white/5 hover:bg-white/5 transition ${selectedJobId === j.id ? "bg-white/10" : ""}`}
                       >
                         <td className="px-4 py-3 text-white/90">{j.file_number}</td>
                         <td className="px-4 py-3 text-white/80">{clientLabel}</td>
@@ -510,12 +459,12 @@ export default function TrackerPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${j.is_active
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${jobHasPendingMilestones.get(j.id)
                                 ? "bg-amber-500/10 text-amber-200 border-amber-500/20"
                                 : "bg-green-500/10 text-green-200 border-green-500/20"
                               }`}
                           >
-                            {j.is_active ? "PENDING" : "COMPLETED"}
+                            {jobHasPendingMilestones.get(j.id) ? "PENDING" : "COMPLETED"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
