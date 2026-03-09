@@ -98,6 +98,8 @@ export default function JobsPage() {
   const [form, setForm] = useState<JobForm>(emptyForm)
 
   const [viewZone, setViewZone] = useState<ViewZone>("ALL")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
 
@@ -108,9 +110,78 @@ export default function JobsPage() {
   }, [clients])
 
   const filteredJobs = useMemo(() => {
-    if (viewZone === "ALL") return jobs
-    return jobs.filter((j) => j.zone === viewZone)
-  }, [jobs, viewZone])
+    let result = jobs
+
+    // Filter by zone
+    if (viewZone !== "ALL") {
+      result = result.filter((j) => j.zone === viewZone)
+    }
+
+    // Filter by search term (file number or client name)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      result = result.filter((j) => {
+        const fileMatch = j.file_number?.toLowerCase().includes(term)
+        const client = clientMap.get(String(j.client))
+        const clientNameMatch = client?.client_name?.toLowerCase().includes(term)
+        const clientCodeMatch = client?.client_code?.toLowerCase().includes(term)
+        return fileMatch || clientNameMatch || clientCodeMatch
+      })
+    }
+
+    // Sort by created_at descending (most recent first)
+    result = [...result].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return dateB - dateA
+    })
+
+    // Limit to top 20 most recent
+    return result.slice(0, 20)
+  }, [jobs, viewZone, searchTerm, clientMap])
+
+  // Generate search suggestions based on file numbers and client names
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm.trim()) return []
+
+    const term = searchTerm.toLowerCase()
+    const suggestions: Array<{ type: "file" | "client"; value: string; label: string }> = []
+    const seen = new Set<string>()
+
+    // Collect file numbers
+    for (const job of jobs) {
+      if (job.file_number && job.file_number.toLowerCase().includes(term)) {
+        const key = `file:${job.file_number}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          suggestions.push({
+            type: "file",
+            value: job.file_number,
+            label: `File: ${job.file_number}`,
+          })
+        }
+      }
+    }
+
+    // Collect client names
+    for (const client of clients) {
+      const nameMatch = client.client_name?.toLowerCase().includes(term)
+      const codeMatch = client.client_code?.toLowerCase().includes(term)
+      if (nameMatch || codeMatch) {
+        const key = `client:${client.id}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          suggestions.push({
+            type: "client",
+            value: client.client_name,
+            label: `Client: ${client.client_code} — ${client.client_name}`,
+          })
+        }
+      }
+    }
+
+    return suggestions.slice(0, 10) // Limit to 10 suggestions
+  }, [searchTerm, jobs, clients])
 
   const showDutyFields = form.zone === "DUTY"
   const showDutyColumn = viewZone === "ALL" ? true : viewZone === "DUTY"
@@ -127,6 +198,34 @@ export default function JobsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function formatDate(dateString: string): string {
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    } catch {
+      return "-"
+    }
+  }
+
+  function handleSearchChange(value: string) {
+    setSearchTerm(value)
+    setShowSuggestions(true)
+  }
+
+  function selectSuggestion(value: string) {
+    setSearchTerm(value)
+    setShowSuggestions(false)
+  }
+
+  function clearSearch() {
+    setSearchTerm("")
+    setShowSuggestions(false)
   }
 
   useEffect(() => {
@@ -263,6 +362,75 @@ export default function JobsPage() {
           </button>
         </div>
       </div>
+
+      {/* Search Section */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+        <div className="relative">
+          <label className="block text-sm font-semibold text-white/80 mb-2">
+            Search Jobs
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              placeholder="Search by file number or client name..."
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition"
+              >
+                <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Autocomplete Suggestions */}
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg overflow-hidden">
+              {searchSuggestions.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => selectSuggestion(suggestion.value)}
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition flex items-center gap-2"
+                >
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
+                      ? "bg-blue-600/20 text-blue-300"
+                      : "bg-green-600/20 text-green-300"
+                    }`}>
+                    {suggestion.type === "file" ? "FILE" : "CLIENT"}
+                  </span>
+                  <span className="text-white/90">{suggestion.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {searchTerm && (
+          <p className="mt-2 text-xs text-white/50">
+            Showing top 20 results matching "{searchTerm}"
+          </p>
+        )}
+      </section>
 
       {/* Form */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
@@ -502,7 +670,9 @@ export default function JobsPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Jobs List</h2>
-          <span className="text-sm text-white/60">{filteredJobs.length} shown</span>
+          <span className="text-sm text-white/60">
+            {filteredJobs.length} shown {jobs.length > 20 && !searchTerm ? "(top 20 most recent)" : ""}
+          </span>
         </div>
 
         {loading ? (
@@ -516,6 +686,7 @@ export default function JobsPage() {
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Qty</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">BL/AWB</th>
@@ -543,6 +714,7 @@ export default function JobsPage() {
                     <tr key={j.id} className="border-b border-white/5 hover:bg-white/5 transition">
                       <td className="px-4 py-3 text-white/90">{j.file_number}</td>
                       <td className="px-4 py-3 text-white/80">{clientLabel}</td>
+                      <td className="px-4 py-3 text-white/70 text-xs">{formatDate(j.created_at)}</td>
                       <td className="px-4 py-3">
                         <span className={zoneBadge(j.zone)}>{j.zone}</span>
                       </td>
