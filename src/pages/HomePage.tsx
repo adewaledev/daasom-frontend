@@ -89,6 +89,7 @@ export default function HomePage() {
 
         <Tile title="Ledger" description="Read-only debits vs credits per job." to="/ledger" />
         <Tile title="Documents" description="Upload and manage files linked to records." to="/documents" />
+        <Tile title="Reports" description="Analytics and insights across jobs and finances." to="/reports" disabled />
       </section>
     </div>
   )
