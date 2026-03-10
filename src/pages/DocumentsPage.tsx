@@ -70,6 +70,7 @@ export default function DocumentsPage() {
 
   const [selectedJobId, setSelectedJobId] = useState<string>("")
   const [docs, setDocs] = useState<Document[]>([])
+  const [searchQuery, setSearchQuery] = useState<string>("")
 
   const [loading, setLoading] = useState(true)
   const [loadingDocs, setLoadingDocs] = useState(false)
@@ -255,6 +256,12 @@ export default function DocumentsPage() {
     return j ? `${j.file_number} • ${j.zone}` : selectedJobId
   }, [jobMap, selectedJobId])
 
+  const filteredDocs = useMemo(() => {
+    if (!searchQuery.trim()) return docs
+    const query = searchQuery.toLowerCase()
+    return docs.filter((d) => d.filename.toLowerCase().includes(query))
+  }, [docs, searchQuery])
+
   return (
     <div className="space-y-6 text-white">
       <div className="flex items-start justify-between gap-4">
@@ -409,8 +416,19 @@ export default function DocumentsPage() {
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Documents</h2>
-          <span className="text-sm text-white/60">{selectedJobId ? docs.length : ""}</span>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="font-semibold text-white">Documents</h2>
+            <span className="text-sm text-white/60">{selectedJobId ? filteredDocs.length : ""}</span>
+          </div>
+          {selectedJobId && (
+            <input
+              type="text"
+              placeholder="Search by filename…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40"
+            />
+          )}
         </div>
 
         {!selectedJobId ? (
@@ -419,6 +437,8 @@ export default function DocumentsPage() {
           <div className="p-5 text-sm text-white/60">Loading…</div>
         ) : docs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No documents.</div>
+        ) : filteredDocs.length === 0 ? (
+          <div className="p-5 text-sm text-white/60">No documents match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -434,7 +454,7 @@ export default function DocumentsPage() {
               </thead>
 
               <tbody>
-                {docs.map((d) => (
+                {filteredDocs.map((d) => (
                   <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     <td className="px-4 py-3">
                       <span className={typeBadge(d.doc_type)}>{d.doc_type}</span>
