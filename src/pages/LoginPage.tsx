@@ -68,9 +68,9 @@ export default function LoginPage() {
 
           <div>
             <h1 className="text-3xl font-semibold leading-tight text-white">
-              Logistics operations,
+              Daasom Nigeria Limited
               <br />
-              <span className="text-blue-300">built for speed.</span>
+              <span className="text-blue-300">...we deliver peace of mind.</span>
             </h1>
             <p className="mt-3 text-sm text-white/70 max-w-sm leading-relaxed">
               Sign in to manage clients, jobs, tracking milestones, and billing — all in one clean workflow.
