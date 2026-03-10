@@ -128,10 +128,6 @@ export default function LoginPage() {
             >
               {submitting ? "Signing in..." : "Sign In"}
             </button>
-
-            <div className="text-xs text-white/50">
-              If login fails unexpectedly, confirm your <span className="text-white/70">VITE_API_BASE_URL</span> and restart the dev server after changes.
-            </div>
           </form>
         </div>
       </div>
