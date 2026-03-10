@@ -505,7 +505,7 @@ export default function JobsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Quantity</label>
                 <input
@@ -516,7 +516,7 @@ export default function JobsPage() {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">BL/AWB</label>
                 <input
                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -535,7 +535,7 @@ export default function JobsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Container Type</label>
                 <select
@@ -549,17 +549,6 @@ export default function JobsPage() {
                   <option value="others">Others</option>
                 </select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
-                <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Container No.</label>
@@ -569,9 +558,7 @@ export default function JobsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, container_number: e.target.value }))}
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Transit Days</label>
                 <input
@@ -581,7 +568,9 @@ export default function JobsPage() {
                   inputMode="numeric"
                 />
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Port</label>
                 <input
@@ -599,9 +588,18 @@ export default function JobsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, vessel: e.target.value }))}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {showDutyFields ? (
                 <div>
                   <label className="block text-sm font-semibold text-white/80 mb-1">Duty Amount</label>
