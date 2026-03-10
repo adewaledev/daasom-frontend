@@ -82,6 +82,17 @@ function canEditInvoiceFields(status: InvoiceStatus) {
   return status === "DRAFT"
 }
 
+function generateInvoiceNumber(fileNumber: string) {
+  const normalizedFileNumber = fileNumber.trim()
+  if (!normalizedFileNumber) return ""
+
+  const randomSuffix = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0")
+
+  return `${normalizedFileNumber}${randomSuffix}`
+}
+
 export default function InvoicesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -157,6 +168,16 @@ export default function InvoicesPage() {
   function cancelEdit() {
     setEditing(null)
     setForm(emptyForm)
+  }
+
+  function handleJobChange(jobId: string) {
+    const selectedJob = jobMap.get(jobId)
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      job: jobId,
+      invoice_number: selectedJob ? generateInvoiceNumber(selectedJob.file_number) : "",
+    }))
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -371,7 +392,7 @@ export default function InvoicesPage() {
               <select
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
                 value={form.job}
-                onChange={(e) => setForm((f) => ({ ...f, job: e.target.value }))}
+                onChange={(e) => handleJobChange(e.target.value)}
                 required
                 disabled={!!editing} // can't change job on edit (OneToOne)
               >
