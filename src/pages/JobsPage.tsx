@@ -14,9 +14,7 @@ type JobForm = {
   bl_awb: string
   weight_kg: string
 
-  container_40ft: string
-  container_20ft: string
-  others: string
+  container_type: "20ft" | "40ft" | "others" | ""
 
   description: string
   container_number: string
@@ -41,9 +39,7 @@ const emptyForm: JobForm = {
   bl_awb: "",
   weight_kg: "",
 
-  container_40ft: "0",
-  container_20ft: "0",
-  others: "",
+  container_type: "",
 
   description: "",
   container_number: "",
@@ -246,9 +242,7 @@ export default function JobsPage() {
       bl_awb: job.bl_awb ?? "",
       weight_kg: job.weight_kg ?? "",
 
-      container_40ft: String(job.container_40ft ?? 0),
-      container_20ft: String(job.container_20ft ?? 0),
-      others: job.others ?? "",
+      container_type: (job.container_40ft ?? 0) > 0 ? "40ft" : (job.container_20ft ?? 0) > 0 ? "20ft" : job.others ? "others" : "",
 
       description: job.description ?? "",
       container_number: job.container_number ?? "",
@@ -302,9 +296,9 @@ export default function JobsPage() {
         bl_awb: form.bl_awb,
         weight_kg: form.weight_kg,
 
-        container_40ft: Number(form.container_40ft || "0"),
-        container_20ft: Number(form.container_20ft || "0"),
-        others: form.others,
+        container_40ft: form.container_type === "40ft" ? 1 : 0,
+        container_20ft: form.container_type === "20ft" ? 1 : 0,
+        others: form.container_type === "others" ? "others" : "",
 
         description: form.description,
         container_number: form.container_number,
@@ -543,32 +537,17 @@ export default function JobsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">40FT</label>
-                <input
+                <label className="block text-sm font-semibold text-white/80 mb-1">Container Type</label>
+                <select
                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.container_40ft}
-                  onChange={(e) => setForm((f) => ({ ...f, container_40ft: e.target.value }))}
-                  inputMode="numeric"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">20FT</label>
-                <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.container_20ft}
-                  onChange={(e) => setForm((f) => ({ ...f, container_20ft: e.target.value }))}
-                  inputMode="numeric"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Others</label>
-                <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.others}
-                  onChange={(e) => setForm((f) => ({ ...f, others: e.target.value }))}
-                />
+                  value={form.container_type}
+                  onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value as JobForm["container_type"] }))}
+                >
+                  <option value="">Select type…</option>
+                  <option value="20ft">20FT</option>
+                  <option value="40ft">40FT</option>
+                  <option value="others">Others</option>
+                </select>
               </div>
             </div>
 
