@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { Job } from "../api/jobs"
 import { listJobs } from "../api/jobs"
 import type { Expense, ExpenseStatus } from "../api/expenses"
-import { createExpense, deleteExpense, getExpenseTotals, listExpenses, updateExpense } from "../api/expenses"
+import { createExpense, deleteExpense, listExpenses, updateExpense } from "../api/expenses"
 
 type ExpenseForm = {
   job: string
@@ -54,7 +54,6 @@ function statusBadge(status: ExpenseStatus) {
 export default function ExpensesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [totals, setTotals] = useState<any>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -77,10 +76,9 @@ export default function ExpensesPage() {
     setInfo("")
     setLoading(true)
     try {
-      const [j, e, t] = await Promise.all([listJobs(), listExpenses(), getExpenseTotals().catch(() => null)])
+      const [j, e] = await Promise.all([listJobs(), listExpenses()])
       setJobs(j)
       setExpenses(e)
-      setTotals(t)
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to load expenses.")
     } finally {
@@ -196,19 +194,6 @@ export default function ExpensesPage() {
           Refresh
         </button>
       </div>
-
-      {/* Totals (subtle) */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold text-white">Expense Totals</div>
-            <div className="text-xs text-white/60">From /api/expenses/totals/ (if available)</div>
-          </div>
-          <div className="text-sm text-white/70">
-            {totals ? <pre className="text-xs text-white/70 whitespace-pre-wrap">{JSON.stringify(totals, null, 2)}</pre> : "—"}
-          </div>
-        </div>
-      </section>
 
       {/* Form */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
