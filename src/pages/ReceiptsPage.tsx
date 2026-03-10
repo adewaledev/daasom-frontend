@@ -101,6 +101,7 @@ export default function ReceiptsPage() {
 
   const [editing, setEditing] = useState<Receipt | null>(null)
   const [form, setForm] = useState<ReceiptForm>(emptyForm)
+  const [showForm, setShowForm] = useState(false)
 
   const invoiceMap = useMemo(() => {
     const m = new Map<string, Invoice>()
@@ -151,6 +152,7 @@ export default function ReceiptsPage() {
   }, [])
 
   function startEdit(x: Receipt) {
+    setShowForm(true)
     setEditing(x)
     setForm({
       invoice: String(x.invoice),
@@ -166,6 +168,13 @@ export default function ReceiptsPage() {
   function cancelEdit() {
     setEditing(null)
     setForm(emptyForm)
+    setShowForm(false)
+  }
+
+  function startCreate() {
+    setEditing(null)
+    setForm(emptyForm)
+    setShowForm(true)
   }
 
   async function syncInvoiceStatusFromReceipts(invoiceId: string) {
@@ -278,6 +287,14 @@ export default function ReceiptsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={showForm ? cancelEdit : startCreate}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+          >
+            {showForm ? "Hide Form" : "Create Receipt"}
+          </button>
+
           <input
             className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
             value={search}
@@ -303,133 +320,135 @@ export default function ReceiptsPage() {
         <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">{info}</div>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">{title}</h2>
-          {editing ? (
-            <button type="button" onClick={cancelEdit} className="text-sm font-semibold text-white/70 hover:text-white transition">
-              Cancel
-            </button>
-          ) : null}
-        </div>
-
-        <form onSubmit={onSubmit} className="p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.invoice}
-                onChange={(e) => setForm((f) => ({ ...f, invoice: e.target.value }))}
-                required
-              >
-                <option value="">Select invoice</option>
-                {invoices.map((inv) => (
-                  <option key={inv.id} value={String(inv.id)}>
-                    {inv.invoice_number} — {inv.currency} {formatAmountWithCommas(String(inv.grand_total ?? ""))} — {inv.status}
-                  </option>
-                ))}
-              </select>
-              {form.invoice ? (
-                <div className="mt-1 text-xs text-white/55">
-                  {(() => {
-                    const inv = invoiceMap.get(String(form.invoice))
-                    return inv
-                      ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(inv.grand_total ?? ""))}`
-                      : ""
-                  })()}
-                </div>
-              ) : null}
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Payment Date</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                type="date"
-                value={form.payment_date}
-                onChange={(e) => setForm((f) => ({ ...f, payment_date: e.target.value }))}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.amount}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    amount: formatAmountWithCommas(e.target.value),
-                  }))
-                }
-                inputMode="decimal"
-                placeholder="e.g. 250,000"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.currency}
-                onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Method</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.method}
-                onChange={(e) => setForm((f) => ({ ...f, method: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Reference</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.reference}
-                onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-white/80 mb-1">Notes</label>
-            <input
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-            >
-              {saving ? "Saving..." : editing ? "Update Receipt" : "Create Receipt"}
-            </button>
-
+      {showForm ? (
+        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 className="font-semibold text-white">{title}</h2>
             {editing ? (
-              <button
-                type="button"
-                onClick={cancelEdit}
-                className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-              >
+              <button type="button" onClick={cancelEdit} className="text-sm font-semibold text-white/70 hover:text-white transition">
                 Cancel
               </button>
             ) : null}
           </div>
-        </form>
-      </section>
+
+          <form onSubmit={onSubmit} className="p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.invoice}
+                  onChange={(e) => setForm((f) => ({ ...f, invoice: e.target.value }))}
+                  required
+                >
+                  <option value="">Select invoice</option>
+                  {invoices.map((inv) => (
+                    <option key={inv.id} value={String(inv.id)}>
+                      {inv.invoice_number} — {inv.currency} {formatAmountWithCommas(String(inv.grand_total ?? ""))} — {inv.status}
+                    </option>
+                  ))}
+                </select>
+                {form.invoice ? (
+                  <div className="mt-1 text-xs text-white/55">
+                    {(() => {
+                      const inv = invoiceMap.get(String(form.invoice))
+                      return inv
+                        ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(inv.grand_total ?? ""))}`
+                        : ""
+                    })()}
+                  </div>
+                ) : null}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Payment Date</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  type="date"
+                  value={form.payment_date}
+                  onChange={(e) => setForm((f) => ({ ...f, payment_date: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.amount}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      amount: formatAmountWithCommas(e.target.value),
+                    }))
+                  }
+                  inputMode="decimal"
+                  placeholder="e.g. 250,000"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.currency}
+                  onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Method</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.method}
+                  onChange={(e) => setForm((f) => ({ ...f, method: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Reference</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.reference}
+                  onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-white/80 mb-1">Notes</label>
+              <input
+                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              >
+                {saving ? "Saving..." : editing ? "Update Receipt" : "Create Receipt"}
+              </button>
+
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">

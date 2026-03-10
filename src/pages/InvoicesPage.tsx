@@ -138,6 +138,7 @@ export default function InvoicesPage() {
 
   const [editing, setEditing] = useState<Invoice | null>(null)
   const [form, setForm] = useState<InvoiceForm>(emptyForm)
+  const [showForm, setShowForm] = useState(false)
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
 
@@ -206,6 +207,7 @@ export default function InvoicesPage() {
   }
 
   function startEdit(x: Invoice) {
+    setShowForm(true)
     setEditing(x)
     setForm({
       job: String(x.job),
@@ -222,6 +224,13 @@ export default function InvoicesPage() {
   function cancelEdit() {
     setEditing(null)
     setForm(emptyForm)
+    setShowForm(false)
+  }
+
+  function startCreate() {
+    setEditing(null)
+    setForm(emptyForm)
+    setShowForm(true)
   }
 
   function handleJobChange(jobId: string) {
@@ -400,6 +409,14 @@ export default function InvoicesPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={showForm ? cancelEdit : startCreate}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+          >
+            {showForm ? "Hide Form" : "Create Invoice"}
+          </button>
+
           <input
             className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
             value={search}
@@ -431,152 +448,154 @@ export default function InvoicesPage() {
       ) : null}
 
       {/* Form */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">{title}</h2>
-          {editing ? (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="text-sm font-semibold text-white/70 hover:text-white transition"
-            >
-              Cancel
-            </button>
-          ) : null}
-        </div>
-
-        <form onSubmit={onSubmit} className="p-5 space-y-4">
-          {editing && !canEditInvoiceFields(editing.status) ? (
-            <div className="text-sm bg-amber-500/10 text-amber-200 border border-amber-500/20 px-3 py-2 rounded-lg">
-              This invoice is <span className="font-semibold">{editing.status}</span>. Only DRAFT invoices can be edited.
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
-                value={form.job}
-                onChange={(e) => handleJobChange(e.target.value)}
-                required
-                disabled={!!editing} // can't change job on edit (OneToOne)
-              >
-                <option value="">Select job…</option>
-                {jobs.map((j) => (
-                  <option key={j.id} value={String(j.id)}>
-                    {j.file_number} — {j.zone}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.currency}
-                onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Number</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.invoice_number}
-                onChange={(e) => setForm((f) => ({ ...f, invoice_number: e.target.value }))}
-                required
-                disabled={!!editing && !canEditInvoiceFields(editing.status)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Issued Date</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                type="date"
-                value={form.issued_date}
-                onChange={(e) => setForm((f) => ({ ...f, issued_date: e.target.value }))}
-                disabled={!!editing && !canEditInvoiceFields(editing.status)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Due Date</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                type="date"
-                value={form.due_date}
-                onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
-                disabled={!!editing && !canEditInvoiceFields(editing.status)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-white/80 mb-1">Notes</label>
-            <textarea
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              disabled={!!editing && !canEditInvoiceFields(editing.status)}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Amount</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.invoice_amount}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    invoice_amount: formatAmountWithCommas(e.target.value),
-                  }))
-                }
-                inputMode="decimal"
-                placeholder="e.g. 500,000"
-                disabled={!!editing && !canEditInvoiceFields(editing.status)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Breakdown <span className="text-white/40 font-normal">(optional)</span></label>
-              <textarea
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
-                value={form.breakdown}
-                onChange={(e) => setForm((f) => ({ ...f, breakdown: e.target.value }))}
-                placeholder="e.g. Clearing: 300,000 | Transport: 200,000"
-                disabled={!!editing && !canEditInvoiceFields(editing.status)}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving || (!!editing && !canEditInvoiceFields(editing.status))}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-            >
-              {saving ? "Saving..." : editing ? "Update Invoice" : "Create Invoice"}
-            </button>
-
+      {showForm ? (
+        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 className="font-semibold text-white">{title}</h2>
             {editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                className="text-sm font-semibold text-white/70 hover:text-white transition"
               >
                 Cancel
               </button>
             ) : null}
           </div>
-        </form>
-      </section>
+
+          <form onSubmit={onSubmit} className="p-5 space-y-4">
+            {editing && !canEditInvoiceFields(editing.status) ? (
+              <div className="text-sm bg-amber-500/10 text-amber-200 border border-amber-500/20 px-3 py-2 rounded-lg">
+                This invoice is <span className="font-semibold">{editing.status}</span>. Only DRAFT invoices can be edited.
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
+                  value={form.job}
+                  onChange={(e) => handleJobChange(e.target.value)}
+                  required
+                  disabled={!!editing} // can't change job on edit (OneToOne)
+                >
+                  <option value="">Select job…</option>
+                  {jobs.map((j) => (
+                    <option key={j.id} value={String(j.id)}>
+                      {j.file_number} — {j.zone}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.currency}
+                  onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Number</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.invoice_number}
+                  onChange={(e) => setForm((f) => ({ ...f, invoice_number: e.target.value }))}
+                  required
+                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Issued Date</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  type="date"
+                  value={form.issued_date}
+                  onChange={(e) => setForm((f) => ({ ...f, issued_date: e.target.value }))}
+                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Due Date</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  type="date"
+                  value={form.due_date}
+                  onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
+                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-white/80 mb-1">Notes</label>
+              <textarea
+                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                disabled={!!editing && !canEditInvoiceFields(editing.status)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Amount</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.invoice_amount}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      invoice_amount: formatAmountWithCommas(e.target.value),
+                    }))
+                  }
+                  inputMode="decimal"
+                  placeholder="e.g. 500,000"
+                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Breakdown <span className="text-white/40 font-normal">(optional)</span></label>
+                <textarea
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
+                  value={form.breakdown}
+                  onChange={(e) => setForm((f) => ({ ...f, breakdown: e.target.value }))}
+                  placeholder="e.g. Clearing: 300,000 | Transport: 200,000"
+                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving || (!!editing && !canEditInvoiceFields(editing.status))}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              >
+                {saving ? "Saving..." : editing ? "Update Invoice" : "Create Invoice"}
+              </button>
+
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       {/* List + Details */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

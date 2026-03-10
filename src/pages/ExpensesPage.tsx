@@ -94,6 +94,7 @@ export default function ExpensesPage() {
 
   const [editing, setEditing] = useState<Expense | null>(null)
   const [form, setForm] = useState<ExpenseForm>(emptyForm)
+  const [showForm, setShowForm] = useState(false)
 
   const title = useMemo(() => (editing ? "Edit Expense" : "Create Expense"), [editing])
 
@@ -145,6 +146,7 @@ export default function ExpensesPage() {
   }, [])
 
   function startEdit(x: Expense) {
+    setShowForm(true)
     setEditing(x)
     setForm({
       job: String(x.job),
@@ -160,6 +162,13 @@ export default function ExpensesPage() {
   function cancelEdit() {
     setEditing(null)
     setForm(emptyForm)
+    setShowForm(false)
+  }
+
+  function startCreate() {
+    setEditing(null)
+    setForm(emptyForm)
+    setShowForm(true)
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -241,6 +250,14 @@ export default function ExpensesPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={showForm ? cancelEdit : startCreate}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+          >
+            {showForm ? "Hide Form" : "Create Expense"}
+          </button>
+
           <input
             className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
             value={search}
@@ -259,6 +276,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* Form */}
+      {showForm ? (
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">{title}</h2>
@@ -436,6 +454,7 @@ export default function ExpensesPage() {
           </div>
         </form>
       </section>
+      ) : null}
 
       {/* List */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
