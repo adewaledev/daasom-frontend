@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Invoice } from "../api/invoices"
-import { listInvoices, refreshInvoiceTotals } from "../api/invoices"
+import { listInvoices, markInvoicePaid, markInvoicePartial, refreshInvoiceTotals } from "../api/invoices"
 import type { Receipt } from "../api/receipts"
 import { createReceipt, deleteReceipt, listReceipts, updateReceipt } from "../api/receipts"
 
@@ -77,9 +77,21 @@ function normalizeAmountForSubmit(value: string): string {
   return String(value ?? "").replace(/,/g, "").trim()
 }
 
+function toAmountNumber(value: unknown): number {
+  const n = Number(String(value ?? "").replace(/,/g, "").trim())
+  return Number.isFinite(n) ? n : 0
+}
+
+function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return parts.some((part) => String(part ?? "").toLowerCase().includes(q))
+}
+
 export default function ReceiptsPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [receipts, setReceipts] = useState<Receipt[]>([])
+  const [search, setSearch] = useState("")
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -97,6 +109,27 @@ export default function ReceiptsPage() {
   }, [invoices])
 
   const title = useMemo(() => (editing ? "Edit Receipt" : "Create Receipt"), [editing])
+
+  const filteredReceipts = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return receipts
+
+    return receipts.filter((r) => {
+      const inv = invoiceMap.get(String(r.invoice))
+      return includesQuery(
+        [
+          inv?.invoice_number,
+          r.currency,
+          formatAmountWithCommas(String(r.amount ?? "")),
+          r.payment_date,
+          r.method,
+          r.reference,
+          r.notes,
+        ],
+        q,
+      )
+    })
+  }, [invoiceMap, receipts, search])
 
   async function refreshAll() {
     setError("")
@@ -135,6 +168,31 @@ export default function ReceiptsPage() {
     setForm(emptyForm)
   }
 
+  async function syncInvoiceStatusFromReceipts(invoiceId: string) {
+    const cleanInvoiceId = String(invoiceId).trim()
+    if (!cleanInvoiceId) return
+
+    await refreshInvoiceTotals(cleanInvoiceId).catch(() => null)
+
+    const [latestInvoices, latestReceipts] = await Promise.all([listInvoices(), listReceipts()])
+    const targetInvoice = latestInvoices.find((inv) => String(inv.id) === cleanInvoiceId)
+    if (!targetInvoice) return
+
+    const paidTotal = latestReceipts
+      .filter((receipt) => String(receipt.invoice) === cleanInvoiceId)
+      .reduce((sum, receipt) => sum + toAmountNumber(receipt.amount), 0)
+
+    const grandTotal = toAmountNumber(targetInvoice.grand_total)
+    if (grandTotal <= 0 || paidTotal <= 0) return
+
+    if (paidTotal >= grandTotal) {
+      await markInvoicePaid(cleanInvoiceId)
+      return
+    }
+
+    await markInvoicePartial(cleanInvoiceId)
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
@@ -166,14 +224,18 @@ export default function ReceiptsPage() {
       }
 
       if (editing) {
+        const previousInvoiceId = String(editing.invoice)
         await updateReceipt(editing.id, payload)
+        await syncInvoiceStatusFromReceipts(previousInvoiceId)
+        if (previousInvoiceId !== payload.invoice) {
+          await syncInvoiceStatusFromReceipts(String(payload.invoice))
+        }
         setInfo("Receipt updated.")
       } else {
         await createReceipt(payload)
+        await syncInvoiceStatusFromReceipts(String(payload.invoice))
         setInfo("Receipt created.")
       }
-
-      await refreshInvoiceTotals(form.invoice.trim()).catch(() => null)
 
       cancelEdit()
       await refreshAll()
@@ -196,8 +258,9 @@ export default function ReceiptsPage() {
     setError("")
     setInfo("")
     try {
+      const invoiceId = String(x.invoice)
       await deleteReceipt(x.id)
-      await refreshInvoiceTotals(String(x.invoice)).catch(() => null)
+      await syncInvoiceStatusFromReceipts(invoiceId)
       setInfo("Receipt deleted.")
       await refreshAll()
       window.setTimeout(() => setInfo(""), 1200)
@@ -214,13 +277,22 @@ export default function ReceiptsPage() {
           <p className="mt-1 text-sm text-white/60">Record payments against invoices.</p>
         </div>
 
-        <button
-          type="button"
-          onClick={refreshAll}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <input
+            className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search receipts..."
+          />
+
+          <button
+            type="button"
+            onClick={refreshAll}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -362,13 +434,15 @@ export default function ReceiptsPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Receipts</h2>
-          <span className="text-sm text-white/60">{receipts.length}</span>
+          <span className="text-sm text-white/60">{filteredReceipts.length} of {receipts.length}</span>
         </div>
 
         {loading ? (
           <div className="p-5 text-sm text-white/60">Loading...</div>
         ) : receipts.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No receipts.</div>
+        ) : filteredReceipts.length === 0 ? (
+          <div className="p-5 text-sm text-white/60">No receipts match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -384,7 +458,7 @@ export default function ReceiptsPage() {
               </thead>
 
               <tbody>
-                {receipts.map((r) => {
+                {filteredReceipts.map((r) => {
                   const inv = invoiceMap.get(String(r.invoice))
                   return (
                     <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition">

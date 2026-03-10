@@ -118,9 +118,16 @@ function normalizeAmountForSubmit(value: string): string {
   return String(value ?? "").replace(/,/g, "").trim()
 }
 
+function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return parts.some((part) => String(part ?? "").toLowerCase().includes(q))
+}
+
 export default function InvoicesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [search, setSearch] = useState("")
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -144,6 +151,28 @@ export default function InvoicesPage() {
     for (const j of jobs) m.set(String(j.id), j)
     return m
   }, [jobs])
+
+  const filteredInvoices = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return invoices
+
+    return invoices.filter((x) => {
+      const j = jobMap.get(String(x.job))
+      return includesQuery(
+        [
+          x.invoice_number,
+          x.status,
+          x.currency,
+          formatAmountWithCommas(String(x.invoice_amount || x.grand_total || "")),
+          x.breakdown,
+          x.notes,
+          j?.file_number,
+          j?.zone,
+        ],
+        q,
+      )
+    })
+  }, [invoices, jobMap, search])
 
   async function refreshAll() {
     setError("")
@@ -370,13 +399,22 @@ export default function InvoicesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={refreshAll}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <input
+            className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search invoices..."
+          />
+
+          <button
+            type="button"
+            onClick={refreshAll}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -545,13 +583,15 @@ export default function InvoicesPage() {
         <section className="xl:col-span-2 rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
             <h2 className="font-semibold text-white">Invoices List</h2>
-            <span className="text-sm text-white/60">{invoices.length} total</span>
+            <span className="text-sm text-white/60">{filteredInvoices.length} of {invoices.length}</span>
           </div>
 
           {loading ? (
             <div className="p-5 text-sm text-white/60">Loading invoices...</div>
           ) : invoices.length === 0 ? (
             <div className="p-5 text-sm text-white/60">No invoices yet.</div>
+          ) : filteredInvoices.length === 0 ? (
+            <div className="p-5 text-sm text-white/60">No invoices match your search.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -566,7 +606,7 @@ export default function InvoicesPage() {
                 </thead>
 
                 <tbody>
-                  {invoices.map((x) => {
+                  {filteredInvoices.map((x) => {
                     const isBusy = busyActionId === x.id
                     const isSelected = selectedInvoice?.id === x.id
 
