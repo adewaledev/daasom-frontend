@@ -13,8 +13,6 @@ import {
   updateInvoice,
   voidInvoice,
 } from "../api/invoices"
-import type { InvoiceAddon } from "../api/invoiceAddons"
-import { createInvoiceAddon, deleteInvoiceAddon, updateInvoiceAddon } from "../api/invoiceAddons"
 
 type InvoiceForm = {
   job: string
@@ -36,16 +34,6 @@ const emptyForm: InvoiceForm = {
   notes: "",
   invoice_amount: "",
   breakdown: "",
-}
-
-type AddonForm = {
-  description: string
-  amount: string
-}
-
-const emptyAddonForm: AddonForm = {
-  description: "",
-  amount: "",
 }
 
 function extractErrorMessage(err: any): string {
@@ -140,11 +128,6 @@ export default function InvoicesPage() {
   const [form, setForm] = useState<InvoiceForm>(emptyForm)
   const [showForm, setShowForm] = useState(false)
 
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
-
-  const [addonEditingId, setAddonEditingId] = useState<string | null>(null)
-  const [addonForm, setAddonForm] = useState<AddonForm>(emptyAddonForm)
-
   const title = useMemo(() => (editing ? "Edit Invoice" : "Create Invoice"), [editing])
 
   const jobMap = useMemo(() => {
@@ -183,12 +166,6 @@ export default function InvoicesPage() {
       const [j, inv] = await Promise.all([listJobs(), listInvoices()])
       setJobs(j)
       setInvoices(inv)
-
-      // keep selected invoice fresh
-      if (selectedInvoice) {
-        const updated = inv.find((x) => x.id === selectedInvoice.id) ?? null
-        setSelectedInvoice(updated)
-      }
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to load invoices.")
     } finally {
@@ -216,7 +193,7 @@ export default function InvoicesPage() {
       issued_date: x.issued_date ?? "",
       due_date: x.due_date ?? "",
       notes: x.notes ?? "",
-      invoice_amount: formatAmountWithCommas(x.invoice_amount ?? ""),
+      invoice_amount: formatAmountWithCommas(x.invoice_amount || x.grand_total || ""),
       breakdown: x.breakdown ?? "",
     })
   }
@@ -258,6 +235,11 @@ export default function InvoicesPage() {
         setError("Invoice number is required.")
         return
       }
+      const normalizedInvoiceAmount = normalizeAmountForSubmit(form.invoice_amount)
+      if (!normalizedInvoiceAmount) {
+        setError("Invoice amount is required.")
+        return
+      }
 
       const payload: Partial<Invoice> = {
         job: form.job.trim(),
@@ -266,7 +248,7 @@ export default function InvoicesPage() {
         issued_date: form.issued_date ? form.issued_date : null,
         due_date: form.due_date ? form.due_date : null,
         notes: form.notes ?? "",
-        invoice_amount: normalizeAmountForSubmit(form.invoice_amount),
+        invoice_amount: normalizedInvoiceAmount,
         breakdown: form.breakdown,
       }
 
@@ -302,7 +284,6 @@ export default function InvoicesPage() {
     try {
       await deleteInvoice(x.id)
       setInfo("Invoice deleted.")
-      if (selectedInvoice?.id === x.id) setSelectedInvoice(null)
       await refreshAll()
       window.setTimeout(() => setInfo(""), 1500)
     } catch (err: any) {
@@ -323,76 +304,6 @@ export default function InvoicesPage() {
       setError(extractErrorMessage(err) || "Action failed.")
     } finally {
       setBusyActionId(null)
-    }
-  }
-
-  function openAddons(x: Invoice) {
-    setSelectedInvoice(x)
-    setAddonEditingId(null)
-    setAddonForm(emptyAddonForm)
-  }
-
-  function startEditAddon(a: InvoiceAddon) {
-    setAddonEditingId(a.id)
-    setAddonForm({
-      description: a.description ?? "",
-      amount: formatAmountWithCommas(String(a.amount ?? "")),
-    })
-  }
-
-  function cancelEditAddon() {
-    setAddonEditingId(null)
-    setAddonForm(emptyAddonForm)
-  }
-
-  async function saveAddon(invoiceId: string) {
-    setError("")
-    setInfo("")
-    try {
-      if (!addonForm.description.trim()) {
-        setError("Addon description is required.")
-        return
-      }
-      if (!addonForm.amount.trim()) {
-        setError("Addon amount is required.")
-        return
-      }
-
-      const payload: Partial<InvoiceAddon> = {
-        invoice: invoiceId,
-        description: addonForm.description.trim(),
-        amount: normalizeAmountForSubmit(addonForm.amount),
-      }
-
-      if (addonEditingId) {
-        await updateInvoiceAddon(addonEditingId, payload)
-        setInfo("Addon updated.")
-      } else {
-        await createInvoiceAddon(payload)
-        setInfo("Addon created.")
-      }
-
-      cancelEditAddon()
-      // Refresh totals too (best practice) — but keep it user-controlled? We'll do it automatically once.
-      await refreshAll()
-      await runAction(invoiceId, () => refreshInvoiceTotals(invoiceId), "Totals refreshed.")
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || "Failed to save addon.")
-    }
-  }
-
-  async function removeAddon(a: InvoiceAddon) {
-    const ok = window.confirm("Delete this addon?")
-    if (!ok) return
-    setError("")
-    setInfo("")
-    try {
-      await deleteInvoiceAddon(a.id)
-      setInfo("Addon deleted.")
-      await refreshAll()
-      if (selectedInvoice) await runAction(selectedInvoice.id, () => refreshInvoiceTotals(selectedInvoice.id), "Totals refreshed.")
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || "Failed to delete addon.")
     }
   }
 
@@ -558,6 +469,7 @@ export default function InvoicesPage() {
                   }
                   inputMode="decimal"
                   placeholder="e.g. 500,000"
+                  required
                   disabled={!!editing && !canEditInvoiceFields(editing.status)}
                 />
               </div>
@@ -597,288 +509,131 @@ export default function InvoicesPage() {
         </section>
       ) : null}
 
-      {/* List + Details */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <section className="xl:col-span-2 rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-white">Invoices List</h2>
-            <span className="text-sm text-white/60">{filteredInvoices.length} of {invoices.length}</span>
-          </div>
+      {/* List */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <h2 className="font-semibold text-white">Invoices List</h2>
+          <span className="text-sm text-white/60">{filteredInvoices.length} of {invoices.length}</span>
+        </div>
 
-          {loading ? (
-            <div className="p-5 text-sm text-white/60">Loading invoices...</div>
-          ) : invoices.length === 0 ? (
-            <div className="p-5 text-sm text-white/60">No invoices yet.</div>
-          ) : filteredInvoices.length === 0 ? (
-            <div className="p-5 text-sm text-white/60">No invoices match your search.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                  </tr>
-                </thead>
+        {loading ? (
+          <div className="p-5 text-sm text-white/60">Loading invoices...</div>
+        ) : invoices.length === 0 ? (
+          <div className="p-5 text-sm text-white/60">No invoices yet.</div>
+        ) : filteredInvoices.length === 0 ? (
+          <div className="p-5 text-sm text-white/60">No invoices match your search.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60 text-white">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                </tr>
+              </thead>
 
-                <tbody>
-                  {filteredInvoices.map((x) => {
-                    const isBusy = busyActionId === x.id
-                    const isSelected = selectedInvoice?.id === x.id
+              <tbody>
+                {filteredInvoices.map((x) => {
+                  const isBusy = busyActionId === x.id
 
-                    return (
-                      <tr key={x.id} className={`border-b border-white/5 hover:bg-white/5 transition ${isSelected ? "bg-white/5" : ""}`}>
-                        <td className="px-4 py-3 text-white/90 font-semibold">{x.invoice_number}</td>
-                        <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
-                        <td className="px-4 py-3 text-white/80">
-                          <div className="text-sm font-semibold text-white/90">
-                            {x.currency}{" "}
-                            {x.invoice_amount || x.grand_total
-                              ? formatAmountWithCommas(String(x.invoice_amount || x.grand_total || ""))
-                              : "—"}
-                          </div>
-                          {x.breakdown ? (
-                            <div className="text-xs text-white/50 mt-0.5 max-w-xs truncate">{x.breakdown}</div>
-                          ) : null}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={statusBadge(x.status)}>{x.status}</span>
-                        </td>
+                  return (
+                    <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 text-white/90 font-semibold">{x.invoice_number}</td>
+                      <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
+                      <td className="px-4 py-3 text-white/80">
+                        <div className="text-sm font-semibold text-white/90">
+                          {x.currency}{" "}
+                          {x.invoice_amount || x.grand_total
+                            ? formatAmountWithCommas(String(x.invoice_amount || x.grand_total || ""))
+                            : "—"}
+                        </div>
+                        {x.breakdown ? (
+                          <div className="text-xs text-white/50 mt-0.5 max-w-xs truncate">{x.breakdown}</div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={statusBadge(x.status)}>{x.status}</span>
+                      </td>
 
-                        <td className="px-4 py-3 text-right">
-                          <div className="inline-flex items-center gap-3">
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(x)}
+                            className="text-blue-300 hover:text-blue-200 font-semibold"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onDelete(x)}
+                            className="text-white/60 hover:text-red-200 font-semibold"
+                          >
+                            Delete
+                          </button>
+
+                          <div className="hidden md:inline-flex items-center gap-2 ml-2">
                             <button
                               type="button"
-                              onClick={() => openAddons(x)}
-                              className="text-blue-300 hover:text-blue-200 font-semibold"
+                              disabled={isBusy}
+                              onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
+                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
                             >
-                              Addons
+                              Refresh
                             </button>
 
                             <button
                               type="button"
-                              onClick={() => startEdit(x)}
-                              className="text-blue-300 hover:text-blue-200 font-semibold"
+                              disabled={isBusy}
+                              onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
+                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
                             >
-                              Edit
+                              Issue
                             </button>
 
                             <button
                               type="button"
-                              onClick={() => onDelete(x)}
-                              className="text-white/60 hover:text-red-200 font-semibold"
+                              disabled={isBusy}
+                              onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
+                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
                             >
-                              Delete
+                              Partial
                             </button>
 
-                            <div className="hidden md:inline-flex items-center gap-2 ml-2">
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
-                                className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                              >
-                                Refresh
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
-                                className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                              >
-                                Issue
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
-                                className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                              >
-                                Partial
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
-                                className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                              >
-                                Paid
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isBusy}
-                                onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
-                                className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                              >
-                                Void
-                              </button>
-                            </div>
-                          </div>
-
-                          {isBusy ? <div className="text-xs text-white/50 mt-2">Working…</div> : null}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        {/* Addons side panel */}
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-white">Invoice Addons</h2>
-              <div className="text-xs text-white/60">
-                {selectedInvoice ? selectedInvoice.invoice_number : "Select an invoice"}
-              </div>
-            </div>
-            {selectedInvoice ? (
-              <button
-                type="button"
-                onClick={() => setSelectedInvoice(null)}
-                className="text-sm font-semibold text-white/70 hover:text-white transition"
-              >
-                Close
-              </button>
-            ) : null}
-          </div>
-
-          {!selectedInvoice ? (
-            <div className="p-5 text-sm text-white/60">Click “Addons” on an invoice to manage its addons.</div>
-          ) : (
-            <div className="p-5 space-y-4">
-              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs text-white/60">Invoice Amount</div>
-                <div className="mt-2 text-base font-semibold text-white">
-                  {selectedInvoice.currency}{" "}
-                  {selectedInvoice.invoice_amount || selectedInvoice.grand_total
-                    ? formatAmountWithCommas(String(selectedInvoice.invoice_amount || selectedInvoice.grand_total || ""))
-                    : "—"}
-                </div>
-                {selectedInvoice.breakdown ? (
-                  <div className="mt-1 text-xs text-white/50 whitespace-pre-wrap">{selectedInvoice.breakdown}</div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => runAction(selectedInvoice.id, () => refreshInvoiceTotals(selectedInvoice.id), "Totals refreshed.")}
-                  className="mt-3 px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-                >
-                  Refresh Totals
-                </button>
-              </div>
-
-              {/* Addon form */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-white">
-                    {addonEditingId ? "Edit Addon" : "Add Addon"}
-                  </div>
-                  {addonEditingId ? (
-                    <button
-                      type="button"
-                      onClick={cancelEditAddon}
-                      className="text-sm font-semibold text-white/70 hover:text-white transition"
-                    >
-                      Cancel
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 space-y-3">
-                  <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
-                    <input
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      value={addonForm.description}
-                      onChange={(e) => setAddonForm((f) => ({ ...f, description: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
-                    <input
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      value={addonForm.amount}
-                      onChange={(e) =>
-                        setAddonForm((f) => ({
-                          ...f,
-                          amount: formatAmountWithCommas(e.target.value),
-                        }))
-                      }
-                      inputMode="decimal"
-                      placeholder="e.g. 25,000"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => saveAddon(selectedInvoice.id)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-                  >
-                    {addonEditingId ? "Update Addon" : "Create Addon"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Addon list */}
-              <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/10 text-sm font-semibold text-white">
-                  Addons ({selectedInvoice.addons?.length ?? 0})
-                </div>
-
-                {!selectedInvoice.addons?.length ? (
-                  <div className="p-4 text-sm text-white/60">No addons yet.</div>
-                ) : (
-                  <div className="divide-y divide-white/10">
-                    {selectedInvoice.addons.map((a) => (
-                      <div key={a.id} className="p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-semibold text-white">{a.description}</div>
-                            <div className="text-sm text-white/70">
-                              {selectedInvoice.currency} {formatAmountWithCommas(String(a.amount ?? ""))}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
                             <button
                               type="button"
-                              onClick={() => startEditAddon(a)}
-                              className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                              disabled={isBusy}
+                              onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
+                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
                             >
-                              Edit
+                              Paid
                             </button>
+
                             <button
                               type="button"
-                              onClick={() => removeAddon(a)}
-                              className="text-white/60 hover:text-red-200 font-semibold text-sm"
+                              disabled={isBusy}
+                              onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
+                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
                             >
-                              Delete
+                              Void
                             </button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              <div className="text-xs text-white/50 leading-relaxed">
-                Note: Addons update totals via <span className="text-white/70 font-semibold">refresh_totals</span>.
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
+                        {isBusy ? <div className="text-xs text-white/50 mt-2">Working…</div> : null}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   )
 }
