@@ -96,6 +96,7 @@ export default function JobsPage() {
   const [error, setError] = useState("")
   const [editing, setEditing] = useState<Job | null>(null)
   const [form, setForm] = useState<JobForm>(emptyForm)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
   const [viewZone, setViewZone] = useState<ViewZone>("ALL")
   const [searchTerm, setSearchTerm] = useState("")
@@ -234,6 +235,7 @@ export default function JobsPage() {
 
   function startEdit(job: Job) {
     setEditing(job)
+    setShowCreateForm(true)
     setForm({
       client: String(job.client),
       zone: job.zone,
@@ -265,6 +267,7 @@ export default function JobsPage() {
   function cancelEdit() {
     setEditing(null)
     setForm(emptyForm)
+    setShowCreateForm(false)
   }
 
   function onZoneChange(next: JobZone) {
@@ -360,6 +363,16 @@ export default function JobsPage() {
           >
             Refresh
           </button>
+
+          {!showCreateForm && !editing ? (
+            <button
+              type="button"
+              onClick={() => setShowCreateForm(true)}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              Create Job
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -414,8 +427,8 @@ export default function JobsPage() {
                   className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition flex items-center gap-2"
                 >
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
-                      ? "bg-blue-600/20 text-blue-300"
-                      : "bg-green-600/20 text-green-300"
+                    ? "bg-blue-600/20 text-blue-300"
+                    : "bg-green-600/20 text-green-300"
                     }`}>
                     {suggestion.type === "file" ? "FILE" : "CLIENT"}
                   </span>
@@ -433,238 +446,230 @@ export default function JobsPage() {
       </section>
 
       {/* Form */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">{title}</h2>
-          {editing ? (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="text-sm font-semibold text-white/70 hover:text-white transition"
-            >
-              Cancel
-            </button>
-          ) : null}
-        </div>
-
-        <form onSubmit={onSubmit} className="p-5 space-y-4">
-          {error ? (
-            <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Client</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.client}
-                onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
-                required
-              >
-                <option value="">Select client…</option>
-                {(clients as any[]).map((c) => (
-                  <option key={String(c.id)} value={String(c.id)}>
-                    {c.client_code} — {c.client_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Zone</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.zone}
-                onChange={(e) => onZoneChange(e.target.value as JobZone)}
-                required
-              >
-                <option value="DUTY">DUTY</option>
-                <option value="FREE">FREE</option>
-                <option value="EXPORT">EXPORT</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">File Number</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.file_number}
-                onChange={(e) => setForm((f) => ({ ...f, file_number: e.target.value }))}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Quantity</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.quantity}
-                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                inputMode="numeric"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">BL/AWB</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.bl_awb}
-                onChange={(e) => setForm((f) => ({ ...f, bl_awb: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Weight (kg)</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.weight_kg}
-                onChange={(e) => setForm((f) => ({ ...f, weight_kg: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">40FT</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.container_40ft}
-                onChange={(e) => setForm((f) => ({ ...f, container_40ft: e.target.value }))}
-                inputMode="numeric"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">20FT</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.container_20ft}
-                onChange={(e) => setForm((f) => ({ ...f, container_20ft: e.target.value }))}
-                inputMode="numeric"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Others</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.others}
-                onChange={(e) => setForm((f) => ({ ...f, others: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Container No.</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.container_number}
-                onChange={(e) => setForm((f) => ({ ...f, container_number: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Transit Days</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.transit_days}
-                onChange={(e) => setForm((f) => ({ ...f, transit_days: e.target.value }))}
-                inputMode="numeric"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Port</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.port}
-                onChange={(e) => setForm((f) => ({ ...f, port: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Vessel</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.vessel}
-                onChange={(e) => setForm((f) => ({ ...f, vessel: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {showDutyFields ? (
-              <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Duty Amount</label>
-                <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.duty_amount}
-                  onChange={(e) => setForm((f) => ({ ...f, duty_amount: e.target.value }))}
-                />
-              </div>
-            ) : (
-              <div className="hidden md:block" />
-            )}
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Refund Amount</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.refund_amount}
-                onChange={(e) => setForm((f) => ({ ...f, refund_amount: e.target.value }))}
-              />
-            </div>
-
-            <div className="flex items-end">
-              <label className="flex items-center gap-3 text-sm font-semibold text-white/80">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-blue-600"
-                  checked={form.is_active}
-                  onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-                />
-                Active
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-            >
-              {saving ? "Saving..." : editing ? "Update Job" : "Create Job"}
-            </button>
-
-            {editing ? (
+      {showCreateForm || editing ? (
+        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 className="font-semibold text-white">{title}</h2>
+            {editing || showCreateForm ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                className="text-sm font-semibold text-white/70 hover:text-white transition"
               >
                 Cancel
               </button>
             ) : null}
           </div>
-        </form>
-      </section>
+
+          <form onSubmit={onSubmit} className="p-5 space-y-4">
+            {error ? (
+              <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Client</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.client}
+                  onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
+                  required
+                >
+                  <option value="">Select client…</option>
+                  {(clients as any[]).map((c) => (
+                    <option key={String(c.id)} value={String(c.id)}>
+                      {c.client_code} — {c.client_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Zone</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.zone}
+                  onChange={(e) => onZoneChange(e.target.value as JobZone)}
+                  required
+                >
+                  <option value="DUTY">DUTY</option>
+                  <option value="FREE">FREE</option>
+                  <option value="EXPORT">EXPORT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">File Number</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.file_number}
+                  onChange={(e) => setForm((f) => ({ ...f, file_number: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Quantity</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.quantity}
+                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">BL/AWB</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.bl_awb}
+                  onChange={(e) => setForm((f) => ({ ...f, bl_awb: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Weight (kg)</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.weight_kg}
+                  onChange={(e) => setForm((f) => ({ ...f, weight_kg: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">40FT</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.container_40ft}
+                  onChange={(e) => setForm((f) => ({ ...f, container_40ft: e.target.value }))}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">20FT</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.container_20ft}
+                  onChange={(e) => setForm((f) => ({ ...f, container_20ft: e.target.value }))}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Others</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.others}
+                  onChange={(e) => setForm((f) => ({ ...f, others: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Container No.</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.container_number}
+                  onChange={(e) => setForm((f) => ({ ...f, container_number: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Transit Days</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.transit_days}
+                  onChange={(e) => setForm((f) => ({ ...f, transit_days: e.target.value }))}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Port</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.port}
+                  onChange={(e) => setForm((f) => ({ ...f, port: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Vessel</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.vessel}
+                  onChange={(e) => setForm((f) => ({ ...f, vessel: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {showDutyFields ? (
+                <div>
+                  <label className="block text-sm font-semibold text-white/80 mb-1">Duty Amount</label>
+                  <input
+                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={form.duty_amount}
+                    onChange={(e) => setForm((f) => ({ ...f, duty_amount: e.target.value }))}
+                  />
+                </div>
+              ) : (
+                <div className="hidden md:block" />
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Refund Amount</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.refund_amount}
+                  onChange={(e) => setForm((f) => ({ ...f, refund_amount: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex items-end">
+                <label className="flex items-center gap-3 text-sm font-semibold text-white/80">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-blue-600"
+                    checked={form.is_active}
+                    onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+                  />
+                  Active
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              >
+                {saving ? "Saving..." : editing ? "Update Job" : "Create Job"}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       {/* Table */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
