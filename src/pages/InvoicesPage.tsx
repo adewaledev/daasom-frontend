@@ -245,12 +245,13 @@ export default function InvoicesPage() {
         job: form.job.trim(),
         invoice_number: form.invoice_number.trim(),
         currency: (form.currency || "NGN").trim(),
-        issued_date: form.issued_date ? form.issued_date : null,
-        due_date: form.due_date ? form.due_date : null,
-        notes: form.notes ?? "",
         invoice_amount: normalizedInvoiceAmount,
-        breakdown: form.breakdown,
       }
+
+      if (form.issued_date.trim()) payload.issued_date = form.issued_date.trim()
+      if (form.due_date.trim()) payload.due_date = form.due_date.trim()
+      if (form.notes.trim()) payload.notes = form.notes.trim()
+      if (form.breakdown.trim()) payload.breakdown = form.breakdown.trim()
 
       if (editing) {
         // Only allow editing invoice fields in DRAFT to avoid weird state drift

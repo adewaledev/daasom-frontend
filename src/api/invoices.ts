@@ -53,12 +53,27 @@ export function buildInvoicePayload(input: Partial<Invoice>): Record<string, any
   if (input.invoice_number !== undefined) out.invoice_number = String(input.invoice_number ?? "").trim()
   if (input.currency !== undefined) out.currency = String(input.currency ?? "NGN").trim()
 
-  if (input.issued_date !== undefined) out.issued_date = input.issued_date ? String(input.issued_date).trim() : null
-  if (input.due_date !== undefined) out.due_date = input.due_date ? String(input.due_date).trim() : null
+  if (input.issued_date !== undefined) {
+    const issued = String(input.issued_date ?? "").trim()
+    if (issued) out.issued_date = issued
+  }
+  if (input.due_date !== undefined) {
+    const due = String(input.due_date ?? "").trim()
+    if (due) out.due_date = due
+  }
 
-  if (input.notes !== undefined) out.notes = String(input.notes ?? "")
-  if (input.invoice_amount !== undefined) out.invoice_amount = String(input.invoice_amount ?? "").trim()
-  if (input.breakdown !== undefined) out.breakdown = String(input.breakdown ?? "")
+  if (input.notes !== undefined) {
+    const notes = String(input.notes ?? "").trim()
+    if (notes) out.notes = notes
+  }
+  if (input.invoice_amount !== undefined) {
+    const amount = String(input.invoice_amount ?? "").trim()
+    if (amount) out.invoice_amount = amount
+  }
+  if (input.breakdown !== undefined) {
+    const breakdown = String(input.breakdown ?? "").trim()
+    if (breakdown) out.breakdown = breakdown
+  }
 
   // totals are read-only; status is controlled by actions (but allow patch if backend permits)
   if (input.status !== undefined) out.status = input.status
