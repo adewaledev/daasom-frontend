@@ -52,6 +52,31 @@ function isDuplicateReferenceError(err: any): boolean {
   return String(ref).toLowerCase().includes("duplicate reference")
 }
 
+function formatAmountWithCommas(value: string): string {
+  const normalized = String(value ?? "").replace(/,/g, "").trim()
+  if (!normalized) return ""
+
+  const isNegative = normalized.startsWith("-")
+  const unsigned = isNegative ? normalized.slice(1) : normalized
+  const hasDecimal = unsigned.includes(".")
+  const [integerPartRaw, ...decimalParts] = unsigned.split(".")
+
+  const integerDigits = integerPartRaw.replace(/\D/g, "")
+  const decimalDigits = decimalParts.join("").replace(/\D/g, "")
+
+  if (!integerDigits && !decimalDigits) return ""
+
+  const formattedInteger = (integerDigits || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  const sign = isNegative ? "-" : ""
+
+  if (!hasDecimal) return `${sign}${formattedInteger}`
+  return `${sign}${formattedInteger}.${decimalDigits}`
+}
+
+function normalizeAmountForSubmit(value: string): string {
+  return String(value ?? "").replace(/,/g, "").trim()
+}
+
 export default function ReceiptsPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [receipts, setReceipts] = useState<Receipt[]>([])
@@ -96,7 +121,7 @@ export default function ReceiptsPage() {
     setEditing(x)
     setForm({
       invoice: String(x.invoice),
-      amount: String(x.amount ?? ""),
+      amount: formatAmountWithCommas(String(x.amount ?? "")),
       currency: x.currency ?? "NGN",
       payment_date: x.payment_date ?? "",
       method: x.method ?? "",
@@ -132,7 +157,7 @@ export default function ReceiptsPage() {
 
       const payload: Partial<Receipt> = {
         invoice: form.invoice.trim(),
-        amount: form.amount.trim(),
+        amount: normalizeAmountForSubmit(form.amount),
         currency: (form.currency || "NGN").trim(),
         payment_date: form.payment_date,
         method: form.method,
@@ -229,7 +254,7 @@ export default function ReceiptsPage() {
                 <option value="">Select invoice</option>
                 {invoices.map((inv) => (
                   <option key={inv.id} value={String(inv.id)}>
-                    {inv.invoice_number} — {inv.currency} {inv.grand_total} — {inv.status}
+                    {inv.invoice_number} — {inv.currency} {formatAmountWithCommas(String(inv.grand_total ?? ""))} — {inv.status}
                   </option>
                 ))}
               </select>
@@ -237,7 +262,9 @@ export default function ReceiptsPage() {
                 <div className="mt-1 text-xs text-white/55">
                   {(() => {
                     const inv = invoiceMap.get(String(form.invoice))
-                    return inv ? `${inv.invoice_number} • ${inv.currency} ${inv.grand_total}` : ""
+                    return inv
+                      ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(inv.grand_total ?? ""))}`
+                      : ""
                   })()}
                 </div>
               ) : null}
@@ -261,7 +288,14 @@ export default function ReceiptsPage() {
               <input
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    amount: formatAmountWithCommas(e.target.value),
+                  }))
+                }
+                inputMode="decimal"
+                placeholder="e.g. 250,000"
                 required
               />
             </div>
@@ -356,7 +390,7 @@ export default function ReceiptsPage() {
                     <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition">
                       <td className="px-4 py-3 text-white/85">{inv ? inv.invoice_number : String(r.invoice)}</td>
                       <td className="px-4 py-3 text-white/90">
-                        {r.currency} {r.amount}
+                        {r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}
                       </td>
                       <td className="px-4 py-3 text-white/80">{r.payment_date}</td>
                       <td className="px-4 py-3 text-white/80">{r.method || ""}</td>

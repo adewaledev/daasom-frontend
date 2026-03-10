@@ -93,6 +93,31 @@ function generateInvoiceNumber(fileNumber: string) {
   return `${normalizedFileNumber}${randomSuffix}`
 }
 
+function formatAmountWithCommas(value: string): string {
+  const normalized = String(value ?? "").replace(/,/g, "").trim()
+  if (!normalized) return ""
+
+  const isNegative = normalized.startsWith("-")
+  const unsigned = isNegative ? normalized.slice(1) : normalized
+  const hasDecimal = unsigned.includes(".")
+  const [integerPartRaw, ...decimalParts] = unsigned.split(".")
+
+  const integerDigits = integerPartRaw.replace(/\D/g, "")
+  const decimalDigits = decimalParts.join("").replace(/\D/g, "")
+
+  if (!integerDigits && !decimalDigits) return ""
+
+  const formattedInteger = (integerDigits || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  const sign = isNegative ? "-" : ""
+
+  if (!hasDecimal) return `${sign}${formattedInteger}`
+  return `${sign}${formattedInteger}.${decimalDigits}`
+}
+
+function normalizeAmountForSubmit(value: string): string {
+  return String(value ?? "").replace(/,/g, "").trim()
+}
+
 export default function InvoicesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -160,7 +185,7 @@ export default function InvoicesPage() {
       issued_date: x.issued_date ?? "",
       due_date: x.due_date ?? "",
       notes: x.notes ?? "",
-      invoice_amount: x.invoice_amount ?? "",
+      invoice_amount: formatAmountWithCommas(x.invoice_amount ?? ""),
       breakdown: x.breakdown ?? "",
     })
   }
@@ -203,7 +228,7 @@ export default function InvoicesPage() {
         issued_date: form.issued_date ? form.issued_date : null,
         due_date: form.due_date ? form.due_date : null,
         notes: form.notes ?? "",
-        invoice_amount: form.invoice_amount,
+        invoice_amount: normalizeAmountForSubmit(form.invoice_amount),
         breakdown: form.breakdown,
       }
 
@@ -271,7 +296,10 @@ export default function InvoicesPage() {
 
   function startEditAddon(a: InvoiceAddon) {
     setAddonEditingId(a.id)
-    setAddonForm({ description: a.description ?? "", amount: String(a.amount ?? "") })
+    setAddonForm({
+      description: a.description ?? "",
+      amount: formatAmountWithCommas(String(a.amount ?? "")),
+    })
   }
 
   function cancelEditAddon() {
@@ -295,7 +323,7 @@ export default function InvoicesPage() {
       const payload: Partial<InvoiceAddon> = {
         invoice: invoiceId,
         description: addonForm.description.trim(),
-        amount: addonForm.amount.trim(),
+        amount: normalizeAmountForSubmit(addonForm.amount),
       }
 
       if (addonEditingId) {
@@ -466,9 +494,14 @@ export default function InvoicesPage() {
               <input
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.invoice_amount}
-                onChange={(e) => setForm((f) => ({ ...f, invoice_amount: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    invoice_amount: formatAmountWithCommas(e.target.value),
+                  }))
+                }
                 inputMode="decimal"
-                placeholder="e.g. 500000"
+                placeholder="e.g. 500,000"
                 disabled={!!editing && !canEditInvoiceFields(editing.status)}
               />
             </div>
@@ -543,7 +576,10 @@ export default function InvoicesPage() {
                         <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
                         <td className="px-4 py-3 text-white/80">
                           <div className="text-sm font-semibold text-white/90">
-                            {x.currency} {x.invoice_amount || x.grand_total || "—"}
+                            {x.currency}{" "}
+                            {x.invoice_amount || x.grand_total
+                              ? formatAmountWithCommas(String(x.invoice_amount || x.grand_total || ""))
+                              : "—"}
                           </div>
                           {x.breakdown ? (
                             <div className="text-xs text-white/50 mt-0.5 max-w-xs truncate">{x.breakdown}</div>
@@ -665,7 +701,10 @@ export default function InvoicesPage() {
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs text-white/60">Invoice Amount</div>
                 <div className="mt-2 text-base font-semibold text-white">
-                  {selectedInvoice.currency} {selectedInvoice.invoice_amount || selectedInvoice.grand_total || "—"}
+                  {selectedInvoice.currency}{" "}
+                  {selectedInvoice.invoice_amount || selectedInvoice.grand_total
+                    ? formatAmountWithCommas(String(selectedInvoice.invoice_amount || selectedInvoice.grand_total || ""))
+                    : "—"}
                 </div>
                 {selectedInvoice.breakdown ? (
                   <div className="mt-1 text-xs text-white/50 whitespace-pre-wrap">{selectedInvoice.breakdown}</div>
@@ -711,7 +750,14 @@ export default function InvoicesPage() {
                     <input
                       className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                       value={addonForm.amount}
-                      onChange={(e) => setAddonForm((f) => ({ ...f, amount: e.target.value }))}
+                      onChange={(e) =>
+                        setAddonForm((f) => ({
+                          ...f,
+                          amount: formatAmountWithCommas(e.target.value),
+                        }))
+                      }
+                      inputMode="decimal"
+                      placeholder="e.g. 25,000"
                     />
                   </div>
 
@@ -741,7 +787,7 @@ export default function InvoicesPage() {
                           <div>
                             <div className="text-sm font-semibold text-white">{a.description}</div>
                             <div className="text-sm text-white/70">
-                              {selectedInvoice.currency} {a.amount}
+                              {selectedInvoice.currency} {formatAmountWithCommas(String(a.amount ?? ""))}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
