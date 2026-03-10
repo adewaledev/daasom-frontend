@@ -21,6 +21,9 @@ export interface Invoice {
   addons_total: string
   grand_total: string
 
+  invoice_amount: string
+  breakdown: string
+
   status: InvoiceStatus
   issued_date: string | null
   due_date: string | null
@@ -54,6 +57,8 @@ export function buildInvoicePayload(input: Partial<Invoice>): Record<string, any
   if (input.due_date !== undefined) out.due_date = input.due_date ? String(input.due_date).trim() : null
 
   if (input.notes !== undefined) out.notes = String(input.notes ?? "")
+  if (input.invoice_amount !== undefined) out.invoice_amount = String(input.invoice_amount ?? "").trim()
+  if (input.breakdown !== undefined) out.breakdown = String(input.breakdown ?? "")
 
   // totals are read-only; status is controlled by actions (but allow patch if backend permits)
   if (input.status !== undefined) out.status = input.status

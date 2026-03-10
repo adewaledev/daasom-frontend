@@ -23,6 +23,8 @@ type InvoiceForm = {
   issued_date: string
   due_date: string
   notes: string
+  invoice_amount: string
+  breakdown: string
 }
 
 const emptyForm: InvoiceForm = {
@@ -32,6 +34,8 @@ const emptyForm: InvoiceForm = {
   issued_date: "",
   due_date: "",
   notes: "",
+  invoice_amount: "",
+  breakdown: "",
 }
 
 type AddonForm = {
@@ -145,6 +149,8 @@ export default function InvoicesPage() {
       issued_date: x.issued_date ?? "",
       due_date: x.due_date ?? "",
       notes: x.notes ?? "",
+      invoice_amount: x.invoice_amount ?? "",
+      breakdown: x.breakdown ?? "",
     })
   }
 
@@ -176,6 +182,8 @@ export default function InvoicesPage() {
         issued_date: form.issued_date ? form.issued_date : null,
         due_date: form.due_date ? form.due_date : null,
         notes: form.notes ?? "",
+        invoice_amount: form.invoice_amount,
+        breakdown: form.breakdown,
       }
 
       if (editing) {
@@ -431,6 +439,31 @@ export default function InvoicesPage() {
             />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Amount</label>
+              <input
+                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={form.invoice_amount}
+                onChange={(e) => setForm((f) => ({ ...f, invoice_amount: e.target.value }))}
+                inputMode="decimal"
+                placeholder="e.g. 500000"
+                disabled={!!editing && !canEditInvoiceFields(editing.status)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-white/80 mb-1">Breakdown <span className="text-white/40 font-normal">(optional)</span></label>
+              <textarea
+                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
+                value={form.breakdown}
+                onChange={(e) => setForm((f) => ({ ...f, breakdown: e.target.value }))}
+                placeholder="e.g. Clearing: 300,000 | Transport: 200,000"
+                disabled={!!editing && !canEditInvoiceFields(editing.status)}
+              />
+            </div>
+          </div>
+
           <div className="flex items-center gap-3">
             <button
               type="submit"
@@ -472,7 +505,7 @@ export default function InvoicesPage() {
                   <tr className="border-b border-white/10">
                     <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
                     <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Totals</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
                     <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
                     <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
                   </tr>
@@ -488,11 +521,12 @@ export default function InvoicesPage() {
                         <td className="px-4 py-3 text-white/90 font-semibold">{x.invoice_number}</td>
                         <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
                         <td className="px-4 py-3 text-white/80">
-                          <div className="text-xs text-white/60">Expenses: {x.expenses_total}</div>
-                          <div className="text-xs text-white/60">Addons: {x.addons_total}</div>
                           <div className="text-sm font-semibold text-white/90">
-                            {x.currency} {x.grand_total}
+                            {x.currency} {x.invoice_amount || x.grand_total || "—"}
                           </div>
+                          {x.breakdown ? (
+                            <div className="text-xs text-white/50 mt-0.5 max-w-xs truncate">{x.breakdown}</div>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3">
                           <span className={statusBadge(x.status)}>{x.status}</span>
@@ -608,12 +642,13 @@ export default function InvoicesPage() {
           ) : (
             <div className="p-5 space-y-4">
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs text-white/60">Totals</div>
-                <div className="mt-1 text-sm text-white/80">Expenses: {selectedInvoice.expenses_total}</div>
-                <div className="text-sm text-white/80">Addons: {selectedInvoice.addons_total}</div>
+                <div className="text-xs text-white/60">Invoice Amount</div>
                 <div className="mt-2 text-base font-semibold text-white">
-                  {selectedInvoice.currency} {selectedInvoice.grand_total}
+                  {selectedInvoice.currency} {selectedInvoice.invoice_amount || selectedInvoice.grand_total || "—"}
                 </div>
+                {selectedInvoice.breakdown ? (
+                  <div className="mt-1 text-xs text-white/50 whitespace-pre-wrap">{selectedInvoice.breakdown}</div>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => runAction(selectedInvoice.id, () => refreshInvoiceTotals(selectedInvoice.id), "Totals refreshed.")}
