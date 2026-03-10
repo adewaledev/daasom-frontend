@@ -258,12 +258,49 @@ export default function ExpensesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-white/80 mb-1">Category</label>
-              <input
+              <select
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.category}
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                 required
-              />
+              >
+                <option value="">Select category…</option>
+                <option>Operational Expenses</option>
+                <option>Terminal Charges</option>
+                <option>Shipping Charges</option>
+                <option>NAHCO Charge</option>
+                <option>SAHCO Charge</option>
+                <option>FAAN Charge</option>
+                <option>Consol Charge</option>
+                <option>SSS Unblocking</option>
+                <option>NDLEA Unblocking</option>
+                <option>FOU</option>
+                <option>Cover Letter</option>
+                <option>Road Expenses</option>
+                <option>Gate OC Terminal</option>
+                <option>Compliance DC Custom</option>
+                <option>Enforcement</option>
+                <option>TDO</option>
+                <option>Express Invoice/Receipt</option>
+                <option>Releasing</option>
+                <option>Pallets</option>
+                <option>NAFDAC/Endorsement</option>
+                <option>Escort Officer</option>
+                <option>Transportation</option>
+                <option>Change of nature</option>
+                <option>Change of Terminal Code</option>
+                <option>Demmurage</option>
+                <option>Truck Parking</option>
+                <option>Convey Officer</option>
+                <option>Reroute</option>
+                <option>PR</option>
+                <option>Bond</option>
+                <option>Merging</option>
+                <option>MST</option>
+                <option>Manifest Unlock</option>
+                <option>Abandoned Manifest</option>
+                <option>Miscellaneous</option>
+              </select>
             </div>
 
             <div>
