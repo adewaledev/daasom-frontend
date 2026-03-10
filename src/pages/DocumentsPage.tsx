@@ -93,6 +93,12 @@ export default function DocumentsPage() {
     return m
   }, [invoices])
 
+  const receiptMap = useMemo(() => {
+    const m = new Map<string, Receipt>()
+    for (const r of receipts) m.set(String(r.id), r)
+    return m
+  }, [receipts])
+
   async function refreshRefs() {
     setError("")
     setInfo("")
@@ -189,10 +195,22 @@ export default function DocumentsPage() {
         return
       }
 
+      let jobId = form.job_id
+      if (form.doc_type === "INVOICE" && form.invoice_id) {
+        const invoice = invoiceMap.get(form.invoice_id)
+        jobId = invoice?.job ? String(invoice.job) : ""
+      } else if (form.doc_type === "RECEIPT" && form.receipt_id) {
+        const receipt = receiptMap.get(form.receipt_id)
+        if (receipt) {
+          const invoice = invoiceMap.get(receipt.invoice)
+          jobId = invoice?.job ? String(invoice.job) : ""
+        }
+      }
+
       const created = await uploadDocument({
         doc_type: form.doc_type,
         file: form.file,
-        job_id: form.doc_type === "JOB" ? form.job_id : undefined,
+        job_id: jobId || undefined,
         invoice_id: form.doc_type === "INVOICE" ? form.invoice_id : undefined,
         receipt_id: form.doc_type === "RECEIPT" ? form.receipt_id : undefined,
       })
@@ -200,7 +218,7 @@ export default function DocumentsPage() {
       setInfo("Uploaded.")
       setForm((f) => ({ ...f, file: null }))
 
-      const jobToRefresh = selectedJobId || created.job_id || (form.doc_type === "JOB" ? form.job_id : "")
+      const jobToRefresh = jobId || selectedJobId || created.job_id || (form.doc_type === "JOB" ? form.job_id : "")
       if (jobToRefresh) {
         if (!selectedJobId) setSelectedJobId(String(jobToRefresh))
         await refreshDocs(String(jobToRefresh))
@@ -229,6 +247,10 @@ export default function DocumentsPage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  function onPreview(d: Document) {
+    window.open(d.url, "_blank")
   }
 
   async function onDelete(d: Document) {
@@ -468,6 +490,13 @@ export default function DocumentsPage() {
                     <td className="px-4 py-3 text-white/70">{String(d.uploaded_at).slice(0, 19).replace("T", " ")}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => onPreview(d)}
+                          className="text-green-300 hover:text-green-200 font-semibold"
+                        >
+                          Preview
+                        </button>
                         <button
                           type="button"
                           onClick={() => onDownload(d)}
