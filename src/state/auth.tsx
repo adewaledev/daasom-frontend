@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import React, { createContext, useContext, useEffect, useMemo, useRef, useCallback, useState } from "react"
 import { login as apiLogin } from "../auth/authApi"
 
 type AuthState = {
@@ -18,12 +18,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     return localStorage.getItem(ACCESS_KEY)
   })
-  const idleTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isAuthedRef = useRef(!!accessToken)
 
   const isAuthed = !!accessToken
+  isAuthedRef.current = isAuthed
 
-  const resetIdleTimer = () => {
-    if (!isAuthed) return
+  const resetIdleTimer = useCallback(() => {
+    if (!isAuthedRef.current) return
 
     // Clear existing timer
     if (idleTimerRef.current) {
@@ -37,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem(REFRESH_KEY)
       setAccessToken(null)
     }, IDLE_TIMEOUT)
-  }
+  }, [])
 
   const value = useMemo<AuthState>(() => {
     return {
@@ -48,7 +50,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(ACCESS_KEY, data.access)
         if (data.refresh) localStorage.setItem(REFRESH_KEY, data.refresh)
         setAccessToken(data.access)
-        resetIdleTimer()
       },
       logout: () => {
         if (idleTimerRef.current) {
@@ -72,11 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     resetIdleTimer()
 
-    const events = ["mousedown", "keydown", "scroll", "touchstart", "click"]
     const handleActivity = () => {
       resetIdleTimer()
     }
 
+    const events = ["mousedown", "keydown", "scroll", "touchstart", "click"]
     events.forEach((event) => {
       window.addEventListener(event, handleActivity)
     })
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(idleTimerRef.current)
       }
     }
-  }, [isAuthed])
+  }, [isAuthed, resetIdleTimer])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
