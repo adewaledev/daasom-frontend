@@ -106,6 +106,20 @@ function normalizeAmountForSubmit(value: string): string {
   return String(value ?? "").replace(/,/g, "").trim()
 }
 
+function toAmountNumber(value: unknown): number {
+  const n = Number(String(value ?? "").replace(/,/g, "").trim())
+  return Number.isFinite(n) ? n : 0
+}
+
+function pickInvoiceAmount(invoice: Pick<Invoice, "invoice_amount" | "grand_total">): string {
+  const invoiceAmount = String(invoice.invoice_amount ?? "").trim()
+  const grandTotal = String(invoice.grand_total ?? "").trim()
+
+  if (toAmountNumber(invoiceAmount) > 0) return invoiceAmount
+  if (toAmountNumber(grandTotal) > 0) return grandTotal
+  return invoiceAmount || grandTotal || ""
+}
+
 function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
@@ -147,7 +161,7 @@ export default function InvoicesPage() {
           x.invoice_number,
           x.status,
           x.currency,
-          formatAmountWithCommas(String(x.invoice_amount || x.grand_total || "")),
+          formatAmountWithCommas(pickInvoiceAmount(x)),
           x.breakdown,
           x.notes,
           j?.file_number,
@@ -193,7 +207,7 @@ export default function InvoicesPage() {
       issued_date: x.issued_date ?? "",
       due_date: x.due_date ?? "",
       notes: x.notes ?? "",
-      invoice_amount: formatAmountWithCommas(x.invoice_amount || x.grand_total || ""),
+      invoice_amount: formatAmountWithCommas(pickInvoiceAmount(x)),
       breakdown: x.breakdown ?? "",
     })
   }
@@ -236,7 +250,8 @@ export default function InvoicesPage() {
         return
       }
       const normalizedInvoiceAmount = normalizeAmountForSubmit(form.invoice_amount)
-      if (!normalizedInvoiceAmount) {
+      const normalizedInvoiceAmountNumber = toAmountNumber(normalizedInvoiceAmount)
+      if (!normalizedInvoiceAmount || normalizedInvoiceAmountNumber <= 0) {
         setError("Invoice amount is required.")
         return
       }
@@ -245,7 +260,7 @@ export default function InvoicesPage() {
         job: form.job.trim(),
         invoice_number: form.invoice_number.trim(),
         currency: (form.currency || "NGN").trim(),
-        invoice_amount: normalizedInvoiceAmount,
+        invoice_amount: normalizedInvoiceAmountNumber.toFixed(2),
       }
 
       if (form.issued_date.trim()) payload.issued_date = form.issued_date.trim()
@@ -546,10 +561,7 @@ export default function InvoicesPage() {
                       <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
                       <td className="px-4 py-3 text-white/80">
                         <div className="text-sm font-semibold text-white/90">
-                          {x.currency}{" "}
-                          {x.invoice_amount || x.grand_total
-                            ? formatAmountWithCommas(String(x.invoice_amount || x.grand_total || ""))
-                            : "—"}
+                          {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
                         </div>
                         {x.breakdown ? (
                           <div className="text-xs text-white/50 mt-0.5 max-w-xs truncate">{x.breakdown}</div>
