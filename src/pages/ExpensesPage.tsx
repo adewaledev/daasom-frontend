@@ -51,6 +51,31 @@ function statusBadge(status: ExpenseStatus) {
   return `${base} bg-white/5 text-white/75 border-white/10` // DRAFT
 }
 
+function formatAmountWithCommas(value: string): string {
+  const normalized = String(value ?? "").replace(/,/g, "").trim()
+  if (!normalized) return ""
+
+  const isNegative = normalized.startsWith("-")
+  const unsigned = isNegative ? normalized.slice(1) : normalized
+  const hasDecimal = unsigned.includes(".")
+  const [integerPartRaw, ...decimalParts] = unsigned.split(".")
+
+  const integerDigits = integerPartRaw.replace(/\D/g, "")
+  const decimalDigits = decimalParts.join("").replace(/\D/g, "")
+
+  if (!integerDigits && !decimalDigits) return ""
+
+  const formattedInteger = (integerDigits || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  const sign = isNegative ? "-" : ""
+
+  if (!hasDecimal) return `${sign}${formattedInteger}`
+  return `${sign}${formattedInteger}.${decimalDigits}`
+}
+
+function normalizeAmountForSubmit(value: string): string {
+  return String(value ?? "").replace(/,/g, "").trim()
+}
+
 export default function ExpensesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -96,7 +121,7 @@ export default function ExpensesPage() {
       job: String(x.job),
       category: x.category ?? "",
       description: x.description ?? "",
-      amount: String(x.amount ?? ""),
+      amount: formatAmountWithCommas(String(x.amount ?? "")),
       currency: x.currency ?? "NGN",
       expense_date: x.expense_date ?? "",
       status: x.status ?? "DRAFT",
@@ -136,7 +161,7 @@ export default function ExpensesPage() {
         job: form.job.trim(),
         category: form.category.trim(),
         description: form.description,
-        amount: form.amount.trim(),
+        amount: normalizeAmountForSubmit(form.amount),
         currency: (form.currency || "NGN").trim(),
         expense_date: form.expense_date,
         status: form.status,
@@ -308,7 +333,14 @@ export default function ExpensesPage() {
               <input
                 className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    amount: formatAmountWithCommas(e.target.value),
+                  }))
+                }
+                inputMode="decimal"
+                placeholder="e.g. 250,000"
                 required
               />
             </div>
@@ -402,7 +434,7 @@ export default function ExpensesPage() {
                       <td className="px-4 py-3 text-white/85">{jobLabel}</td>
                       <td className="px-4 py-3 text-white/90">{x.category}</td>
                       <td className="px-4 py-3 text-white/90">
-                        {x.currency} {x.amount}
+                        {x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}
                       </td>
                       <td className="px-4 py-3 text-white/80">{x.expense_date}</td>
                       <td className="px-4 py-3">
