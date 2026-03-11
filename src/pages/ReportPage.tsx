@@ -7,6 +7,8 @@ import type { Expense } from "../api/expenses"
 import { listExpenses } from "../api/expenses"
 import type { Receipt } from "../api/receipts"
 import { listReceipts } from "../api/receipts"
+import type { Client } from "../api/clients"
+import { listClients } from "../api/clients"
 
 function extractErrorMessage(err: any): string {
   if (!err?.response?.status) return "Network error. Backend may be unavailable."
@@ -64,6 +66,7 @@ type JobStatus = "PENDING" | "COMPLETE"
 
 export default function ReportPage() {
   const [jobs, setJobs] = useState<Job[]>([])
+  const [clients, setClients] = useState<Client[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [receipts, setReceipts] = useState<Receipt[]>([])
@@ -71,13 +74,15 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
+  const [searchTerm, setSearchTerm] = useState("")
 
   async function refreshAll() {
     setError("")
     setLoading(true)
     try {
-      const [j, i, e, r] = await Promise.all([listJobs(), listInvoices(), listExpenses(), listReceipts()])
+      const [j, c, i, e, r] = await Promise.all([listJobs(), listClients(), listInvoices(), listExpenses(), listReceipts()])
       setJobs(j)
+      setClients(c)
       setInvoices(i)
       setExpenses(e)
       setReceipts(r)
@@ -190,15 +195,40 @@ export default function ReportPage() {
     }
   }, [invoices, expenses, receipts])
 
+  // Client map for quick lookup
+  const clientMap = useMemo(() => {
+    const m = new Map<string, Client>()
+    clients.forEach((c) => m.set(String(c.id), c))
+    return m
+  }, [clients])
+
   // Filtered jobs
   const filteredJobs = useMemo(() => {
-    if (jobStatusFilter === "all") return jobs
-    const statusMap: Record<JobStatus, boolean> = {
-      PENDING: true,
-      COMPLETE: false,
+    let result = jobs
+
+    // Apply status filter
+    if (jobStatusFilter !== "all") {
+      const statusMap: Record<JobStatus, boolean> = {
+        PENDING: true,
+        COMPLETE: false,
+      }
+      result = result.filter((j) => j.is_active === statusMap[jobStatusFilter])
     }
-    return jobs.filter((j) => j.is_active === statusMap[jobStatusFilter])
-  }, [jobs, jobStatusFilter])
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim()
+      result = result.filter((job) => {
+        const fileNumberMatch = job.file_number.toLowerCase().includes(term)
+        const zoneMatch = job.zone.toLowerCase().includes(term)
+        const client = clientMap.get(String(job.client))
+        const clientNameMatch = client?.client_name.toLowerCase().includes(term) ?? false
+        return fileNumberMatch || zoneMatch || clientNameMatch
+      })
+    }
+
+    return result
+  }, [jobs, jobStatusFilter, searchTerm, clientMap])
 
   // Job summaries
   const jobSummaries = useMemo(() => {
@@ -345,16 +375,26 @@ export default function ReportPage() {
 
       {/* Job Summary Dashboard */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-white">Job Summary</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="font-semibold text-white">Job Summary</h2>
+            <input
+              type="text"
+              placeholder="Search by file # or client name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 max-w-sm bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
           <div className="flex gap-2">
             {["all", "PENDING", "COMPLETE"].map((status) => (
               <button
                 key={status}
                 onClick={() => setJobStatusFilter(status as any)}
                 className={`px-3 py-1 rounded-lg text-sm font-semibold transition ${jobStatusFilter === status
-                    ? "bg-blue-600 text-white"
-                    : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
                   }`}
               >
                 {status === "all" ? "All" : status === "PENDING" ? "Active" : "Complete"}
@@ -395,10 +435,10 @@ export default function ReportPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${summary.paidStatus === "PAID"
-                            ? "bg-green-600/10 text-green-200 border border-green-500/20"
-                            : summary.paidStatus === "PARTIAL"
-                              ? "bg-amber-600/10 text-amber-200 border border-amber-500/20"
-                              : "bg-red-600/10 text-red-200 border border-red-500/20"
+                          ? "bg-green-600/10 text-green-200 border border-green-500/20"
+                          : summary.paidStatus === "PARTIAL"
+                            ? "bg-amber-600/10 text-amber-200 border border-amber-500/20"
+                            : "bg-red-600/10 text-red-200 border border-red-500/20"
                           }`}
                       >
                         {summary.paidStatus}
