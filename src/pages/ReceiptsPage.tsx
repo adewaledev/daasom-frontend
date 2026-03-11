@@ -4,6 +4,7 @@ import { listInvoices, markInvoicePaid, markInvoicePartial, refreshInvoiceTotals
 import type { Receipt } from "../api/receipts"
 import { createReceipt, deleteReceipt, listReceipts, updateReceipt } from "../api/receipts"
 import { useAuth } from "../state/auth"
+import { nextInvoiceStatusFromReceipts } from "./receiptStatus"
 
 type ReceiptForm = {
   invoice: string
@@ -215,16 +216,17 @@ export default function ReceiptsPage() {
       .filter((receipt) => String(receipt.invoice) === cleanInvoiceId)
       .reduce((sum, receipt) => sum + toAmountNumber(receipt.amount), 0)
 
-    if (paidTotal <= 0) {
+    const expectedTotal = getExpectedInvoiceTotal(targetInvoice)
+
+    const nextStatus = nextInvoiceStatusFromReceipts(expectedTotal, paidTotal)
+    if (nextStatus === "DRAFT") {
       if (targetInvoice.status !== "DRAFT") {
         await updateInvoice(cleanInvoiceId, { status: "DRAFT" })
       }
       return
     }
 
-    const expectedTotal = getExpectedInvoiceTotal(targetInvoice)
-
-    if (expectedTotal > 0 && paidTotal >= expectedTotal) {
+    if (nextStatus === "PAID") {
       await markInvoicePaid(cleanInvoiceId)
       return
     }
