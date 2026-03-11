@@ -36,12 +36,14 @@ function StatCard({
   currency = "",
   subtext,
   color = "blue",
+  onClick,
 }: {
   label: string
   value: string | number
   currency?: string
   subtext?: string
   color?: "blue" | "green" | "amber" | "purple" | "red"
+  onClick?: () => void
 }) {
   const colorMap = {
     blue: "bg-blue-600/10 border-blue-500/20 text-blue-200",
@@ -49,6 +51,22 @@ function StatCard({
     amber: "bg-amber-600/10 border-amber-500/20 text-amber-200",
     purple: "bg-purple-600/10 border-purple-500/20 text-purple-200",
     red: "bg-red-600/10 border-red-500/20 text-red-200",
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`w-full text-left rounded-xl border border-white/10 ${colorMap[color]} px-4 py-3 hover:bg-white/10 transition`}
+      >
+        <div className="text-xs text-white/60">{label}</div>
+        <div className="mt-1 text-lg font-semibold text-white">
+          {currency} {money(value)}
+        </div>
+        {subtext && <div className="mt-1 text-xs text-white/50">{subtext}</div>}
+      </button>
+    )
   }
 
   return (
@@ -75,6 +93,7 @@ export default function ReportPage() {
   const [error, setError] = useState("")
   const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
 
   async function refreshAll() {
     setError("")
@@ -171,6 +190,12 @@ export default function ReportPage() {
     })
     return m
   }, [filteredExpenses])
+
+  const jobMap = useMemo(() => {
+    const m = new Map<string, Job>()
+    jobs.forEach((j) => m.set(String(j.id), j))
+    return m
+  }, [jobs])
 
   const filteredReceiptsByInvoice = useMemo(() => {
     const m = new Map<string, Receipt[]>()
@@ -295,6 +320,25 @@ export default function ReportPage() {
     })
   }, [filteredJobs, filteredInvoicesByJob, filteredExpensesByJob, filteredReceiptsByInvoice])
 
+  const expenseBreakdownRows = useMemo(() => {
+    return [...filteredExpenses]
+      .sort((a, b) => String(b.expense_date).localeCompare(String(a.expense_date)))
+      .map((exp) => {
+        const job = jobMap.get(String(exp.job))
+        return {
+          id: exp.id,
+          expense_date: exp.expense_date,
+          category: exp.category,
+          description: exp.description,
+          amount: exp.amount,
+          currency: exp.currency,
+          status: exp.status,
+          fileNumber: job?.file_number || "-",
+          zone: job?.zone || "-",
+        }
+      })
+  }, [filteredExpenses, jobMap])
+
   return (
     <div className="space-y-6 text-white">
       {/* Header */}
@@ -352,6 +396,7 @@ export default function ReportPage() {
           currency={metrics.currencies[0] || "NGN"}
           color="amber"
           subtext={`${metrics.expenses.total} expenses`}
+          onClick={() => setShowExpenseBreakdown(true)}
         />
         <StatCard
           label="Outstanding Balance"
@@ -666,6 +711,63 @@ export default function ReportPage() {
           })}
         </div>
       </section>
+
+      {showExpenseBreakdown ? (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-6xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-white">Expenses Breakdown</h2>
+                <p className="text-xs text-white/60 mt-1">
+                  Total: {metrics.currencies[0] || "NGN"} {money(metrics.totalExpenseAmount)} • Draft: {metrics.expenses.draft} • Submitted: {metrics.expenses.submitted} • Approved: {metrics.expenses.approved}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExpenseBreakdown(false)}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+              >
+                Close
+              </button>
+            </div>
+
+            {expenseBreakdownRows.length === 0 ? (
+              <div className="p-5 text-sm text-white/60">No expenses to display for current filters.</div>
+            ) : (
+              <div className="overflow-auto max-h-[70vh]">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-black/80 text-white sticky top-0">
+                    <tr className="border-b border-white/10">
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                      <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expenseBreakdownRows.map((row) => (
+                      <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3 text-white/80">{row.expense_date}</td>
+                        <td className="px-4 py-3 text-white font-semibold">{row.fileNumber}</td>
+                        <td className="px-4 py-3 text-white/70">{row.zone}</td>
+                        <td className="px-4 py-3 text-white/85">{row.category}</td>
+                        <td className="px-4 py-3 text-white/70">{row.description || ""}</td>
+                        <td className="px-4 py-3 text-white/80">{row.status}</td>
+                        <td className="px-4 py-3 text-right text-white font-semibold">
+                          {row.currency} {money(row.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
