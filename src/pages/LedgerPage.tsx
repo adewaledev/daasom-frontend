@@ -60,21 +60,41 @@ export default function LedgerPage() {
 
   const selectedJob = useMemo(() => jobMap.get(selectedJobId) ?? null, [jobMap, selectedJobId])
 
+  function parseAmt(raw: string | number | undefined | null): number {
+    const n = Number(String(raw ?? "").replace(/,/g, "").trim())
+    return Number.isFinite(n) ? n : 0
+  }
+
   const totals = useMemo(() => {
     let debit = 0
     let credit = 0
-    let currency = "NGN"
+    // track first-seen currency per key so mixed currencies don't silently combine
+    const currencies = new Set<string>()
 
     for (const e of entries) {
-      currency = e.currency || currency
-      const amt = Number(e.amount)
-      if (!Number.isFinite(amt)) continue
+      if (e.currency) currencies.add(e.currency)
+      const amt = parseAmt(e.amount)
+      if (!amt) continue
       if (e.direction === "DEBIT") debit += amt
       else credit += amt
     }
 
-    const balance = credit - debit
-    return { debit, credit, balance, currency }
+    // outstanding = what the client still owes (debit) minus what they've paid (credit)
+    const balance = debit - credit
+    const currency = [...currencies][0] || "NGN"
+    const multiCurrency = currencies.size > 1
+    return { debit, credit, balance, currency, multiCurrency }
+  }, [entries])
+
+  // pre-compute running balance per row (DEBIT increases, CREDIT decreases)
+  const entriesWithRunning = useMemo(() => {
+    let running = 0
+    return entries.map((e) => {
+      const amt = parseAmt(e.amount)
+      if (e.direction === "DEBIT") running += amt
+      else running -= amt
+      return { ...e, _running: running }
+    })
   }, [entries])
 
   async function refreshJobs() {
@@ -198,9 +218,20 @@ export default function LedgerPage() {
           </div>
 
           <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-            <div className="text-xs text-white/60">Balance</div>
-            <div className="mt-1 text-base font-semibold text-white">
-              {totals.currency} {money(totals.balance)}
+            <div className="text-xs text-white/60">Outstanding Balance</div>
+            <div
+              className={`mt-1 text-base font-semibold ${
+                totals.balance <= 0 ? "text-green-300" : "text-amber-300"
+              }`}
+            >
+              {totals.currency} {money(Math.abs(totals.balance))}
+            </div>
+            <div className="mt-0.5 text-xs text-white/50">
+              {totals.balance <= 0
+                ? totals.balance < 0
+                  ? `Overpaid by ${totals.currency} ${money(Math.abs(totals.balance))}`
+                  : "Fully settled"
+                : "Amount still owed"}
             </div>
           </div>
         </div>
@@ -229,11 +260,12 @@ export default function LedgerPage() {
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
                   <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Running Balance</th>
                 </tr>
               </thead>
 
               <tbody>
-                {entries.map((e) => (
+                {entriesWithRunning.map((e) => (
                   <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     <td className="px-4 py-3 text-white/80">{e.event_date}</td>
                     <td className="px-4 py-3">
@@ -245,7 +277,15 @@ export default function LedgerPage() {
                     <td className="px-4 py-3 text-white/90">{e.description || ""}</td>
                     <td className="px-4 py-3 text-white/70">{e.invoice_id ? String(e.invoice_id) : ""}</td>
                     <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                      {e.currency} {e.amount}
+                      {e.currency} {money(parseAmt(e.amount))}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${
+                        e._running <= 0 ? "text-green-300" : "text-amber-300"
+                      }`}
+                    >
+                      {e.currency} {money(Math.abs(e._running))}
+                      {e._running < 0 ? " CR" : e._running > 0 ? " DR" : ""}
                     </td>
                   </tr>
                 ))}
