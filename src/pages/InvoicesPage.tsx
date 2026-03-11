@@ -21,6 +21,7 @@ type InvoiceForm = {
   issued_date: string
   due_date: string
   notes: string
+  invoice_amount: string
 }
 
 const emptyForm: InvoiceForm = {
@@ -30,6 +31,7 @@ const emptyForm: InvoiceForm = {
   issued_date: "",
   due_date: "",
   notes: "",
+  invoice_amount: "",
 }
 
 function extractErrorMessage(err: any): string {
@@ -103,10 +105,16 @@ function toAmountNumber(value: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function pickInvoiceAmount(invoice: Pick<Invoice, "grand_total">): string {
+function normalizeAmountForSubmit(value: string): string {
+  return String(value ?? "").replace(/,/g, "").trim()
+}
+
+function pickInvoiceAmount(invoice: Pick<Invoice, "invoice_amount" | "grand_total">): string {
+  const invoiceAmount = String(invoice.invoice_amount ?? "").trim()
   const grandTotal = String(invoice.grand_total ?? "").trim()
+  if (toAmountNumber(invoiceAmount) > 0) return invoiceAmount
   if (toAmountNumber(grandTotal) > 0) return grandTotal
-  return grandTotal || ""
+  return invoiceAmount || grandTotal || ""
 }
 
 function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
@@ -195,6 +203,7 @@ export default function InvoicesPage() {
       issued_date: x.issued_date ?? "",
       due_date: x.due_date ?? "",
       notes: x.notes ?? "",
+      invoice_amount: formatAmountWithCommas(pickInvoiceAmount(x)),
     })
   }
 
@@ -235,11 +244,18 @@ export default function InvoicesPage() {
         setError("Invoice number is required.")
         return
       }
+      const normalizedInvoiceAmount = normalizeAmountForSubmit(form.invoice_amount)
+      const normalizedInvoiceAmountNumber = toAmountNumber(normalizedInvoiceAmount)
+      if (!normalizedInvoiceAmount || normalizedInvoiceAmountNumber <= 0) {
+        setError("Invoice amount is required.")
+        return
+      }
 
       const payload: Partial<Invoice> = {
         job: form.job.trim(),
         invoice_number: form.invoice_number.trim(),
         currency: (form.currency || "NGN").trim(),
+        invoice_amount: normalizedInvoiceAmountNumber.toFixed(2),
       }
 
       if (form.issued_date.trim()) payload.issued_date = form.issued_date.trim()
@@ -451,10 +467,21 @@ export default function InvoicesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
-                <div className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2">
-                  Amount is auto-calculated from expenses/addons. Use "Refresh" in the list to recalculate totals.
-                </div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Amount</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.invoice_amount}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      invoice_amount: formatAmountWithCommas(e.target.value),
+                    }))
+                  }
+                  inputMode="decimal"
+                  placeholder="e.g. 500,000"
+                  required
+                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
+                />
               </div>
             </div>
 

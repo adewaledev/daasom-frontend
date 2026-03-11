@@ -20,6 +20,7 @@ export interface Invoice {
   expenses_total: string
   addons_total: string
   grand_total: string
+  invoice_amount?: string
 
   status: InvoiceStatus
   issued_date: string | null
@@ -62,6 +63,14 @@ export function buildInvoicePayload(input: Partial<Invoice>): Record<string, any
   if (input.notes !== undefined) {
     const notes = String(input.notes ?? "").trim()
     if (notes) out.notes = notes
+  }
+
+  if (input.invoice_amount !== undefined) {
+    const amount = String(input.invoice_amount ?? "").trim()
+    if (amount) {
+      // Backend serializer aliases `amount` -> `invoice_amount`.
+      out.amount = amount
+    }
   }
 
   // totals are read-only; status is controlled by actions (but allow patch if backend permits)
