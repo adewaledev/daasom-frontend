@@ -68,7 +68,7 @@ export default function DocumentsPage() {
 
   const [selectedJobId, setSelectedJobId] = useState<string>("")
   const [docs, setDocs] = useState<Document[]>([])
-  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [jobSearch, setJobSearch] = useState<string>("")
   const [showUploadForm, setShowUploadForm] = useState(false)
 
   const [loading, setLoading] = useState(true)
@@ -145,6 +145,12 @@ export default function DocumentsPage() {
     else setDocs([])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedJobId])
+
+  useEffect(() => {
+    const selected = jobs.find((j) => String(j.id) === selectedJobId)
+    if (selected) setJobSearch(`${selected.file_number} — ${selected.zone}`)
+    else if (!selectedJobId) setJobSearch("")
+  }, [jobs, selectedJobId])
 
   function linkPreview(d: Document) {
     if (d.doc_type === "JOB" && d.job_id) {
@@ -298,11 +304,14 @@ export default function DocumentsPage() {
     return j ? `${j.file_number} • ${j.zone}` : selectedJobId
   }, [jobMap, selectedJobId])
 
-  const filteredDocs = useMemo(() => {
-    if (!searchQuery.trim()) return docs
-    const query = searchQuery.toLowerCase()
-    return docs.filter((d) => d.filename.toLowerCase().includes(query))
-  }, [docs, searchQuery])
+  const filteredJobOptions = useMemo(() => {
+    const term = jobSearch.trim().toLowerCase()
+    if (!term) return jobs
+    return jobs.filter((j) => {
+      const label = `${j.file_number} ${j.zone}`.toLowerCase()
+      return label.includes(term)
+    })
+  }, [jobs, jobSearch])
 
   return (
     <div className="space-y-6 text-white">
@@ -333,39 +342,27 @@ export default function DocumentsPage() {
       ) : null}
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
-            <select
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              disabled={loading || busy}
-            >
-              <option value="">Select job</option>
-              {jobs.map((j) => (
-                <option key={j.id} value={String(j.id)}>
-                  {j.file_number} — {j.zone}
-                </option>
-              ))}
-            </select>
-            {selectedJobLabel ? <div className="mt-1 text-xs text-white/55">{selectedJobLabel}</div> : null}
-          </div>
+        <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+        <input
+          list="documents-job-options"
+          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          value={jobSearch}
+          onChange={(e) => {
+            const value = e.target.value
+            setJobSearch(value)
 
-          <div>
-            <label className="block text-sm font-semibold text-white/80 mb-1">Search file</label>
-            <input
-              type="text"
-              placeholder="Search by file name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40"
-            />
-            <div className="mt-1 text-xs text-white/55">
-              {selectedJobId ? `${filteredDocs.length} file(s) found` : "Select a job to view and filter files."}
-            </div>
-          </div>
-        </div>
+            const exactMatch = jobs.find((j) => `${j.file_number} — ${j.zone}`.toLowerCase() === value.toLowerCase())
+            setSelectedJobId(exactMatch ? String(exactMatch.id) : "")
+          }}
+          placeholder="Search and select job..."
+          disabled={loading || busy}
+        />
+        <datalist id="documents-job-options">
+          {filteredJobOptions.map((j) => (
+            <option key={j.id} value={`${j.file_number} — ${j.zone}`} />
+          ))}
+        </datalist>
+        {selectedJobLabel ? <div className="mt-1 text-xs text-white/55">{selectedJobLabel}</div> : null}
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
@@ -516,7 +513,7 @@ export default function DocumentsPage() {
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold text-white">Documents</h2>
-            <span className="text-sm text-white/60">{selectedJobId ? filteredDocs.length : ""}</span>
+            <span className="text-sm text-white/60">{selectedJobId ? docs.length : ""}</span>
           </div>
         </div>
 
@@ -526,8 +523,6 @@ export default function DocumentsPage() {
           <div className="p-5 text-sm text-white/60">Loading…</div>
         ) : docs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No documents.</div>
-        ) : filteredDocs.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No documents match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -543,7 +538,7 @@ export default function DocumentsPage() {
               </thead>
 
               <tbody>
-                {filteredDocs.map((d) => (
+                {docs.map((d) => (
                   <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition">
                     <td className="px-4 py-3">
                       <span className={typeBadge(d.doc_type)}>{d.doc_type}</span>
