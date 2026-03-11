@@ -21,8 +21,6 @@ type InvoiceForm = {
   issued_date: string
   due_date: string
   notes: string
-  invoice_amount: string
-  breakdown: string
 }
 
 const emptyForm: InvoiceForm = {
@@ -32,8 +30,6 @@ const emptyForm: InvoiceForm = {
   issued_date: "",
   due_date: "",
   notes: "",
-  invoice_amount: "",
-  breakdown: "",
 }
 
 function extractErrorMessage(err: any): string {
@@ -102,22 +98,15 @@ function formatAmountWithCommas(value: string): string {
   return `${sign}${formattedInteger}.${decimalDigits}`
 }
 
-function normalizeAmountForSubmit(value: string): string {
-  return String(value ?? "").replace(/,/g, "").trim()
-}
-
 function toAmountNumber(value: unknown): number {
   const n = Number(String(value ?? "").replace(/,/g, "").trim())
   return Number.isFinite(n) ? n : 0
 }
 
-function pickInvoiceAmount(invoice: Pick<Invoice, "invoice_amount" | "grand_total">): string {
-  const invoiceAmount = String(invoice.invoice_amount ?? "").trim()
+function pickInvoiceAmount(invoice: Pick<Invoice, "grand_total">): string {
   const grandTotal = String(invoice.grand_total ?? "").trim()
-
-  if (toAmountNumber(invoiceAmount) > 0) return invoiceAmount
   if (toAmountNumber(grandTotal) > 0) return grandTotal
-  return invoiceAmount || grandTotal || ""
+  return grandTotal || ""
 }
 
 function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
@@ -162,7 +151,6 @@ export default function InvoicesPage() {
           x.status,
           x.currency,
           formatAmountWithCommas(pickInvoiceAmount(x)),
-          x.breakdown,
           x.notes,
           j?.file_number,
           j?.zone,
@@ -207,8 +195,6 @@ export default function InvoicesPage() {
       issued_date: x.issued_date ?? "",
       due_date: x.due_date ?? "",
       notes: x.notes ?? "",
-      invoice_amount: formatAmountWithCommas(pickInvoiceAmount(x)),
-      breakdown: x.breakdown ?? "",
     })
   }
 
@@ -249,24 +235,16 @@ export default function InvoicesPage() {
         setError("Invoice number is required.")
         return
       }
-      const normalizedInvoiceAmount = normalizeAmountForSubmit(form.invoice_amount)
-      const normalizedInvoiceAmountNumber = toAmountNumber(normalizedInvoiceAmount)
-      if (!normalizedInvoiceAmount || normalizedInvoiceAmountNumber <= 0) {
-        setError("Invoice amount is required.")
-        return
-      }
 
       const payload: Partial<Invoice> = {
         job: form.job.trim(),
         invoice_number: form.invoice_number.trim(),
         currency: (form.currency || "NGN").trim(),
-        invoice_amount: normalizedInvoiceAmountNumber.toFixed(2),
       }
 
       if (form.issued_date.trim()) payload.issued_date = form.issued_date.trim()
       if (form.due_date.trim()) payload.due_date = form.due_date.trim()
       if (form.notes.trim()) payload.notes = form.notes.trim()
-      if (form.breakdown.trim()) payload.breakdown = form.breakdown.trim()
 
       if (editing) {
         // Only allow editing invoice fields in DRAFT to avoid weird state drift
@@ -473,32 +451,10 @@ export default function InvoicesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Amount</label>
-                <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.invoice_amount}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      invoice_amount: formatAmountWithCommas(e.target.value),
-                    }))
-                  }
-                  inputMode="decimal"
-                  placeholder="e.g. 500,000"
-                  required
-                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Breakdown <span className="text-white/40 font-normal">(optional)</span></label>
-                <textarea
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
-                  value={form.breakdown}
-                  onChange={(e) => setForm((f) => ({ ...f, breakdown: e.target.value }))}
-                  placeholder="e.g. Clearing: 300,000 | Transport: 200,000"
-                  disabled={!!editing && !canEditInvoiceFields(editing.status)}
-                />
+                <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
+                <div className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2">
+                  Amount is auto-calculated from expenses/addons. Use "Refresh" in the list to recalculate totals.
+                </div>
               </div>
             </div>
 
@@ -563,9 +519,9 @@ export default function InvoicesPage() {
                         <div className="text-sm font-semibold text-white/90">
                           {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
                         </div>
-                        {x.breakdown ? (
-                          <div className="text-xs text-white/50 mt-0.5 max-w-xs truncate">{x.breakdown}</div>
-                        ) : null}
+                        <div className="text-xs text-white/50 mt-0.5">
+                          Expenses: {formatAmountWithCommas(String(x.expenses_total ?? "0"))} | Addons: {formatAmountWithCommas(String(x.addons_total ?? "0"))}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={statusBadge(x.status)}>{x.status}</span>
