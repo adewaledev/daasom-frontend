@@ -109,12 +109,10 @@ function normalizeAmountForSubmit(value: string): string {
   return String(value ?? "").replace(/,/g, "").trim()
 }
 
-function pickInvoiceAmount(invoice: Pick<Invoice, "invoice_amount" | "grand_total">): string {
+function pickInvoiceAmount(invoice: Pick<Invoice, "invoice_amount">): string {
   const invoiceAmount = String(invoice.invoice_amount ?? "").trim()
-  const grandTotal = String(invoice.grand_total ?? "").trim()
   if (toAmountNumber(invoiceAmount) > 0) return invoiceAmount
-  if (toAmountNumber(grandTotal) > 0) return grandTotal
-  return invoiceAmount || grandTotal || ""
+  return invoiceAmount || ""
 }
 
 function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
@@ -547,7 +545,7 @@ export default function InvoicesPage() {
                           {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
                         </div>
                         <div className="text-xs text-white/50 mt-0.5">
-                          Expenses: {formatAmountWithCommas(String(x.expenses_total ?? "0"))} | Addons: {formatAmountWithCommas(String(x.addons_total ?? "0"))}
+                          Total Expenses: {formatAmountWithCommas(String(x.expenses_total ?? "0"))}
                         </div>
                       </td>
                       <td className="px-4 py-3">
