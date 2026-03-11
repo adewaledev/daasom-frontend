@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Invoice } from "../api/invoices"
-import { listInvoices, markInvoicePaid, markInvoicePartial, refreshInvoiceTotals } from "../api/invoices"
+import { listInvoices, markInvoicePaid, markInvoicePartial, refreshInvoiceTotals, updateInvoice } from "../api/invoices"
 import type { Receipt } from "../api/receipts"
 import { createReceipt, deleteReceipt, listReceipts, updateReceipt } from "../api/receipts"
 import { useAuth } from "../state/auth"
@@ -215,7 +215,12 @@ export default function ReceiptsPage() {
       .filter((receipt) => String(receipt.invoice) === cleanInvoiceId)
       .reduce((sum, receipt) => sum + toAmountNumber(receipt.amount), 0)
 
-    if (paidTotal <= 0) return
+    if (paidTotal <= 0) {
+      if (targetInvoice.status !== "DRAFT") {
+        await updateInvoice(cleanInvoiceId, { status: "DRAFT" })
+      }
+      return
+    }
 
     const expectedTotal = getExpectedInvoiceTotal(targetInvoice)
 
