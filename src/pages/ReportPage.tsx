@@ -223,11 +223,16 @@ export default function ReportPage() {
       currencies.add(rec.currency)
     })
 
+    const rawOutstanding = totalInvoiceAmount - totalReceiptAmount
+    const outstanding = Math.max(rawOutstanding, 0)
+    const overpaid = Math.max(-rawOutstanding, 0)
+
     return {
       totalInvoiceAmount,
       totalExpenseAmount,
       totalReceiptAmount,
-      outstanding: totalInvoiceAmount - totalReceiptAmount,
+      outstanding,
+      overpaid,
       invoices: {
         draft: draftInvoices,
         issued: issuedInvoices,
@@ -353,7 +358,13 @@ export default function ReportPage() {
           value={metrics.outstanding}
           currency={metrics.currencies[0] || "NGN"}
           color={metrics.outstanding > 0 ? "red" : "green"}
-          subtext={metrics.outstanding > 0 ? "Due from clients" : "All paid"}
+          subtext={
+            metrics.outstanding > 0
+              ? "Due from clients"
+              : metrics.overpaid > 0
+                ? `Overpaid by ${metrics.currencies[0] || "NGN"} ${money(metrics.overpaid)}`
+                : "All paid"
+          }
         />
       </section>
 
