@@ -1,0 +1,600 @@
+import { useEffect, useMemo, useState } from "react"
+import type { Job } from "../api/jobs"
+import { listJobs } from "../api/jobs"
+import type { Invoice } from "../api/invoices"
+import { listInvoices } from "../api/invoices"
+import type { Expense } from "../api/expenses"
+import { listExpenses } from "../api/expenses"
+import type { Receipt } from "../api/receipts"
+import { listReceipts } from "../api/receipts"
+
+function extractErrorMessage(err: any): string {
+  if (!err?.response?.status) return "Network error. Backend may be unavailable."
+  const data = err.response.data
+  if (typeof data === "string") return data
+  if (data?.detail) return String(data.detail)
+  if (data && typeof data === "object") {
+    const parts = Object.entries(data)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
+      .filter(Boolean)
+    return parts.length ? parts.join(" | ") : "Request failed"
+  }
+  return `Request failed (HTTP ${err.response.status})`
+}
+
+function money(n: number | string): string {
+  const num = typeof n === "string" ? parseFloat(n) : n
+  if (!Number.isFinite(num)) return "0.00"
+  return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function StatCard({
+  label,
+  value,
+  currency = "",
+  subtext,
+  color = "blue",
+}: {
+  label: string
+  value: string | number
+  currency?: string
+  subtext?: string
+  color?: "blue" | "green" | "amber" | "purple" | "red"
+}) {
+  const colorMap = {
+    blue: "bg-blue-600/10 border-blue-500/20 text-blue-200",
+    green: "bg-green-600/10 border-green-500/20 text-green-200",
+    amber: "bg-amber-600/10 border-amber-500/20 text-amber-200",
+    purple: "bg-purple-600/10 border-purple-500/20 text-purple-200",
+    red: "bg-red-600/10 border-red-500/20 text-red-200",
+  }
+
+  return (
+    <div className={`rounded-xl border border-white/10 ${colorMap[color]} px-4 py-3`}>
+      <div className="text-xs text-white/60">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-white">
+        {currency} {money(value)}
+      </div>
+      {subtext && <div className="mt-1 text-xs text-white/50">{subtext}</div>}
+    </div>
+  )
+}
+
+type JobStatus = "PENDING" | "COMPLETE"
+
+export default function ReportPage() {
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [receipts, setReceipts] = useState<Receipt[]>([])
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
+
+  async function refreshAll() {
+    setError("")
+    setLoading(true)
+    try {
+      const [j, i, e, r] = await Promise.all([listJobs(), listInvoices(), listExpenses(), listReceipts()])
+      setJobs(j)
+      setInvoices(i)
+      setExpenses(e)
+      setReceipts(r)
+    } catch (err: any) {
+      setError(extractErrorMessage(err) || "Failed to load data.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refreshAll()
+  }, [])
+
+  // Map builders
+  const invoicesByJob = useMemo(() => {
+    const m = new Map<string, Invoice[]>()
+    invoices.forEach((inv) => {
+      const jobId = String(inv.job)
+      if (!m.has(jobId)) m.set(jobId, [])
+      m.get(jobId)!.push(inv)
+    })
+    return m
+  }, [invoices])
+
+  const expensesByJob = useMemo(() => {
+    const m = new Map<string, Expense[]>()
+    expenses.forEach((exp) => {
+      const jobId = String(exp.job)
+      if (!m.has(jobId)) m.set(jobId, [])
+      m.get(jobId)!.push(exp)
+    })
+    return m
+  }, [expenses])
+
+  const receiptsByInvoice = useMemo(() => {
+    const m = new Map<string, Receipt[]>()
+    receipts.forEach((rec) => {
+      const invId = String(rec.invoice)
+      if (!m.has(invId)) m.set(invId, [])
+      m.get(invId)!.push(rec)
+    })
+    return m
+  }, [receipts])
+
+  // Computed metrics
+  const metrics = useMemo(() => {
+    let totalInvoiceAmount = 0
+    let totalExpenseAmount = 0
+    let totalReceiptAmount = 0
+    let draftInvoices = 0
+    let issuedInvoices = 0
+    let partialInvoices = 0
+    let paidInvoices = 0
+    let voidInvoices = 0
+    let draftExpenses = 0
+    let submittedExpenses = 0
+    let approvedExpenses = 0
+    const currencies = new Set<string>()
+
+    invoices.forEach((inv) => {
+      const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
+      if (Number.isFinite(amt)) totalInvoiceAmount += amt
+      currencies.add(inv.currency)
+      if (inv.status === "DRAFT") draftInvoices++
+      else if (inv.status === "ISSUED") issuedInvoices++
+      else if (inv.status === "PARTIALLY_PAID") partialInvoices++
+      else if (inv.status === "PAID") paidInvoices++
+      else if (inv.status === "VOID") voidInvoices++
+    })
+
+    expenses.forEach((exp) => {
+      const amt = parseFloat(exp.amount || "0")
+      if (Number.isFinite(amt)) totalExpenseAmount += amt
+      currencies.add(exp.currency)
+      if (exp.status === "DRAFT") draftExpenses++
+      else if (exp.status === "SUBMITTED") submittedExpenses++
+      else if (exp.status === "APPROVED") approvedExpenses++
+    })
+
+    receipts.forEach((rec) => {
+      const amt = parseFloat(rec.amount || "0")
+      if (Number.isFinite(amt)) totalReceiptAmount += amt
+      currencies.add(rec.currency)
+    })
+
+    return {
+      totalInvoiceAmount,
+      totalExpenseAmount,
+      totalReceiptAmount,
+      outstanding: totalInvoiceAmount - totalReceiptAmount,
+      invoices: {
+        draft: draftInvoices,
+        issued: issuedInvoices,
+        partial: partialInvoices,
+        paid: paidInvoices,
+        void: voidInvoices,
+        total: invoices.length,
+      },
+      expenses: {
+        draft: draftExpenses,
+        submitted: submittedExpenses,
+        approved: approvedExpenses,
+        total: expenses.length,
+      },
+      receipts: {
+        total: receipts.length,
+      },
+      currencies: Array.from(currencies),
+    }
+  }, [invoices, expenses, receipts])
+
+  // Filtered jobs
+  const filteredJobs = useMemo(() => {
+    if (jobStatusFilter === "all") return jobs
+    const statusMap: Record<JobStatus, boolean> = {
+      PENDING: true,
+      COMPLETE: false,
+    }
+    return jobs.filter((j) => j.is_active === statusMap[jobStatusFilter])
+  }, [jobs, jobStatusFilter])
+
+  // Job summaries
+  const jobSummaries = useMemo(() => {
+    return filteredJobs.map((job) => {
+      const jobInvoices = invoicesByJob.get(String(job.id)) || []
+      const jobExpenses = expensesByJob.get(String(job.id)) || []
+
+      let invoicedAmount = 0
+      let receivedAmount = 0
+      let jobExpenseAmount = 0
+
+      jobInvoices.forEach((inv) => {
+        const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
+        if (Number.isFinite(amt)) invoicedAmount += amt
+      })
+
+      jobExpenses.forEach((exp) => {
+        const amt = parseFloat(exp.amount || "0")
+        if (Number.isFinite(amt)) jobExpenseAmount += amt
+      })
+
+      jobInvoices.forEach((inv) => {
+        const invReceipts = receiptsByInvoice.get(String(inv.id)) || []
+        invReceipts.forEach((rec) => {
+          const amt = parseFloat(rec.amount || "0")
+          if (Number.isFinite(amt)) receivedAmount += amt
+        })
+      })
+
+      return {
+        job,
+        invoiceCount: jobInvoices.length,
+        invoicedAmount,
+        expenseCount: jobExpenses.length,
+        expenseAmount: jobExpenseAmount,
+        receivedAmount,
+        paidStatus: receivedAmount >= invoicedAmount ? "PAID" : receivedAmount > 0 ? "PARTIAL" : "UNPAID",
+        currency: jobInvoices[0]?.currency || jobExpenses[0]?.currency || "NGN",
+      }
+    })
+  }, [filteredJobs, invoicesByJob, expensesByJob, receiptsByInvoice])
+
+  return (
+    <div className="space-y-6 text-white">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-blue-300">Reports & Analytics</h1>
+          <p className="mt-1 text-sm text-white/60">Executive dashboard with job, expense, invoice and receipt summaries.</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={refreshAll}
+          disabled={loading}
+          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition disabled:opacity-50"
+        >
+          {loading ? "Loading…" : "Refresh"}
+        </button>
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">{error}</div>
+      )}
+
+      {/* Key Metrics Cards */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          label="Total Invoiced"
+          value={metrics.totalInvoiceAmount}
+          currency={metrics.currencies[0] || "NGN"}
+          color="blue"
+          subtext={`${metrics.invoices.total} invoices`}
+        />
+        <StatCard
+          label="Total Received"
+          value={metrics.totalReceiptAmount}
+          currency={metrics.currencies[0] || "NGN"}
+          color="green"
+          subtext={`${metrics.receipts.total} receipts`}
+        />
+        <StatCard
+          label="Total Expenses"
+          value={metrics.totalExpenseAmount}
+          currency={metrics.currencies[0] || "NGN"}
+          color="amber"
+          subtext={`${metrics.expenses.total} expenses`}
+        />
+        <StatCard
+          label="Outstanding Balance"
+          value={metrics.outstanding}
+          currency={metrics.currencies[0] || "NGN"}
+          color={metrics.outstanding > 0 ? "red" : "green"}
+          subtext={metrics.outstanding > 0 ? "Due from clients" : "All paid"}
+        />
+      </section>
+
+      {/* Invoice Status Breakdown */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <h2 className="font-semibold text-white mb-4">Invoice Status Breakdown</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="rounded-lg border border-blue-500/20 bg-blue-600/10 px-3 py-2">
+            <div className="text-xs text-blue-200">Draft</div>
+            <div className="mt-1 font-semibold text-white">{metrics.invoices.draft}</div>
+          </div>
+          <div className="rounded-lg border border-purple-500/20 bg-purple-600/10 px-3 py-2">
+            <div className="text-xs text-purple-200">Issued</div>
+            <div className="mt-1 font-semibold text-white">{metrics.invoices.issued}</div>
+          </div>
+          <div className="rounded-lg border border-amber-500/20 bg-amber-600/10 px-3 py-2">
+            <div className="text-xs text-amber-200">Partial</div>
+            <div className="mt-1 font-semibold text-white">{metrics.invoices.partial}</div>
+          </div>
+          <div className="rounded-lg border border-green-500/20 bg-green-600/10 px-3 py-2">
+            <div className="text-xs text-green-200">Paid</div>
+            <div className="mt-1 font-semibold text-white">{metrics.invoices.paid}</div>
+          </div>
+          <div className="rounded-lg border border-red-500/20 bg-red-600/10 px-3 py-2">
+            <div className="text-xs text-red-200">Voided</div>
+            <div className="mt-1 font-semibold text-white">{metrics.invoices.void}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Expense Status Breakdown */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <h2 className="font-semibold text-white mb-4">Expense Status Breakdown</h2>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg border border-blue-500/20 bg-blue-600/10 px-3 py-2">
+            <div className="text-xs text-blue-200">Draft</div>
+            <div className="mt-1 font-semibold text-white">{metrics.expenses.draft}</div>
+          </div>
+          <div className="rounded-lg border border-purple-500/20 bg-purple-600/10 px-3 py-2">
+            <div className="text-xs text-purple-200">Submitted</div>
+            <div className="mt-1 font-semibold text-white">{metrics.expenses.submitted}</div>
+          </div>
+          <div className="rounded-lg border border-green-500/20 bg-green-600/10 px-3 py-2">
+            <div className="text-xs text-green-200">Approved</div>
+            <div className="mt-1 font-semibold text-white">{metrics.expenses.approved}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Job Summary Dashboard */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-white">Job Summary</h2>
+          <div className="flex gap-2">
+            {["all", "PENDING", "COMPLETE"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setJobStatusFilter(status as any)}
+                className={`px-3 py-1 rounded-lg text-sm font-semibold transition ${jobStatusFilter === status
+                    ? "bg-blue-600 text-white"
+                    : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+                  }`}
+              >
+                {status === "all" ? "All" : status === "PENDING" ? "Active" : "Complete"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {jobSummaries.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60 text-white">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Invoices</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced Amount</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobSummaries.map((summary) => (
+                  <tr key={summary.job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                    <td className="px-4 py-3 font-semibold text-white">{summary.job.file_number}</td>
+                    <td className="px-4 py-3 text-white/80">{summary.job.zone}</td>
+                    <td className="px-4 py-3 text-white/80">{summary.invoiceCount}</td>
+                    <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                      {summary.currency} {money(summary.invoicedAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-white/80">{summary.expenseCount}</td>
+                    <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                      {summary.currency} {money(summary.receivedAmount)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${summary.paidStatus === "PAID"
+                            ? "bg-green-600/10 text-green-200 border border-green-500/20"
+                            : summary.paidStatus === "PARTIAL"
+                              ? "bg-amber-600/10 text-amber-200 border border-amber-500/20"
+                              : "bg-red-600/10 text-red-200 border border-red-500/20"
+                          }`}
+                      >
+                        {summary.paidStatus}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Expenses per Job */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <h2 className="font-semibold text-white mb-4">Expenses per Job</h2>
+
+        {filteredJobs.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60 text-white">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Draft</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Submitted</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Approved</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJobs.map((job) => {
+                  const jobExpenses = expensesByJob.get(String(job.id)) || []
+                  const currency = jobExpenses[0]?.currency || "NGN"
+                  const status = {
+                    DRAFT: jobExpenses.filter((e) => e.status === "DRAFT").length,
+                    SUBMITTED: jobExpenses.filter((e) => e.status === "SUBMITTED").length,
+                    APPROVED: jobExpenses.filter((e) => e.status === "APPROVED").length,
+                  }
+                  const total = jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0)
+
+                  return (
+                    <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                      <td className="px-4 py-3 text-white/80">{job.zone}</td>
+                      <td className="px-4 py-3 text-right text-white/80">{jobExpenses.length}</td>
+                      <td className="px-4 py-3 text-right text-blue-200 font-semibold">{status.DRAFT}</td>
+                      <td className="px-4 py-3 text-right text-purple-200 font-semibold">{status.SUBMITTED}</td>
+                      <td className="px-4 py-3 text-right text-green-200 font-semibold">{status.APPROVED}</td>
+                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                        {currency} {money(total)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Invoices per Job */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <h2 className="font-semibold text-white mb-4">Invoices per Job</h2>
+
+        {filteredJobs.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60 text-white">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Draft</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Issued</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Partial</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Paid</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJobs.map((job) => {
+                  const jobInvoices = invoicesByJob.get(String(job.id)) || []
+                  const currency = jobInvoices[0]?.currency || "NGN"
+                  const status = {
+                    DRAFT: jobInvoices.filter((i) => i.status === "DRAFT").length,
+                    ISSUED: jobInvoices.filter((i) => i.status === "ISSUED").length,
+                    PARTIAL: jobInvoices.filter((i) => i.status === "PARTIALLY_PAID").length,
+                    PAID: jobInvoices.filter((i) => i.status === "PAID").length,
+                  }
+                  const total = jobInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
+
+                  return (
+                    <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                      <td className="px-4 py-3 text-white/80">{job.zone}</td>
+                      <td className="px-4 py-3 text-right text-white/80">{jobInvoices.length}</td>
+                      <td className="px-4 py-3 text-right text-blue-200 font-semibold">{status.DRAFT}</td>
+                      <td className="px-4 py-3 text-right text-purple-200 font-semibold">{status.ISSUED}</td>
+                      <td className="px-4 py-3 text-right text-amber-200 font-semibold">{status.PARTIAL}</td>
+                      <td className="px-4 py-3 text-right text-green-200 font-semibold">{status.PAID}</td>
+                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                        {currency} {money(total)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Receipts per Job */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <h2 className="font-semibold text-white mb-4">Receipts per Job</h2>
+
+        {filteredJobs.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60 text-white">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Receipt Count</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Received</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Invoiced</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJobs.map((job) => {
+                  const jobInvoices = invoicesByJob.get(String(job.id)) || []
+                  const jobReceipts = jobInvoices.flatMap((inv) => receiptsByInvoice.get(String(inv.id)) || [])
+                  const currency = jobInvoices[0]?.currency || "NGN"
+
+                  const totalInvoiced = jobInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
+                  const totalReceived = jobReceipts.reduce((sum, r) => sum + parseFloat(r.amount || "0"), 0)
+
+                  return (
+                    <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                      <td className="px-4 py-3 text-white/80">{job.zone}</td>
+                      <td className="px-4 py-3 text-right text-white/80">{jobReceipts.length}</td>
+                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                        {currency} {money(totalReceived)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                        {currency} {money(totalInvoiced)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                        {currency} {money(Math.max(totalInvoiced - totalReceived, 0))}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Currency Breakdown */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <h2 className="font-semibold text-white mb-4">Currency Breakdown</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {metrics.currencies.map((currency) => {
+            const currencyInvoices = invoices.filter((i) => i.currency === currency)
+            const currencyExpenses = expenses.filter((e) => e.currency === currency)
+            const currencyReceipts = receipts.filter((r) => r.currency === currency)
+
+            const invoiceTotal = currencyInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
+            const expenseTotal = currencyExpenses.reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0)
+            const receiptTotal = currencyReceipts.reduce((sum, r) => sum + parseFloat(r.amount || "0"), 0)
+
+            return (
+              <div key={currency} className="rounded-lg border border-white/10 bg-black/30 p-4 space-y-2">
+                <div className="font-semibold text-white">{currency}</div>
+                <div className="text-xs text-white/60">Invoiced</div>
+                <div className="font-semibold text-white">{currency} {money(invoiceTotal)}</div>
+                <div className="mt-2 text-xs text-white/60">Expenses</div>
+                <div className="font-semibold text-white">{currency} {money(expenseTotal)}</div>
+                <div className="mt-2 text-xs text-white/60">Received</div>
+                <div className="font-semibold text-white">{currency} {money(receiptTotal)}</div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+    </div>
+  )
+}

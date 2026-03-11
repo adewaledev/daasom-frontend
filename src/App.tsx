@@ -10,6 +10,7 @@ import ExpensesPage from "./pages/ExpensesPage"
 import InvoicesPage from "./pages/InvoicesPage"
 import ReceiptsPage from "./pages/ReceiptsPage"
 import LedgerPage from "./pages/LedgerPage"
+import ReportPage from "./pages/ReportPage"
 import DocumentsPage from "./pages/DocumentsPage"
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/invoices" element={<InvoicesPage />} />
         <Route path="/receipts" element={<ReceiptsPage />} />
+        <Route path="/reports" element={<ReportPage />} />
         <Route path="/ledger" element={<LedgerPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
       </Route>

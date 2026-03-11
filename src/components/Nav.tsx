@@ -56,6 +56,10 @@ export default function Nav() {
             Receipts
           </NavLink>
 
+          <NavLink to="/reports" className={navClass}>
+            Reports
+          </NavLink>
+
           <NavLink to="/ledger" className={navClass}>
             Ledger
           </NavLink>
