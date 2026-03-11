@@ -3,6 +3,7 @@ import type { Job } from "../api/jobs"
 import { listJobs } from "../api/jobs"
 import type { Expense, ExpenseStatus } from "../api/expenses"
 import { createExpense, deleteExpense, listExpenses, updateExpense } from "../api/expenses"
+import { listInvoices, refreshInvoiceTotals } from "../api/invoices"
 
 type ExpenseForm = {
   job: string
@@ -171,6 +172,20 @@ export default function ExpensesPage() {
     setShowForm(true)
   }
 
+  async function refreshInvoiceTotalsForJob(jobId: string) {
+    const cleanJobId = String(jobId).trim()
+    if (!cleanJobId) return
+
+    try {
+      const invoices = await listInvoices()
+      const invoice = invoices.find((inv) => String(inv.job) === cleanJobId)
+      if (!invoice?.id) return
+      await refreshInvoiceTotals(invoice.id)
+    } catch {
+      // Ignore totals sync failure; expense CRUD success should still be preserved.
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
@@ -206,10 +221,16 @@ export default function ExpensesPage() {
       }
 
       if (editing) {
+        const previousJobId = String(editing.job)
         await updateExpense(editing.id, payload)
+        await refreshInvoiceTotalsForJob(previousJobId)
+        if (previousJobId !== payload.job) {
+          await refreshInvoiceTotalsForJob(String(payload.job))
+        }
         setInfo("Expense updated.")
       } else {
         await createExpense(payload)
+        await refreshInvoiceTotalsForJob(String(payload.job))
         setInfo("Expense created.")
       }
 
@@ -230,7 +251,9 @@ export default function ExpensesPage() {
     setError("")
     setInfo("")
     try {
+      const jobId = String(x.job)
       await deleteExpense(x.id)
+      await refreshInvoiceTotalsForJob(jobId)
       setInfo("Expense deleted.")
       await refreshAll()
       window.setTimeout(() => setInfo(""), 1500)
@@ -277,183 +300,183 @@ export default function ExpensesPage() {
 
       {/* Form */}
       {showForm ? (
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">{title}</h2>
-          {editing ? (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="text-sm font-semibold text-white/70 hover:text-white transition"
-            >
-              Cancel
-            </button>
-          ) : null}
-        </div>
-
-        <form onSubmit={onSubmit} className="p-5 space-y-4">
-          {error ? (
-            <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
-              {error}
-            </div>
-          ) : null}
-
-          {info ? (
-            <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">
-              {info}
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.job}
-                onChange={(e) => setForm((f) => ({ ...f, job: e.target.value }))}
-                required
-              >
-                <option value="">Select job…</option>
-                {jobs.map((j) => (
-                  <option key={j.id} value={String(j.id)}>
-                    {j.file_number} — {j.zone}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Status</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ExpenseStatus }))}
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="SUBMITTED">SUBMITTED</option>
-                <option value="APPROVED">APPROVED</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Category</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                required
-              >
-                <option value="">Select category…</option>
-                <option>Operational Expenses</option>
-                <option>Terminal Charges</option>
-                <option>Shipping Charges</option>
-                <option>NAHCO Charge</option>
-                <option>SAHCO Charge</option>
-                <option>FAAN Charge</option>
-                <option>Consol Charge</option>
-                <option>SSS Unblocking</option>
-                <option>NDLEA Unblocking</option>
-                <option>FOU</option>
-                <option>Cover Letter</option>
-                <option>Road Expenses</option>
-                <option>Gate OC Terminal</option>
-                <option>Compliance DC Custom</option>
-                <option>Enforcement</option>
-                <option>TDO</option>
-                <option>Express Invoice/Receipt</option>
-                <option>Releasing</option>
-                <option>Pallets</option>
-                <option>NAFDAC/Endorsement</option>
-                <option>Escort Officer</option>
-                <option>Transportation</option>
-                <option>Change of nature</option>
-                <option>Change of Terminal Code</option>
-                <option>Demmurage</option>
-                <option>Truck Parking</option>
-                <option>Convey Officer</option>
-                <option>Reroute</option>
-                <option>PR</option>
-                <option>Bond</option>
-                <option>Merging</option>
-                <option>MST</option>
-                <option>Manifest Unlock</option>
-                <option>Abandoned Manifest</option>
-                <option>Miscellaneous</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.amount}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    amount: formatAmountWithCommas(e.target.value),
-                  }))
-                }
-                inputMode="decimal"
-                placeholder="e.g. 250,000"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.currency}
-                onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-3">
-              <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Expense Date</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                type="date"
-                value={form.expense_date}
-                onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-            >
-              {saving ? "Saving..." : editing ? "Update Expense" : "Create Expense"}
-            </button>
-
+        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 className="font-semibold text-white">{title}</h2>
             {editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                className="text-sm font-semibold text-white/70 hover:text-white transition"
               >
                 Cancel
               </button>
             ) : null}
           </div>
-        </form>
-      </section>
+
+          <form onSubmit={onSubmit} className="p-5 space-y-4">
+            {error ? (
+              <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+                {error}
+              </div>
+            ) : null}
+
+            {info ? (
+              <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">
+                {info}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.job}
+                  onChange={(e) => setForm((f) => ({ ...f, job: e.target.value }))}
+                  required
+                >
+                  <option value="">Select job…</option>
+                  {jobs.map((j) => (
+                    <option key={j.id} value={String(j.id)}>
+                      {j.file_number} — {j.zone}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Status</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.status}
+                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ExpenseStatus }))}
+                >
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="SUBMITTED">SUBMITTED</option>
+                  <option value="APPROVED">APPROVED</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Category</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.category}
+                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                  required
+                >
+                  <option value="">Select category…</option>
+                  <option>Operational Expenses</option>
+                  <option>Terminal Charges</option>
+                  <option>Shipping Charges</option>
+                  <option>NAHCO Charge</option>
+                  <option>SAHCO Charge</option>
+                  <option>FAAN Charge</option>
+                  <option>Consol Charge</option>
+                  <option>SSS Unblocking</option>
+                  <option>NDLEA Unblocking</option>
+                  <option>FOU</option>
+                  <option>Cover Letter</option>
+                  <option>Road Expenses</option>
+                  <option>Gate OC Terminal</option>
+                  <option>Compliance DC Custom</option>
+                  <option>Enforcement</option>
+                  <option>TDO</option>
+                  <option>Express Invoice/Receipt</option>
+                  <option>Releasing</option>
+                  <option>Pallets</option>
+                  <option>NAFDAC/Endorsement</option>
+                  <option>Escort Officer</option>
+                  <option>Transportation</option>
+                  <option>Change of nature</option>
+                  <option>Change of Terminal Code</option>
+                  <option>Demmurage</option>
+                  <option>Truck Parking</option>
+                  <option>Convey Officer</option>
+                  <option>Reroute</option>
+                  <option>PR</option>
+                  <option>Bond</option>
+                  <option>Merging</option>
+                  <option>MST</option>
+                  <option>Manifest Unlock</option>
+                  <option>Abandoned Manifest</option>
+                  <option>Miscellaneous</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.amount}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      amount: formatAmountWithCommas(e.target.value),
+                    }))
+                  }
+                  inputMode="decimal"
+                  placeholder="e.g. 250,000"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.currency}
+                  onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-3">
+                <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Expense Date</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  type="date"
+                  value={form.expense_date}
+                  onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              >
+                {saving ? "Saving..." : editing ? "Update Expense" : "Create Expense"}
+              </button>
+
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </section>
       ) : null}
 
       {/* List */}
