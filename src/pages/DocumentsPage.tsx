@@ -13,7 +13,6 @@ type UploadForm = {
   job_id: string
   invoice_id: string
   receipt_id: string
-  file: File | null
 }
 
 const emptyForm: UploadForm = {
@@ -21,7 +20,6 @@ const emptyForm: UploadForm = {
   job_id: "",
   invoice_id: "",
   receipt_id: "",
-  file: null,
 }
 
 function extractErrorMessage(err: any): string {
@@ -81,6 +79,7 @@ export default function DocumentsPage() {
   const [info, setInfo] = useState("")
 
   const [form, setForm] = useState<UploadForm>(emptyForm)
+  const [uploadFiles, setUploadFiles] = useState<Array<File | null>>([null])
 
   const jobMap = useMemo(() => {
     const m = new Map<string, Job>()
@@ -172,6 +171,21 @@ export default function DocumentsPage() {
     }))
   }
 
+  function onFileAtChange(index: number, file: File | null) {
+    setUploadFiles((prev) => prev.map((f, i) => (i === index ? file : f)))
+  }
+
+  function onAddMoreFileInput() {
+    setUploadFiles((prev) => [...prev, null])
+  }
+
+  function onRemoveFileInput(index: number) {
+    setUploadFiles((prev) => {
+      if (prev.length <= 1) return [null]
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
   async function onUpload(e: React.FormEvent) {
     e.preventDefault()
     setError("")
@@ -179,8 +193,9 @@ export default function DocumentsPage() {
     setBusy(true)
 
     try {
-      if (!form.file) {
-        setError("File is required.")
+      const filesToUpload = uploadFiles.filter((f): f is File => !!f)
+      if (!filesToUpload.length) {
+        setError("At least one file is required.")
         return
       }
       if (form.doc_type === "JOB" && !form.job_id) {
@@ -208,18 +223,22 @@ export default function DocumentsPage() {
         }
       }
 
-      const created = await uploadDocument({
-        doc_type: form.doc_type,
-        file: form.file,
-        job_id: jobId || undefined,
-        invoice_id: form.doc_type === "INVOICE" ? form.invoice_id : undefined,
-        receipt_id: form.doc_type === "RECEIPT" ? form.receipt_id : undefined,
-      })
+      let createdJobId = ""
+      for (const file of filesToUpload) {
+        const created = await uploadDocument({
+          doc_type: form.doc_type,
+          file,
+          job_id: jobId || undefined,
+          invoice_id: form.doc_type === "INVOICE" ? form.invoice_id : undefined,
+          receipt_id: form.doc_type === "RECEIPT" ? form.receipt_id : undefined,
+        })
+        if (!createdJobId && created?.job_id) createdJobId = String(created.job_id)
+      }
 
-      setInfo("Uploaded.")
-      setForm((f) => ({ ...f, file: null }))
+      setInfo(filesToUpload.length > 1 ? `${filesToUpload.length} files uploaded.` : "Uploaded.")
+      setUploadFiles([null])
 
-      const jobToRefresh = jobId || selectedJobId || created.job_id || (form.doc_type === "JOB" ? form.job_id : "")
+      const jobToRefresh = jobId || selectedJobId || createdJobId || (form.doc_type === "JOB" ? form.job_id : "")
       if (jobToRefresh) {
         if (!selectedJobId) setSelectedJobId(String(jobToRefresh))
         await refreshDocs(String(jobToRefresh))
@@ -435,18 +454,45 @@ export default function DocumentsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">File</label>
-                <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15"
-                  type="file"
-                  onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] ?? null }))}
-                  disabled={busy}
-                />
-                {form.file ? (
-                  <div className="mt-1 text-xs text-white/55">
-                    {form.file.name} • {formatBytes(form.file.size)}
-                  </div>
-                ) : null}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-semibold text-white/80">Files</label>
+                  <button
+                    type="button"
+                    onClick={onAddMoreFileInput}
+                    disabled={busy}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition disabled:opacity-60"
+                  >
+                    + Add more
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {uploadFiles.map((file, index) => (
+                    <div key={index} className="rounded-lg border border-white/10 bg-black/20 p-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15"
+                          type="file"
+                          onChange={(e) => onFileAtChange(index, e.target.files?.[0] ?? null)}
+                          disabled={busy}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onRemoveFileInput(index)}
+                          disabled={busy || uploadFiles.length <= 1}
+                          className="px-2 py-1 rounded text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {file ? (
+                        <div className="mt-1 text-xs text-white/55">
+                          {file.name} • {formatBytes(file.size)}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <button
