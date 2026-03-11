@@ -220,9 +220,8 @@ export default function LedgerPage() {
           <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
             <div className="text-xs text-white/60">Outstanding Balance</div>
             <div
-              className={`mt-1 text-base font-semibold ${
-                totals.balance <= 0 ? "text-green-300" : "text-amber-300"
-              }`}
+              className={`mt-1 text-base font-semibold ${totals.balance <= 0 ? "text-green-300" : "text-amber-300"
+                }`}
             >
               {totals.currency} {money(Math.abs(totals.balance))}
             </div>
@@ -280,9 +279,8 @@ export default function LedgerPage() {
                       {e.currency} {money(parseAmt(e.amount))}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-semibold ${
-                        e._running <= 0 ? "text-green-300" : "text-amber-300"
-                      }`}
+                      className={`px-4 py-3 text-right font-semibold ${e._running <= 0 ? "text-green-300" : "text-amber-300"
+                        }`}
                     >
                       {e.currency} {money(Math.abs(e._running))}
                       {e._running < 0 ? " CR" : e._running > 0 ? " DR" : ""}
