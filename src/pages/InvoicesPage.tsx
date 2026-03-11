@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Job } from "../api/jobs"
 import { listJobs } from "../api/jobs"
+import type { Expense } from "../api/expenses"
+import { listExpenses } from "../api/expenses"
 import type { Invoice, InvoiceStatus } from "../api/invoices"
 import {
   createInvoice,
@@ -124,6 +126,7 @@ function includesQuery(parts: Array<string | undefined | null>, query: string): 
 export default function InvoicesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [search, setSearch] = useState("")
 
   const [loading, setLoading] = useState(true)
@@ -144,6 +147,23 @@ export default function InvoicesPage() {
     for (const j of jobs) m.set(String(j.id), j)
     return m
   }, [jobs])
+
+  const expenseTotalsByJob = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const expense of expenses) {
+      const jobId = String(expense.job)
+      const amount = toAmountNumber(expense.amount)
+      totals.set(jobId, (totals.get(jobId) ?? 0) + amount)
+    }
+    return totals
+  }, [expenses])
+
+  function getExpenseTotalForInvoice(invoice: Invoice): string {
+    const jobId = String(invoice.job)
+    const computed = expenseTotalsByJob.get(jobId)
+    if (computed !== undefined) return computed.toFixed(2)
+    return String(invoice.expenses_total ?? "0")
+  }
 
   const filteredInvoices = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -171,9 +191,10 @@ export default function InvoicesPage() {
     setInfo("")
     setLoading(true)
     try {
-      const [j, inv] = await Promise.all([listJobs(), listInvoices()])
+      const [j, inv, ex] = await Promise.all([listJobs(), listInvoices(), listExpenses()])
       setJobs(j)
       setInvoices(inv)
+      setExpenses(ex)
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to load invoices.")
     } finally {
@@ -545,7 +566,7 @@ export default function InvoicesPage() {
                           {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
                         </div>
                         <div className="text-xs text-white/50 mt-0.5">
-                          Total Expenses: {formatAmountWithCommas(String(x.expenses_total ?? "0"))}
+                          Total Expenses: {formatAmountWithCommas(getExpenseTotalForInvoice(x))}
                         </div>
                       </td>
                       <td className="px-4 py-3">
