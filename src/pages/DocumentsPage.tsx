@@ -333,35 +333,39 @@ export default function DocumentsPage() {
       ) : null}
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
-        <select
-          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-          value={selectedJobId}
-          onChange={(e) => setSelectedJobId(e.target.value)}
-          disabled={loading || busy}
-        >
-          <option value="">Select job</option>
-          {jobs.map((j) => (
-            <option key={j.id} value={String(j.id)}>
-              {j.file_number} — {j.zone}
-            </option>
-          ))}
-        </select>
-        {selectedJobLabel ? <div className="mt-1 text-xs text-white/55">{selectedJobLabel}</div> : null}
-      </section>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+            <select
+              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              value={selectedJobId}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+              disabled={loading || busy}
+            >
+              <option value="">Select job</option>
+              {jobs.map((j) => (
+                <option key={j.id} value={String(j.id)}>
+                  {j.file_number} — {j.zone}
+                </option>
+              ))}
+            </select>
+            {selectedJobLabel ? <div className="mt-1 text-xs text-white/55">{selectedJobLabel}</div> : null}
+          </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <label className="block text-sm font-semibold text-white/80 mb-1">Search file</label>
-        <input
-          type="text"
-          placeholder="Search by file name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          disabled={!selectedJobId}
-          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40 disabled:opacity-60"
-        />
-        <div className="mt-1 text-xs text-white/55">
-          {selectedJobId ? `${filteredDocs.length} file(s) found` : "Select a job to search files."}
+          <div>
+            <label className="block text-sm font-semibold text-white/80 mb-1">Search file</label>
+            <input
+              type="text"
+              placeholder="Search by file name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={!selectedJobId}
+              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40 disabled:opacity-60"
+            />
+            <div className="mt-1 text-xs text-white/55">
+              {selectedJobId ? `${filteredDocs.length} file(s) found` : "Select a job to search files."}
+            </div>
+          </div>
         </div>
       </section>
 
