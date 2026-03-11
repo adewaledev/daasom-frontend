@@ -82,6 +82,12 @@ function toAmountNumber(value: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
+function getExpectedInvoiceTotal(inv: Invoice): number {
+  const invoiceAmount = toAmountNumber(inv.invoice_amount)
+  if (invoiceAmount > 0) return invoiceAmount
+  return toAmountNumber(inv.grand_total)
+}
+
 function includesQuery(parts: Array<string | undefined | null>, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
@@ -191,10 +197,11 @@ export default function ReceiptsPage() {
       .filter((receipt) => String(receipt.invoice) === cleanInvoiceId)
       .reduce((sum, receipt) => sum + toAmountNumber(receipt.amount), 0)
 
-    const grandTotal = toAmountNumber(targetInvoice.grand_total)
-    if (grandTotal <= 0 || paidTotal <= 0) return
+    if (paidTotal <= 0) return
 
-    if (paidTotal >= grandTotal) {
+    const expectedTotal = getExpectedInvoiceTotal(targetInvoice)
+
+    if (expectedTotal > 0 && paidTotal >= expectedTotal) {
       await markInvoicePaid(cleanInvoiceId)
       return
     }
@@ -344,7 +351,7 @@ export default function ReceiptsPage() {
                   <option value="">Select invoice</option>
                   {invoices.map((inv) => (
                     <option key={inv.id} value={String(inv.id)}>
-                      {inv.invoice_number} — {inv.currency} {formatAmountWithCommas(String(inv.grand_total ?? ""))} — {inv.status}
+                      {inv.invoice_number} — {inv.currency} {formatAmountWithCommas(String(getExpectedInvoiceTotal(inv)))} — {inv.status}
                     </option>
                   ))}
                 </select>
@@ -353,7 +360,7 @@ export default function ReceiptsPage() {
                     {(() => {
                       const inv = invoiceMap.get(String(form.invoice))
                       return inv
-                        ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(inv.grand_total ?? ""))}`
+                        ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(getExpectedInvoiceTotal(inv)))}`
                         : ""
                     })()}
                   </div>
