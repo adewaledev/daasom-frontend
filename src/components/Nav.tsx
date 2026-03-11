@@ -44,6 +44,10 @@ export default function Nav() {
             Tracker
           </NavLink>
 
+          <NavLink to="/documents" className={navClass}>
+            Documents
+          </NavLink>
+
           <NavLink to="/expenses" className={navClass}>
             Expenses
           </NavLink>
@@ -56,16 +60,12 @@ export default function Nav() {
             Receipts
           </NavLink>
 
-          <NavLink to="/reports" className={navClass}>
-            Reports
-          </NavLink>
-
           <NavLink to="/ledger" className={navClass}>
             Ledger
           </NavLink>
 
-          <NavLink to="/documents" className={navClass}>
-            Documents
+          <NavLink to="/reports" className={navClass}>
+            Reports
           </NavLink>
 
           <button
