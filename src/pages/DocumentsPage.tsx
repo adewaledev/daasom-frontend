@@ -71,6 +71,7 @@ export default function DocumentsPage() {
   const [selectedJobId, setSelectedJobId] = useState<string>("")
   const [docs, setDocs] = useState<Document[]>([])
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const [showUploadForm, setShowUploadForm] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [loadingDocs, setLoadingDocs] = useState(false)
@@ -330,127 +331,144 @@ export default function DocumentsPage() {
         {selectedJobLabel ? <div className="mt-1 text-xs text-white/55">{selectedJobLabel}</div> : null}
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10">
-          <h2 className="font-semibold text-white">Upload</h2>
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <label className="block text-sm font-semibold text-white/80 mb-1">Search file</label>
+        <input
+          type="text"
+          placeholder="Search by file name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          disabled={!selectedJobId}
+          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40 disabled:opacity-60"
+        />
+        <div className="mt-1 text-xs text-white/55">
+          {selectedJobId ? `${filteredDocs.length} file(s) found` : "Select a job to search files."}
         </div>
-
-        <form onSubmit={onUpload} className="p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Type</label>
-              <select
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.doc_type}
-                onChange={(e) => onDocTypeChange(e.target.value as DocumentType)}
-                disabled={busy}
-              >
-                <option value="JOB">JOB</option>
-                <option value="INVOICE">INVOICE</option>
-                <option value="RECEIPT">RECEIPT</option>
-              </select>
-            </div>
-
-            {form.doc_type === "JOB" ? (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
-                <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.job_id}
-                  onChange={(e) => setForm((f) => ({ ...f, job_id: e.target.value }))}
-                  disabled={busy}
-                >
-                  <option value="">Select job</option>
-                  {jobs.map((j) => (
-                    <option key={j.id} value={String(j.id)}>
-                      {j.file_number} — {j.zone}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-
-            {form.doc_type === "INVOICE" ? (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
-                <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.invoice_id}
-                  onChange={(e) => setForm((f) => ({ ...f, invoice_id: e.target.value }))}
-                  disabled={busy}
-                >
-                  <option value="">Select invoice</option>
-                  {invoices.map((inv) => (
-                    <option key={inv.id} value={String(inv.id)}>
-                      {inv.invoice_number} — {inv.currency} {inv.grand_total}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-
-            {form.doc_type === "RECEIPT" ? (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Receipt</label>
-                <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.receipt_id}
-                  onChange={(e) => setForm((f) => ({ ...f, receipt_id: e.target.value }))}
-                  disabled={busy}
-                >
-                  <option value="">Select receipt</option>
-                  {receipts.map((r) => (
-                    <option key={r.id} value={String(r.id)}>
-                      {r.currency} {r.amount} — {r.payment_date}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-white/80 mb-1">File</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15"
-                type="file"
-                onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] ?? null }))}
-                disabled={busy}
-              />
-              {form.file ? (
-                <div className="mt-1 text-xs text-white/55">
-                  {form.file.name} • {formatBytes(form.file.size)}
-                </div>
-              ) : null}
-            </div>
-
-            <button
-              type="submit"
-              disabled={busy}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-            >
-              {busy ? "Uploading..." : "Upload"}
-            </button>
-          </div>
-        </form>
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center justify-between gap-3 mb-3">
+          <h2 className="font-semibold text-white">Upload</h2>
+          <button
+            type="button"
+            onClick={() => setShowUploadForm((v) => !v)}
+            className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            {showUploadForm ? "Hide upload" : "Upload document"}
+          </button>
+        </div>
+
+        {showUploadForm ? (
+          <form onSubmit={onUpload} className="p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Type</label>
+                <select
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.doc_type}
+                  onChange={(e) => onDocTypeChange(e.target.value as DocumentType)}
+                  disabled={busy}
+                >
+                  <option value="JOB">JOB</option>
+                  <option value="INVOICE">INVOICE</option>
+                  <option value="RECEIPT">RECEIPT</option>
+                </select>
+              </div>
+
+              {form.doc_type === "JOB" ? (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+                  <select
+                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={form.job_id}
+                    onChange={(e) => setForm((f) => ({ ...f, job_id: e.target.value }))}
+                    disabled={busy}
+                  >
+                    <option value="">Select job</option>
+                    {jobs.map((j) => (
+                      <option key={j.id} value={String(j.id)}>
+                        {j.file_number} — {j.zone}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              {form.doc_type === "INVOICE" ? (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
+                  <select
+                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={form.invoice_id}
+                    onChange={(e) => setForm((f) => ({ ...f, invoice_id: e.target.value }))}
+                    disabled={busy}
+                  >
+                    <option value="">Select invoice</option>
+                    {invoices.map((inv) => (
+                      <option key={inv.id} value={String(inv.id)}>
+                        {inv.invoice_number} — {inv.currency} {inv.grand_total}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              {form.doc_type === "RECEIPT" ? (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-white/80 mb-1">Receipt</label>
+                  <select
+                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    value={form.receipt_id}
+                    onChange={(e) => setForm((f) => ({ ...f, receipt_id: e.target.value }))}
+                    disabled={busy}
+                  >
+                    <option value="">Select receipt</option>
+                    {receipts.map((r) => (
+                      <option key={r.id} value={String(r.id)}>
+                        {r.currency} {r.amount} — {r.payment_date}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white/80 mb-1">File</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15"
+                  type="file"
+                  onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] ?? null }))}
+                  disabled={busy}
+                />
+                {form.file ? (
+                  <div className="mt-1 text-xs text-white/55">
+                    {form.file.name} • {formatBytes(form.file.size)}
+                  </div>
+                ) : null}
+              </div>
+
+              <button
+                type="submit"
+                disabled={busy}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              >
+                {busy ? "Uploading..." : "Upload"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="p-5 text-sm text-white/60">Click "Upload document" to add a file.</div>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold text-white">Documents</h2>
             <span className="text-sm text-white/60">{selectedJobId ? filteredDocs.length : ""}</span>
           </div>
-          {selectedJobId && (
-            <input
-              type="text"
-              placeholder="Search by filename…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40"
-            />
-          )}
         </div>
 
         {!selectedJobId ? (
