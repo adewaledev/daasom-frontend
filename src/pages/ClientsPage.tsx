@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Client } from "../api/clients"
 import { createClient, listClients, updateClient } from "../api/clients"
+import { useAuth } from "../state/auth"
 
 type ClientForm = {
   client_code: string
@@ -44,6 +45,7 @@ function extractErrorMessage(err: any): string {
 }
 
 export default function ClientsPage() {
+  const { can, roleLabel } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -52,6 +54,7 @@ export default function ClientsPage() {
   const [form, setForm] = useState<ClientForm>(emptyForm)
 
   const title = useMemo(() => (editing ? "Edit Client" : "Create Client"), [editing])
+  const canWriteClients = can("clients.write")
 
   async function refresh() {
     setError("")
@@ -90,6 +93,10 @@ export default function ClientsPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!canWriteClients) {
+      setError(`${roleLabel} role has view-only access to clients.`)
+      return
+    }
     setError("")
     setSaving(true)
 
@@ -154,124 +161,132 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      {/* Form Card */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">{title}</h2>
-          {editing ? (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="text-sm font-semibold text-white/70 hover:text-white transition"
-            >
-              Cancel
-            </button>
-          ) : null}
+      {!canWriteClients ? (
+        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+          Signed in as {roleLabel}. Clients are view-only for this role.
         </div>
+      ) : null}
 
-        <form onSubmit={onSubmit} className="p-5 space-y-4">
-          {error ? (
-            <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Client Code</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.client_code}
-                onChange={(e) => setForm((f) => ({ ...f, client_code: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Client Prefix</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.client_prefix}
-                onChange={(e) => setForm((f) => ({ ...f, client_prefix: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Client Name</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.client_name}
-                onChange={(e) => setForm((f) => ({ ...f, client_name: e.target.value }))}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Email</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                type="email"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Phone</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Address</label>
-              <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={form.address}
-                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              id="is_active"
-              type="checkbox"
-              className="h-4 w-4 accent-blue-600"
-              checked={form.is_active}
-              onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-            />
-            <label htmlFor="is_active" className="text-sm font-semibold text-white/80">
-              Active
-            </label>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-            >
-              {saving ? "Saving..." : editing ? "Update Client" : "Create Client"}
-            </button>
-
+      {/* Form Card */}
+      {canWriteClients ? (
+        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
+          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+            <h2 className="font-semibold text-white">{title}</h2>
             {editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                className="text-sm font-semibold text-white/70 hover:text-white transition"
               >
                 Cancel
               </button>
             ) : null}
           </div>
-        </form>
-      </section>
+
+          <form onSubmit={onSubmit} className="p-5 space-y-4">
+            {error ? (
+              <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Client Code</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.client_code}
+                  onChange={(e) => setForm((f) => ({ ...f, client_code: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Client Prefix</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.client_prefix}
+                  onChange={(e) => setForm((f) => ({ ...f, client_prefix: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Client Name</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.client_name}
+                  onChange={(e) => setForm((f) => ({ ...f, client_name: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Email</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  type="email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Phone</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Address</label>
+                <input
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.address}
+                  onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                id="is_active"
+                type="checkbox"
+                className="h-4 w-4 accent-blue-600"
+                checked={form.is_active}
+                onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+              />
+              <label htmlFor="is_active" className="text-sm font-semibold text-white/80">
+                Active
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              >
+                {saving ? "Saving..." : editing ? "Update Client" : "Create Client"}
+              </button>
+
+              {editing ? (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       {/* Table Card */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
@@ -315,13 +330,15 @@ export default function ClientsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(c)}
-                        className="text-blue-300 hover:text-blue-200 font-semibold"
-                      >
-                        Edit
-                      </button>
+                      {canWriteClients ? (
+                        <button
+                          type="button"
+                          onClick={() => startEdit(c)}
+                          className="text-blue-300 hover:text-blue-200 font-semibold"
+                        >
+                          Edit
+                        </button>
+                      ) : <span className="text-white/40">View only</span>}
                     </td>
                   </tr>
                 ))}

@@ -4,6 +4,7 @@ import { listJobs } from "../api/jobs"
 import type { Expense, ExpenseStatus } from "../api/expenses"
 import { createExpense, deleteExpense, listExpenses, updateExpense } from "../api/expenses"
 import { listInvoices, refreshInvoiceTotals } from "../api/invoices"
+import { useAuth } from "../state/auth"
 
 type ExpenseForm = {
   job: string
@@ -84,6 +85,7 @@ function includesQuery(parts: Array<string | undefined | null>, query: string): 
 }
 
 export default function ExpensesPage() {
+  const { can, roleLabel } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [search, setSearch] = useState("")
@@ -98,6 +100,7 @@ export default function ExpensesPage() {
   const [showForm, setShowForm] = useState(false)
 
   const title = useMemo(() => (editing ? "Edit Expense" : "Create Expense"), [editing])
+  const canWriteExpenses = can("expenses.write")
 
   const jobMap = useMemo(() => {
     const m = new Map<string, Job>()
@@ -188,6 +191,10 @@ export default function ExpensesPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!canWriteExpenses) {
+      setError(`${roleLabel} role has view-only access to expenses.`)
+      return
+    }
     setError("")
     setInfo("")
     setSaving(true)
@@ -245,6 +252,10 @@ export default function ExpensesPage() {
   }
 
   async function onDelete(x: Expense) {
+    if (!canWriteExpenses) {
+      setError(`${roleLabel} role has view-only access to expenses.`)
+      return
+    }
     const ok = window.confirm("Delete this expense? This cannot be undone.")
     if (!ok) return
 
@@ -273,13 +284,15 @@ export default function ExpensesPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={showForm ? cancelEdit : startCreate}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
-          >
-            {showForm ? "Hide Form" : "Create Expense"}
-          </button>
+          {canWriteExpenses ? (
+            <button
+              type="button"
+              onClick={showForm ? cancelEdit : startCreate}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              {showForm ? "Hide Form" : "Create Expense"}
+            </button>
+          ) : null}
 
           <input
             className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -298,8 +311,14 @@ export default function ExpensesPage() {
         </div>
       </div>
 
+      {!canWriteExpenses ? (
+        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+          Signed in as {roleLabel}. Expenses are view-only for this role.
+        </div>
+      ) : null}
+
       {/* Form */}
-      {showForm ? (
+      {showForm && canWriteExpenses ? (
         <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
             <h2 className="font-semibold text-white">{title}</h2>
@@ -524,20 +543,24 @@ export default function ExpensesPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(x)}
-                            className="text-blue-300 hover:text-blue-200 font-semibold"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDelete(x)}
-                            className="text-white/60 hover:text-red-200 font-semibold"
-                          >
-                            Delete
-                          </button>
+                          {canWriteExpenses ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEdit(x)}
+                                className="text-blue-300 hover:text-blue-200 font-semibold"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDelete(x)}
+                                className="text-white/60 hover:text-red-200 font-semibold"
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : <span className="text-white/40">View only</span>}
                         </div>
                       </td>
                     </tr>

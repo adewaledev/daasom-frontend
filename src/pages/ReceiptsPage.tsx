@@ -3,6 +3,7 @@ import type { Invoice } from "../api/invoices"
 import { listInvoices, markInvoicePaid, markInvoicePartial, refreshInvoiceTotals } from "../api/invoices"
 import type { Receipt } from "../api/receipts"
 import { createReceipt, deleteReceipt, listReceipts, updateReceipt } from "../api/receipts"
+import { useAuth } from "../state/auth"
 
 type ReceiptForm = {
   invoice: string
@@ -95,6 +96,7 @@ function includesQuery(parts: Array<string | undefined | null>, query: string): 
 }
 
 export default function ReceiptsPage() {
+  const { can, roleLabel } = useAuth()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [receipts, setReceipts] = useState<Receipt[]>([])
   const [search, setSearch] = useState("")
@@ -108,6 +110,7 @@ export default function ReceiptsPage() {
   const [editing, setEditing] = useState<Receipt | null>(null)
   const [form, setForm] = useState<ReceiptForm>(emptyForm)
   const [showForm, setShowForm] = useState(false)
+  const canWriteReceipts = can("receipts.write")
 
   const invoiceMap = useMemo(() => {
     const m = new Map<string, Invoice>()
@@ -226,6 +229,10 @@ export default function ReceiptsPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!canWriteReceipts) {
+      setError(`${roleLabel} role has view-only access to receipts.`)
+      return
+    }
     setError("")
     setInfo("")
     setSaving(true)
@@ -283,6 +290,10 @@ export default function ReceiptsPage() {
   }
 
   async function onDelete(x: Receipt) {
+    if (!canWriteReceipts) {
+      setError(`${roleLabel} role has view-only access to receipts.`)
+      return
+    }
     const ok = window.confirm("Delete this receipt? This cannot be undone.")
     if (!ok) return
 
@@ -309,13 +320,15 @@ export default function ReceiptsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={showForm ? cancelEdit : startCreate}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
-          >
-            {showForm ? "Hide Form" : "Create Receipt"}
-          </button>
+          {canWriteReceipts ? (
+            <button
+              type="button"
+              onClick={showForm ? cancelEdit : startCreate}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              {showForm ? "Hide Form" : "Create Receipt"}
+            </button>
+          ) : null}
 
           <input
             className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -342,7 +355,13 @@ export default function ReceiptsPage() {
         <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">{info}</div>
       ) : null}
 
-      {showForm ? (
+      {!canWriteReceipts ? (
+        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+          Signed in as {roleLabel}. Receipts are view-only for this role.
+        </div>
+      ) : null}
+
+      {showForm && canWriteReceipts ? (
         <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
             <h2 className="font-semibold text-white">{title}</h2>
@@ -516,12 +535,16 @@ export default function ReceiptsPage() {
                       <td className="px-4 py-3 text-white/80">{r.reference || ""}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-3">
-                          <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200 font-semibold">
-                            Edit
-                          </button>
-                          <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200 font-semibold">
-                            Delete
-                          </button>
+                          {canWriteReceipts ? (
+                            <>
+                              <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200 font-semibold">
+                                Edit
+                              </button>
+                              <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200 font-semibold">
+                                Delete
+                              </button>
+                            </>
+                          ) : <span className="text-white/40">View only</span>}
                         </div>
                       </td>
                     </tr>

@@ -3,6 +3,7 @@ import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
 import type { Job, JobZone } from "../api/jobs"
 import { createJob, listJobs, updateJob } from "../api/jobs"
+import { useAuth } from "../state/auth"
 
 type JobForm = {
   client: string // store raw id as string (uuid or number string)
@@ -84,6 +85,7 @@ function zoneBadge(zone: JobZone) {
 type ViewZone = "ALL" | JobZone
 
 export default function JobsPage() {
+  const { can, roleLabel } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
 
@@ -99,6 +101,7 @@ export default function JobsPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
+  const canWriteJobs = can("jobs.write")
 
   const clientMap = useMemo(() => {
     const m = new Map<string, Client>()
@@ -270,6 +273,10 @@ export default function JobsPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!canWriteJobs) {
+      setError(`${roleLabel} role has view-only access to jobs.`)
+      return
+    }
     setError("")
     setSaving(true)
 
@@ -358,7 +365,7 @@ export default function JobsPage() {
             Refresh
           </button>
 
-          {!showCreateForm && !editing ? (
+          {canWriteJobs && !showCreateForm && !editing ? (
             <button
               type="button"
               onClick={() => setShowCreateForm(true)}
@@ -369,6 +376,12 @@ export default function JobsPage() {
           ) : null}
         </div>
       </div>
+
+      {!canWriteJobs ? (
+        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+          Signed in as {roleLabel}. Jobs are view-only for this role.
+        </div>
+      ) : null}
 
       {/* Search Section */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
@@ -440,7 +453,7 @@ export default function JobsPage() {
       </section>
 
       {/* Form */}
-      {showCreateForm || editing ? (
+      {canWriteJobs && (showCreateForm || editing) ? (
         <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
             <h2 className="font-semibold text-white">{title}</h2>
@@ -727,13 +740,15 @@ export default function JobsPage() {
                       </td>
 
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(j)}
-                          className="text-blue-300 hover:text-blue-200 font-semibold"
-                        >
-                          Edit
-                        </button>
+                        {canWriteJobs ? (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(j)}
+                            className="text-blue-300 hover:text-blue-200 font-semibold"
+                          >
+                            Edit
+                          </button>
+                        ) : <span className="text-white/40">View only</span>}
                       </td>
                     </tr>
                   )

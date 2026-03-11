@@ -5,6 +5,7 @@ import { listClients } from "../api/clients"
 import type { Client } from "../api/clients"
 import { listJobMilestones, updateJobMilestone } from "../api/jobMilestones"
 import type { JobMilestone, MilestoneStatus } from "../api/jobMilestones"
+import { useAuth } from "../state/auth"
 
 function extractErrorMessage(err: any): string {
   const status = err?.response?.status
@@ -44,6 +45,7 @@ function statusBadge(status: MilestoneStatus) {
 }
 
 export default function TrackerPage() {
+  const { can, roleLabel } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
 
@@ -62,6 +64,7 @@ export default function TrackerPage() {
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "COMPLETED">("ALL")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const canWriteTracker = can("tracker.write")
 
   const clientMap = useMemo(() => {
     const m = new Map<string, Client>()
@@ -250,6 +253,10 @@ export default function TrackerPage() {
   }, [selectedJobId])
 
   async function saveRow(id: string, status: MilestoneStatus, date: string) {
+    if (!canWriteTracker) {
+      setError(`${roleLabel} role has view-only access to tracker updates.`)
+      return
+    }
     setError("")
     setInfo("")
     try {
@@ -281,6 +288,12 @@ export default function TrackerPage() {
           Refresh
         </button>
       </div>
+
+      {!canWriteTracker ? (
+        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+          <div className="text-sm text-white/75">Signed in as {roleLabel}. Tracker updates are view-only for this role.</div>
+        </section>
+      ) : null}
 
       {/* Search Section */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
@@ -460,8 +473,8 @@ export default function TrackerPage() {
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${jobHasPendingMilestones.get(j.id)
-                                ? "bg-amber-500/10 text-amber-200 border-amber-500/20"
-                                : "bg-green-500/10 text-green-200 border-green-500/20"
+                              ? "bg-amber-500/10 text-amber-200 border-amber-500/20"
+                              : "bg-green-500/10 text-green-200 border-green-500/20"
                               }`}
                           >
                             {jobHasPendingMilestones.get(j.id) ? "PENDING" : "COMPLETED"}
@@ -549,7 +562,7 @@ export default function TrackerPage() {
 
               <tbody>
                 {milestones.map((m) => (
-                  <MilestoneRow key={m.id} m={m} onSave={saveRow} />
+                  <MilestoneRow key={m.id} m={m} onSave={saveRow} canWrite={canWriteTracker} />
                 ))}
               </tbody>
             </table>
@@ -564,9 +577,11 @@ export default function TrackerPage() {
 function MilestoneRow({
   m,
   onSave,
+  canWrite,
 }: {
   m: JobMilestone
   onSave: (id: string, status: MilestoneStatus, date: string) => Promise<void>
+  canWrite: boolean
 }) {
   const [status, setStatus] = useState<MilestoneStatus>(m.status)
   const [date, setDate] = useState<string>(m.date ?? "")
@@ -609,7 +624,7 @@ function MilestoneRow({
       </td>
 
       <td className="px-4 py-3">
-        <select className={statusSelectClass(status)} value={status} onChange={(e) => setStatus(e.target.value as MilestoneStatus)}>
+        <select className={statusSelectClass(status)} value={status} onChange={(e) => setStatus(e.target.value as MilestoneStatus)} disabled={!canWrite}>
           <option value="PENDING">PENDING</option>
           <option value="DONE">DONE</option>
         </select>
@@ -621,17 +636,18 @@ function MilestoneRow({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          disabled={!canWrite}
         />
       </td>
 
       <td className="px-4 py-3 text-right">
         <button
           type="button"
-          disabled={!dirty || saving}
+          disabled={!canWrite || !dirty || saving}
           onClick={save}
           className={[
             "px-3 py-2 rounded-lg text-sm font-semibold transition border",
-            !dirty || saving
+            !canWrite || !dirty || saving
               ? "bg-white/5 text-white/40 border-white/10 cursor-not-allowed"
               : "bg-blue-600 text-white border-blue-500/30 hover:bg-blue-700",
           ].join(" ")}

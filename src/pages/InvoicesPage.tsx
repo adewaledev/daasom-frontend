@@ -15,6 +15,7 @@ import {
   updateInvoice,
   voidInvoice,
 } from "../api/invoices"
+import { useAuth } from "../state/auth"
 
 type InvoiceForm = {
   job: string
@@ -124,6 +125,7 @@ function includesQuery(parts: Array<string | undefined | null>, query: string): 
 }
 
 export default function InvoicesPage() {
+  const { can, roleLabel } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -141,6 +143,7 @@ export default function InvoicesPage() {
   const [showForm, setShowForm] = useState(false)
 
   const title = useMemo(() => (editing ? "Edit Invoice" : "Create Invoice"), [editing])
+  const canWriteInvoices = can("invoices.write")
 
   const jobMap = useMemo(() => {
     const m = new Map<string, Job>()
@@ -250,6 +253,10 @@ export default function InvoicesPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!canWriteInvoices) {
+      setError(`${roleLabel} role has view-only access to invoices.`)
+      return
+    }
     setError("")
     setInfo("")
     setSaving(true)
@@ -305,6 +312,10 @@ export default function InvoicesPage() {
   }
 
   async function onDelete(x: Invoice) {
+    if (!canWriteInvoices) {
+      setError(`${roleLabel} role has view-only access to invoices.`)
+      return
+    }
     const ok = window.confirm("Delete this invoice? This cannot be undone.")
     if (!ok) return
 
@@ -321,6 +332,10 @@ export default function InvoicesPage() {
   }
 
   async function runAction(id: string, action: () => Promise<any>, label: string) {
+    if (!canWriteInvoices) {
+      setError(`${roleLabel} role has view-only access to invoices.`)
+      return
+    }
     setError("")
     setInfo("")
     setBusyActionId(id)
@@ -349,13 +364,15 @@ export default function InvoicesPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={showForm ? cancelEdit : startCreate}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
-          >
-            {showForm ? "Hide Form" : "Create Invoice"}
-          </button>
+          {canWriteInvoices ? (
+            <button
+              type="button"
+              onClick={showForm ? cancelEdit : startCreate}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              {showForm ? "Hide Form" : "Create Invoice"}
+            </button>
+          ) : null}
 
           <input
             className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -387,8 +404,14 @@ export default function InvoicesPage() {
         </div>
       ) : null}
 
+      {!canWriteInvoices ? (
+        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+          Signed in as {roleLabel}. Invoices are view-only for this role.
+        </div>
+      ) : null}
+
       {/* Form */}
-      {showForm ? (
+      {showForm && canWriteInvoices ? (
         <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
             <h2 className="font-semibold text-white">{title}</h2>
@@ -575,68 +598,72 @@ export default function InvoicesPage() {
 
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(x)}
-                            className="text-blue-300 hover:text-blue-200 font-semibold"
-                          >
-                            Edit
-                          </button>
+                          {canWriteInvoices ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEdit(x)}
+                                className="text-blue-300 hover:text-blue-200 font-semibold"
+                              >
+                                Edit
+                              </button>
 
-                          <button
-                            type="button"
-                            onClick={() => onDelete(x)}
-                            className="text-white/60 hover:text-red-200 font-semibold"
-                          >
-                            Delete
-                          </button>
+                              <button
+                                type="button"
+                                onClick={() => onDelete(x)}
+                                className="text-white/60 hover:text-red-200 font-semibold"
+                              >
+                                Delete
+                              </button>
 
-                          <div className="hidden md:inline-flex items-center gap-2 ml-2">
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
-                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                            >
-                              Refresh
-                            </button>
+                              <div className="hidden md:inline-flex items-center gap-2 ml-2">
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                >
+                                  Refresh
+                                </button>
 
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
-                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                            >
-                              Issue
-                            </button>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                >
+                                  Issue
+                                </button>
 
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
-                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                            >
-                              Partial
-                            </button>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                >
+                                  Partial
+                                </button>
 
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
-                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                            >
-                              Paid
-                            </button>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                >
+                                  Paid
+                                </button>
 
-                            <button
-                              type="button"
-                              disabled={isBusy}
-                              onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
-                              className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                            >
-                              Void
-                            </button>
-                          </div>
+                                <button
+                                  type="button"
+                                  disabled={isBusy}
+                                  onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                >
+                                  Void
+                                </button>
+                              </div>
+                            </>
+                          ) : <span className="text-white/40">View only</span>}
                         </div>
 
                         {isBusy ? <div className="text-xs text-white/50 mt-2">Working…</div> : null}

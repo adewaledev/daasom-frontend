@@ -7,6 +7,7 @@ import type { Receipt } from "../api/receipts"
 import { listReceipts } from "../api/receipts"
 import type { Document, DocumentType } from "../api/documents"
 import { deleteDocument, downloadDocumentByUrl, listDocumentsByJob, uploadDocument } from "../api/documents"
+import { useAuth } from "../state/auth"
 
 type UploadForm = {
   doc_type: DocumentType
@@ -62,6 +63,7 @@ function typeBadge(t: DocumentType) {
 }
 
 export default function DocumentsPage() {
+  const { can, roleLabel } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [receipts, setReceipts] = useState<Receipt[]>([])
@@ -80,6 +82,7 @@ export default function DocumentsPage() {
 
   const [form, setForm] = useState<UploadForm>(emptyForm)
   const [uploadFiles, setUploadFiles] = useState<Array<File | null>>([null])
+  const canWriteDocuments = can("documents.write")
 
   const jobMap = useMemo(() => {
     const m = new Map<string, Job>()
@@ -194,6 +197,10 @@ export default function DocumentsPage() {
 
   async function onUpload(e: React.FormEvent) {
     e.preventDefault()
+    if (!canWriteDocuments) {
+      setError(`${roleLabel} role has view-only access to documents.`)
+      return
+    }
     setError("")
     setInfo("")
     setBusy(true)
@@ -280,6 +287,10 @@ export default function DocumentsPage() {
   }
 
   async function onDelete(d: Document) {
+    if (!canWriteDocuments) {
+      setError(`${roleLabel} role has view-only access to documents.`)
+      return
+    }
     const ok = window.confirm(`Delete "${d.filename}"?`)
     if (!ok) return
 
@@ -341,6 +352,12 @@ export default function DocumentsPage() {
         <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">{info}</div>
       ) : null}
 
+      {!canWriteDocuments ? (
+        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+          Signed in as {roleLabel}. Document uploads and deletes are view-only for this role.
+        </div>
+      ) : null}
+
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
         <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
         <input
@@ -368,16 +385,18 @@ export default function DocumentsPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Upload</h2>
-          <button
-            type="button"
-            onClick={() => setShowUploadForm((v) => !v)}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-          >
-            {showUploadForm ? "Hide upload" : "Upload document"}
-          </button>
+          {canWriteDocuments ? (
+            <button
+              type="button"
+              onClick={() => setShowUploadForm((v) => !v)}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            >
+              {showUploadForm ? "Hide upload" : "Upload document"}
+            </button>
+          ) : null}
         </div>
 
-        {showUploadForm ? (
+        {showUploadForm && canWriteDocuments ? (
           <form onSubmit={onUpload} className="p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -505,7 +524,9 @@ export default function DocumentsPage() {
             </div>
           </form>
         ) : (
-          <div className="p-5 text-sm text-white/60">Click "Upload document" to add a file.</div>
+          <div className="p-5 text-sm text-white/60">
+            {canWriteDocuments ? 'Click "Upload document" to add a file.' : "Uploads are disabled for this role."}
+          </div>
         )}
       </section>
 
@@ -570,7 +591,7 @@ export default function DocumentsPage() {
                         <button
                           type="button"
                           onClick={() => onDelete(d)}
-                          disabled={busy}
+                          disabled={busy || !canWriteDocuments}
                           className="text-white/60 hover:text-red-200 font-semibold disabled:opacity-60"
                         >
                           Delete
