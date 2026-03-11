@@ -359,11 +359,10 @@ export default function DocumentsPage() {
               placeholder="Search by file name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              disabled={!selectedJobId}
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40 disabled:opacity-60"
+              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 placeholder-white/40"
             />
             <div className="mt-1 text-xs text-white/55">
-              {selectedJobId ? `${filteredDocs.length} file(s) found` : "Select a job to search files."}
+              {selectedJobId ? `${filteredDocs.length} file(s) found` : "Select a job to view and filter files."}
             </div>
           </div>
         </div>
