@@ -94,6 +94,7 @@ export default function ReportPage() {
   const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
+  const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
 
   async function refreshAll() {
     setError("")
@@ -206,6 +207,12 @@ export default function ReportPage() {
     })
     return m
   }, [filteredReceipts])
+
+  const filteredInvoiceMap = useMemo(() => {
+    const m = new Map<string, Invoice>()
+    filteredInvoices.forEach((inv) => m.set(String(inv.id), inv))
+    return m
+  }, [filteredInvoices])
 
   // Computed metrics (based on filtered data for whole page)
   const metrics = useMemo(() => {
@@ -339,6 +346,26 @@ export default function ReportPage() {
       })
   }, [filteredExpenses, jobMap])
 
+  const receiptBreakdownRows = useMemo(() => {
+    return [...filteredReceipts]
+      .sort((a, b) => String(b.payment_date).localeCompare(String(a.payment_date)))
+      .map((rec) => {
+        const invoice = filteredInvoiceMap.get(String(rec.invoice))
+        const job = invoice ? jobMap.get(String(invoice.job)) : undefined
+        return {
+          id: rec.id,
+          payment_date: rec.payment_date,
+          method: rec.method,
+          reference: rec.reference,
+          amount: rec.amount,
+          currency: rec.currency,
+          invoiceNumber: invoice?.invoice_number || "-",
+          fileNumber: job?.file_number || "-",
+          zone: job?.zone || "-",
+        }
+      })
+  }, [filteredReceipts, filteredInvoiceMap, jobMap])
+
   return (
     <div className="space-y-6 text-white">
       {/* Header */}
@@ -389,6 +416,7 @@ export default function ReportPage() {
           currency={metrics.currencies[0] || "NGN"}
           color="green"
           subtext={`${metrics.receipts.total} receipts`}
+          onClick={() => setShowReceiptBreakdown(true)}
         />
         <StatCard
           label="Total Expenses"
@@ -756,6 +784,63 @@ export default function ReportPage() {
                         <td className="px-4 py-3 text-white/85">{row.category}</td>
                         <td className="px-4 py-3 text-white/70">{row.description || ""}</td>
                         <td className="px-4 py-3 text-white/80">{row.status}</td>
+                        <td className="px-4 py-3 text-right text-white font-semibold">
+                          {row.currency} {money(row.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {showReceiptBreakdown ? (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-6xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-white">Receipts Breakdown</h2>
+                <p className="text-xs text-white/60 mt-1">
+                  Total: {metrics.currencies[0] || "NGN"} {money(metrics.totalReceiptAmount)} • Count: {metrics.receipts.total}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReceiptBreakdown(false)}
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+              >
+                Close
+              </button>
+            </div>
+
+            {receiptBreakdownRows.length === 0 ? (
+              <div className="p-5 text-sm text-white/60">No receipts to display for current filters.</div>
+            ) : (
+              <div className="overflow-auto max-h-[70vh]">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-black/80 text-white sticky top-0">
+                    <tr className="border-b border-white/10">
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Method</th>
+                      <th className="px-4 py-3 text-left font-semibold text-white/90">Reference</th>
+                      <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {receiptBreakdownRows.map((row) => (
+                      <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3 text-white/80">{row.payment_date}</td>
+                        <td className="px-4 py-3 text-white font-semibold">{row.fileNumber}</td>
+                        <td className="px-4 py-3 text-white/70">{row.zone}</td>
+                        <td className="px-4 py-3 text-white/85">{row.invoiceNumber}</td>
+                        <td className="px-4 py-3 text-white/70">{row.method || ""}</td>
+                        <td className="px-4 py-3 text-white/70">{row.reference || ""}</td>
                         <td className="px-4 py-3 text-right text-white font-semibold">
                           {row.currency} {money(row.amount)}
                         </td>
