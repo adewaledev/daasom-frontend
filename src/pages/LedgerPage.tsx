@@ -43,7 +43,9 @@ function money(n: number) {
 
 export default function LedgerPage() {
   const [jobs, setJobs] = useState<Job[]>([])
-  const [selectedJobId, setSelectedJobId] = useState<string>("")
+  const [selectedJobId, setSelectedJobId] = useState<string>(
+    () => sessionStorage.getItem("ledger_selected_job") ?? "",
+  )
 
   const [entries, setEntries] = useState<LedgerEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -177,7 +179,12 @@ export default function LedgerPage() {
             <select
               className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
               value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
+              onChange={(e) => {
+                const id = e.target.value
+                setSelectedJobId(id)
+                if (id) sessionStorage.setItem("ledger_selected_job", id)
+                else sessionStorage.removeItem("ledger_selected_job")
+              }}
               disabled={loading}
             >
               <option value="">Select job</option>
