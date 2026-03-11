@@ -97,104 +97,6 @@ export default function ReportPage() {
     refreshAll()
   }, [])
 
-  // Map builders
-  const invoicesByJob = useMemo(() => {
-    const m = new Map<string, Invoice[]>()
-    invoices.forEach((inv) => {
-      const jobId = String(inv.job)
-      if (!m.has(jobId)) m.set(jobId, [])
-      m.get(jobId)!.push(inv)
-    })
-    return m
-  }, [invoices])
-
-  const expensesByJob = useMemo(() => {
-    const m = new Map<string, Expense[]>()
-    expenses.forEach((exp) => {
-      const jobId = String(exp.job)
-      if (!m.has(jobId)) m.set(jobId, [])
-      m.get(jobId)!.push(exp)
-    })
-    return m
-  }, [expenses])
-
-  const receiptsByInvoice = useMemo(() => {
-    const m = new Map<string, Receipt[]>()
-    receipts.forEach((rec) => {
-      const invId = String(rec.invoice)
-      if (!m.has(invId)) m.set(invId, [])
-      m.get(invId)!.push(rec)
-    })
-    return m
-  }, [receipts])
-
-  // Computed metrics
-  const metrics = useMemo(() => {
-    let totalInvoiceAmount = 0
-    let totalExpenseAmount = 0
-    let totalReceiptAmount = 0
-    let draftInvoices = 0
-    let issuedInvoices = 0
-    let partialInvoices = 0
-    let paidInvoices = 0
-    let voidInvoices = 0
-    let draftExpenses = 0
-    let submittedExpenses = 0
-    let approvedExpenses = 0
-    const currencies = new Set<string>()
-
-    invoices.forEach((inv) => {
-      const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
-      if (Number.isFinite(amt)) totalInvoiceAmount += amt
-      currencies.add(inv.currency)
-      if (inv.status === "DRAFT") draftInvoices++
-      else if (inv.status === "ISSUED") issuedInvoices++
-      else if (inv.status === "PARTIALLY_PAID") partialInvoices++
-      else if (inv.status === "PAID") paidInvoices++
-      else if (inv.status === "VOID") voidInvoices++
-    })
-
-    expenses.forEach((exp) => {
-      const amt = parseFloat(exp.amount || "0")
-      if (Number.isFinite(amt)) totalExpenseAmount += amt
-      currencies.add(exp.currency)
-      if (exp.status === "DRAFT") draftExpenses++
-      else if (exp.status === "SUBMITTED") submittedExpenses++
-      else if (exp.status === "APPROVED") approvedExpenses++
-    })
-
-    receipts.forEach((rec) => {
-      const amt = parseFloat(rec.amount || "0")
-      if (Number.isFinite(amt)) totalReceiptAmount += amt
-      currencies.add(rec.currency)
-    })
-
-    return {
-      totalInvoiceAmount,
-      totalExpenseAmount,
-      totalReceiptAmount,
-      outstanding: totalInvoiceAmount - totalReceiptAmount,
-      invoices: {
-        draft: draftInvoices,
-        issued: issuedInvoices,
-        partial: partialInvoices,
-        paid: paidInvoices,
-        void: voidInvoices,
-        total: invoices.length,
-      },
-      expenses: {
-        draft: draftExpenses,
-        submitted: submittedExpenses,
-        approved: approvedExpenses,
-        total: expenses.length,
-      },
-      receipts: {
-        total: receipts.length,
-      },
-      currencies: Array.from(currencies),
-    }
-  }, [invoices, expenses, receipts])
-
   // Client map for quick lookup
   const clientMap = useMemo(() => {
     const m = new Map<string, Client>()
@@ -202,7 +104,7 @@ export default function ReportPage() {
     return m
   }, [clients])
 
-  // Filtered jobs
+  // Filtered jobs (applies both status and search filters)
   const filteredJobs = useMemo(() => {
     let result = jobs
 
@@ -230,11 +132,128 @@ export default function ReportPage() {
     return result
   }, [jobs, jobStatusFilter, searchTerm, clientMap])
 
+  // Track filtered job IDs for quick lookup
+  const filteredJobIds = useMemo(() => {
+    return new Set(filteredJobs.map((j) => String(j.id)))
+  }, [filteredJobs])
+
+  // Filter data based on selected jobs
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((inv) => filteredJobIds.has(String(inv.job)))
+  }, [invoices, filteredJobIds])
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((exp) => filteredJobIds.has(String(exp.job)))
+  }, [expenses, filteredJobIds])
+
+  const filteredReceipts = useMemo(() => {
+    const filteredInvIds = new Set(filteredInvoices.map((i) => String(i.id)))
+    return receipts.filter((rec) => filteredInvIds.has(String(rec.invoice)))
+  }, [receipts, filteredInvoices])
+
+  // Build filtered maps
+  const filteredInvoicesByJob = useMemo(() => {
+    const m = new Map<string, Invoice[]>()
+    filteredInvoices.forEach((inv) => {
+      const jobId = String(inv.job)
+      if (!m.has(jobId)) m.set(jobId, [])
+      m.get(jobId)!.push(inv)
+    })
+    return m
+  }, [filteredInvoices])
+
+  const filteredExpensesByJob = useMemo(() => {
+    const m = new Map<string, Expense[]>()
+    filteredExpenses.forEach((exp) => {
+      const jobId = String(exp.job)
+      if (!m.has(jobId)) m.set(jobId, [])
+      m.get(jobId)!.push(exp)
+    })
+    return m
+  }, [filteredExpenses])
+
+  const filteredReceiptsByInvoice = useMemo(() => {
+    const m = new Map<string, Receipt[]>()
+    filteredReceipts.forEach((rec) => {
+      const invId = String(rec.invoice)
+      if (!m.has(invId)) m.set(invId, [])
+      m.get(invId)!.push(rec)
+    })
+    return m
+  }, [filteredReceipts])
+
+  // Computed metrics (based on filtered data for whole page)
+  const metrics = useMemo(() => {
+    let totalInvoiceAmount = 0
+    let totalExpenseAmount = 0
+    let totalReceiptAmount = 0
+    let draftInvoices = 0
+    let issuedInvoices = 0
+    let partialInvoices = 0
+    let paidInvoices = 0
+    let voidInvoices = 0
+    let draftExpenses = 0
+    let submittedExpenses = 0
+    let approvedExpenses = 0
+    const currencies = new Set<string>()
+
+    filteredInvoices.forEach((inv) => {
+      const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
+      if (Number.isFinite(amt)) totalInvoiceAmount += amt
+      currencies.add(inv.currency)
+      if (inv.status === "DRAFT") draftInvoices++
+      else if (inv.status === "ISSUED") issuedInvoices++
+      else if (inv.status === "PARTIALLY_PAID") partialInvoices++
+      else if (inv.status === "PAID") paidInvoices++
+      else if (inv.status === "VOID") voidInvoices++
+    })
+
+    filteredExpenses.forEach((exp) => {
+      const amt = parseFloat(exp.amount || "0")
+      if (Number.isFinite(amt)) totalExpenseAmount += amt
+      currencies.add(exp.currency)
+      if (exp.status === "DRAFT") draftExpenses++
+      else if (exp.status === "SUBMITTED") submittedExpenses++
+      else if (exp.status === "APPROVED") approvedExpenses++
+    })
+
+    filteredReceipts.forEach((rec) => {
+      const amt = parseFloat(rec.amount || "0")
+      if (Number.isFinite(amt)) totalReceiptAmount += amt
+      currencies.add(rec.currency)
+    })
+
+    return {
+      totalInvoiceAmount,
+      totalExpenseAmount,
+      totalReceiptAmount,
+      outstanding: totalInvoiceAmount - totalReceiptAmount,
+      invoices: {
+        draft: draftInvoices,
+        issued: issuedInvoices,
+        partial: partialInvoices,
+        paid: paidInvoices,
+        void: voidInvoices,
+        total: filteredInvoices.length,
+      },
+      expenses: {
+        draft: draftExpenses,
+        submitted: submittedExpenses,
+        approved: approvedExpenses,
+        total: filteredExpenses.length,
+      },
+      receipts: {
+        total: filteredReceipts.length,
+      },
+      currencies: Array.from(currencies),
+    }
+  }, [filteredInvoices, filteredExpenses, filteredReceipts])
+
   // Job summaries
   const jobSummaries = useMemo(() => {
     return filteredJobs.map((job) => {
-      const jobInvoices = invoicesByJob.get(String(job.id)) || []
-      const jobExpenses = expensesByJob.get(String(job.id)) || []
+      const jobInvoices = filteredInvoicesByJob.get(String(job.id)) || []
+      const jobExpenses = filteredExpensesByJob.get(String(job.id)) || []
 
       let invoicedAmount = 0
       let receivedAmount = 0
@@ -251,7 +270,7 @@ export default function ReportPage() {
       })
 
       jobInvoices.forEach((inv) => {
-        const invReceipts = receiptsByInvoice.get(String(inv.id)) || []
+        const invReceipts = filteredReceiptsByInvoice.get(String(inv.id)) || []
         invReceipts.forEach((rec) => {
           const amt = parseFloat(rec.amount || "0")
           if (Number.isFinite(amt)) receivedAmount += amt
@@ -269,7 +288,7 @@ export default function ReportPage() {
         currency: jobInvoices[0]?.currency || jobExpenses[0]?.currency || "NGN",
       }
     })
-  }, [filteredJobs, invoicesByJob, expensesByJob, receiptsByInvoice])
+  }, [filteredJobs, filteredInvoicesByJob, filteredExpensesByJob, filteredReceiptsByInvoice])
 
   return (
     <div className="space-y-6 text-white">
@@ -294,6 +313,17 @@ export default function ReportPage() {
       {error && (
         <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">{error}</div>
       )}
+
+      {/* Search Bar */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <input
+          type="text"
+          placeholder="Search by file number or client name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-4 py-3 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+        />
+      </section>
 
       {/* Key Metrics Cards */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -375,18 +405,8 @@ export default function ReportPage() {
 
       {/* Job Summary Dashboard */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="font-semibold text-white">Job Summary</h2>
-            <input
-              type="text"
-              placeholder="Search by file # or client name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 max-w-sm bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
-          </div>
-
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-white">Job Summary</h2>
           <div className="flex gap-2">
             {["all", "PENDING", "COMPLETE"].map((status) => (
               <button
@@ -404,7 +424,7 @@ export default function ReportPage() {
         </div>
 
         {jobSummaries.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -457,7 +477,7 @@ export default function ReportPage() {
         <h2 className="font-semibold text-white mb-4">Expenses per Job</h2>
 
         {filteredJobs.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -474,7 +494,7 @@ export default function ReportPage() {
               </thead>
               <tbody>
                 {filteredJobs.map((job) => {
-                  const jobExpenses = expensesByJob.get(String(job.id)) || []
+                  const jobExpenses = filteredExpensesByJob.get(String(job.id)) || []
                   const currency = jobExpenses[0]?.currency || "NGN"
                   const status = {
                     DRAFT: jobExpenses.filter((e) => e.status === "DRAFT").length,
@@ -508,7 +528,7 @@ export default function ReportPage() {
         <h2 className="font-semibold text-white mb-4">Invoices per Job</h2>
 
         {filteredJobs.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -526,7 +546,7 @@ export default function ReportPage() {
               </thead>
               <tbody>
                 {filteredJobs.map((job) => {
-                  const jobInvoices = invoicesByJob.get(String(job.id)) || []
+                  const jobInvoices = filteredInvoicesByJob.get(String(job.id)) || []
                   const currency = jobInvoices[0]?.currency || "NGN"
                   const status = {
                     DRAFT: jobInvoices.filter((i) => i.status === "DRAFT").length,
@@ -562,7 +582,7 @@ export default function ReportPage() {
         <h2 className="font-semibold text-white mb-4">Receipts per Job</h2>
 
         {filteredJobs.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs found.</div>
+          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -578,8 +598,8 @@ export default function ReportPage() {
               </thead>
               <tbody>
                 {filteredJobs.map((job) => {
-                  const jobInvoices = invoicesByJob.get(String(job.id)) || []
-                  const jobReceipts = jobInvoices.flatMap((inv) => receiptsByInvoice.get(String(inv.id)) || [])
+                  const jobInvoices = filteredInvoicesByJob.get(String(job.id)) || []
+                  const jobReceipts = jobInvoices.flatMap((inv) => filteredReceiptsByInvoice.get(String(inv.id)) || [])
                   const currency = jobInvoices[0]?.currency || "NGN"
 
                   const totalInvoiced = jobInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
@@ -613,9 +633,9 @@ export default function ReportPage() {
         <h2 className="font-semibold text-white mb-4">Currency Breakdown</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {metrics.currencies.map((currency) => {
-            const currencyInvoices = invoices.filter((i) => i.currency === currency)
-            const currencyExpenses = expenses.filter((e) => e.currency === currency)
-            const currencyReceipts = receipts.filter((r) => r.currency === currency)
+            const currencyInvoices = filteredInvoices.filter((i) => i.currency === currency)
+            const currencyExpenses = filteredExpenses.filter((e) => e.currency === currency)
+            const currencyReceipts = filteredReceipts.filter((r) => r.currency === currency)
 
             const invoiceTotal = currencyInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
             const expenseTotal = currencyExpenses.reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0)
