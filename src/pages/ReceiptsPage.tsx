@@ -117,6 +117,21 @@ export default function ReceiptsPage() {
 
   const title = useMemo(() => (editing ? "Edit Receipt" : "Create Receipt"), [editing])
 
+  const paidTotalsByInvoice = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const receipt of receipts) {
+      const invoiceId = String(receipt.invoice)
+      totals.set(invoiceId, (totals.get(invoiceId) ?? 0) + toAmountNumber(receipt.amount))
+    }
+    return totals
+  }, [receipts])
+
+  function getInvoiceBalance(inv: Invoice): number {
+    const expected = getExpectedInvoiceTotal(inv)
+    const paid = paidTotalsByInvoice.get(String(inv.id)) ?? 0
+    return Math.max(expected - paid, 0)
+  }
+
   const filteredReceipts = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return receipts
@@ -360,7 +375,7 @@ export default function ReceiptsPage() {
                     {(() => {
                       const inv = invoiceMap.get(String(form.invoice))
                       return inv
-                        ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(getExpectedInvoiceTotal(inv)))}`
+                        ? `${inv.invoice_number} • ${inv.currency} ${formatAmountWithCommas(String(getExpectedInvoiceTotal(inv)))} • Balance: ${inv.currency} ${formatAmountWithCommas(String(getInvoiceBalance(inv)))} `
                         : ""
                     })()}
                   </div>
@@ -478,6 +493,7 @@ export default function ReceiptsPage() {
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Method</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Balance</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Reference</th>
                   <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
                 </tr>
@@ -494,6 +510,9 @@ export default function ReceiptsPage() {
                       </td>
                       <td className="px-4 py-3 text-white/80">{r.payment_date}</td>
                       <td className="px-4 py-3 text-white/80">{r.method || ""}</td>
+                      <td className="px-4 py-3 text-white/80">
+                        {inv ? `${inv.currency} ${formatAmountWithCommas(String(getInvoiceBalance(inv)))}` : ""}
+                      </td>
                       <td className="px-4 py-3 text-white/80">{r.reference || ""}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-3">
