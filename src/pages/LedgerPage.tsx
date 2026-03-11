@@ -79,19 +79,19 @@ export default function LedgerPage() {
       else credit += amt
     }
 
-    // outstanding = what the client still owes (debit) minus what they've paid (credit)
-    const balance = debit - credit
+    // profit/loss = income received (credit) minus costs incurred (debit)
+    const balance = credit - debit
     const currency = [...currencies][0] || "NGN"
     const multiCurrency = currencies.size > 1
     return { debit, credit, balance, currency, multiCurrency }
   }, [entries])
 
-  // pre-compute running balance per row (DEBIT increases, CREDIT decreases)
+  // pre-compute running P&L per row (CREDIT increases profit, DEBIT decreases)
   const entriesWithRunning = useMemo(() => {
     let running = 0
     return entries.map((e) => {
       const amt = parseAmt(e.amount)
-      if (e.direction === "DEBIT") running += amt
+      if (e.direction === "CREDIT") running += amt
       else running -= amt
       return { ...e, _running: running }
     })
@@ -218,19 +218,19 @@ export default function LedgerPage() {
           </div>
 
           <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-            <div className="text-xs text-white/60">Outstanding Balance</div>
+            <div className="text-xs text-white/60">Profit / Loss</div>
             <div
-              className={`mt-1 text-base font-semibold ${totals.balance <= 0 ? "text-green-300" : "text-amber-300"
+              className={`mt-1 text-base font-semibold ${totals.balance >= 0 ? "text-green-300" : "text-red-300"
                 }`}
             >
-              {totals.currency} {money(Math.abs(totals.balance))}
+              {totals.balance < 0 ? "-" : ""}{totals.currency} {money(Math.abs(totals.balance))}
             </div>
             <div className="mt-0.5 text-xs text-white/50">
-              {totals.balance <= 0
-                ? totals.balance < 0
-                  ? `Overpaid by ${totals.currency} ${money(Math.abs(totals.balance))}`
-                  : "Fully settled"
-                : "Amount still owed"}
+              {totals.balance > 0
+                ? "Profit"
+                : totals.balance < 0
+                  ? "Loss"
+                  : "Break even"}
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function LedgerPage() {
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
                   <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Running Balance</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Running P&amp;L</th>
                 </tr>
               </thead>
 
@@ -279,11 +279,10 @@ export default function LedgerPage() {
                       {e.currency} {money(parseAmt(e.amount))}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-semibold ${e._running <= 0 ? "text-green-300" : "text-amber-300"
+                      className={`px-4 py-3 text-right font-semibold ${e._running >= 0 ? "text-green-300" : "text-red-300"
                         }`}
                     >
-                      {e.currency} {money(Math.abs(e._running))}
-                      {e._running < 0 ? " CR" : e._running > 0 ? " DR" : ""}
+                      {e._running < 0 ? "-" : ""}{e.currency} {money(Math.abs(e._running))}
                     </td>
                   </tr>
                 ))}
