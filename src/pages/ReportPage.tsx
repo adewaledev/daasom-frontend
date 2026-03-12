@@ -329,6 +329,7 @@ export default function ReportPage() {
   const [error, setError] = useState("")
   const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
   const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
 
@@ -387,6 +388,34 @@ export default function ReportPage() {
 
     return result
   }, [jobs, jobStatusFilter, searchTerm, clientMap])
+
+  const searchSuggestions = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase()
+    if (!q) return []
+
+    const suggestions: string[] = []
+    const seen = new Set<string>()
+
+    for (const job of jobs) {
+      const client = clientMap.get(String(job.client))
+      const candidates = [
+        job.file_number,
+        job.zone,
+        client?.client_name,
+        client?.client_code,
+      ]
+      for (const c of candidates) {
+        const val = String(c ?? "").trim()
+        if (!val || !val.toLowerCase().includes(q)) continue
+        if (seen.has(val.toLowerCase())) continue
+        seen.add(val.toLowerCase())
+        suggestions.push(val)
+        if (suggestions.length >= 10) return suggestions
+      }
+    }
+
+    return suggestions
+  }, [searchTerm, jobs, clientMap])
 
   // Track filtered job IDs for quick lookup
   const filteredJobIds = useMemo(() => {
@@ -724,13 +753,37 @@ export default function ReportPage() {
 
       {/* Search Bar */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <input
-          type="text"
-          placeholder="Search by file number or client name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-4 py-3 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
-        />
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by file number or client name..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setShowSuggestions(true) }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-4 pr-9 py-3 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+          {searchTerm ? (
+            <button
+              type="button"
+              onClick={() => { setSearchTerm(""); setShowSuggestions(false) }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition text-lg leading-none"
+              aria-label="Clear search"
+            >×</button>
+          ) : null}
+          {showSuggestions && searchSuggestions.length > 0 ? (
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+              {searchSuggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => { setSearchTerm(s); setShowSuggestions(false) }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                >{s}</button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </section>
 
       {/* Key Metrics Cards */}
