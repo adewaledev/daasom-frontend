@@ -80,6 +80,202 @@ function StatCard({
   )
 }
 
+type SeriesPoint = {
+  label: string
+  value: number
+}
+
+function buildLinePath(points: SeriesPoint[], maxValue: number, width: number, height: number): string {
+  if (!points.length) return ""
+  if (points.length === 1) {
+    const y = height - ((points[0].value / maxValue) * height || 0)
+    return `M 0 ${y} L ${width} ${y}`
+  }
+
+  const stepX = width / (points.length - 1)
+  return points
+    .map((point, i) => {
+      const x = i * stepX
+      const y = height - ((point.value / maxValue) * height || 0)
+      return `${i === 0 ? "M" : "L"} ${x} ${y}`
+    })
+    .join(" ")
+}
+
+function toMonthKey(rawDate: string | null | undefined): string {
+  if (!rawDate) return ""
+  const parsed = new Date(rawDate)
+  if (!Number.isFinite(parsed.getTime())) return ""
+  const y = parsed.getFullYear()
+  const m = String(parsed.getMonth() + 1).padStart(2, "0")
+  return `${y}-${m}`
+}
+
+function toMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split("-")
+  if (!year || !month) return monthKey
+  const parsed = new Date(Number(year), Number(month) - 1, 1)
+  return parsed.toLocaleString(undefined, { month: "short", year: "2-digit" })
+}
+
+function TrendLineChart({
+  title,
+  subtitle,
+  points,
+  series,
+}: {
+  title: string
+  subtitle: string
+  points: Array<{ label: string;[key: string]: string | number }>
+  series: Array<{ key: string; label: string; color: string }>
+}) {
+  const width = 900
+  const height = 260
+
+  const maxValue = Math.max(
+    1,
+    ...points.flatMap((point) => series.map((s) => Number(point[s.key] ?? 0))),
+  )
+
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="font-semibold text-white">{title}</h2>
+          <p className="text-xs text-white/55 mt-1">{subtitle}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-white/70">
+          {series.map((s) => (
+            <div key={s.key} className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+              <span>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {points.length === 0 ? (
+        <div className="text-sm text-white/60 py-3">No time-series data available for current filters.</div>
+      ) : (
+        <>
+          <div className="rounded-xl border border-white/10 bg-black/30 p-3 overflow-x-auto">
+            <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[640px] w-full h-48" preserveAspectRatio="none">
+              {[0.25, 0.5, 0.75, 1].map((tick) => (
+                <line
+                  key={tick}
+                  x1="0"
+                  y1={height - height * tick}
+                  x2={width}
+                  y2={height - height * tick}
+                  stroke="rgba(255,255,255,0.12)"
+                  strokeDasharray="4 6"
+                  strokeWidth="1"
+                />
+              ))}
+
+              {series.map((s) => {
+                const path = buildLinePath(
+                  points.map((p) => ({ label: p.label, value: Number(p[s.key] ?? 0) })),
+                  maxValue,
+                  width,
+                  height,
+                )
+
+                return (
+                  <path
+                    key={s.key}
+                    d={path}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )
+              })}
+            </svg>
+          </div>
+
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+            {points.map((point) => (
+              <div key={point.label} className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
+                <div className="text-[11px] text-white/55">{point.label}</div>
+                {series.map((s) => (
+                  <div key={s.key} className="text-xs mt-1" style={{ color: s.color }}>
+                    {s.label}: {money(Number(point[s.key] ?? 0))}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
+function TrendBarChart({
+  title,
+  subtitle,
+  points,
+  series,
+}: {
+  title: string
+  subtitle: string
+  points: Array<{ label: string;[key: string]: string | number }>
+  series: Array<{ key: string; label: string; color: string }>
+}) {
+  const maxValue = Math.max(
+    1,
+    ...points.flatMap((point) => series.map((s) => Number(point[s.key] ?? 0))),
+  )
+
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="font-semibold text-white">{title}</h2>
+          <p className="text-xs text-white/55 mt-1">{subtitle}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-white/70">
+          {series.map((s) => (
+            <div key={s.key} className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: s.color }} />
+              <span>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {points.length === 0 ? (
+        <div className="text-sm text-white/60 py-3">No time-series data available for current filters.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <div className="min-w-[760px] grid grid-cols-6 gap-3 items-end h-64 rounded-xl border border-white/10 bg-black/30 p-4">
+            {points.map((point) => (
+              <div key={point.label} className="h-full flex flex-col justify-end gap-2">
+                <div className="flex items-end gap-1.5 h-full">
+                  {series.map((s) => {
+                    const value = Number(point[s.key] ?? 0)
+                    const heightPct = `${Math.max((value / maxValue) * 100, 3)}%`
+                    return (
+                      <div key={s.key} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="text-[10px] text-white/70">{value}</div>
+                        <div className="w-full rounded-t-sm" style={{ height: heightPct, backgroundColor: s.color }} />
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="text-[11px] text-white/60 text-center">{point.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
 type JobStatus = "PENDING" | "COMPLETE"
 
 export default function ReportPage() {
@@ -366,6 +562,64 @@ export default function ReportPage() {
       })
   }, [filteredReceipts, filteredInvoiceMap, jobMap])
 
+  const monthlyTrend = useMemo(() => {
+    const buckets = new Map<string, {
+      invoiced: number
+      received: number
+      expenses: number
+      invoiceCount: number
+      receiptCount: number
+      expenseCount: number
+    }>()
+
+    function ensureBucket(monthKey: string) {
+      if (!monthKey) return null
+      if (!buckets.has(monthKey)) {
+        buckets.set(monthKey, {
+          invoiced: 0,
+          received: 0,
+          expenses: 0,
+          invoiceCount: 0,
+          receiptCount: 0,
+          expenseCount: 0,
+        })
+      }
+      return buckets.get(monthKey)!
+    }
+
+    filteredInvoices.forEach((inv) => {
+      const monthKey = toMonthKey(inv.issued_date || inv.created_at)
+      const bucket = ensureBucket(monthKey)
+      if (!bucket) return
+      bucket.invoiced += Number.parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
+      bucket.invoiceCount += 1
+    })
+
+    filteredReceipts.forEach((rec) => {
+      const monthKey = toMonthKey(rec.payment_date)
+      const bucket = ensureBucket(monthKey)
+      if (!bucket) return
+      bucket.received += Number.parseFloat(rec.amount || "0") || 0
+      bucket.receiptCount += 1
+    })
+
+    filteredExpenses.forEach((exp) => {
+      const monthKey = toMonthKey(exp.expense_date)
+      const bucket = ensureBucket(monthKey)
+      if (!bucket) return
+      bucket.expenses += Number.parseFloat(exp.amount || "0") || 0
+      bucket.expenseCount += 1
+    })
+
+    return [...buckets.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([key, value]) => ({
+        label: toMonthLabel(key),
+        ...value,
+      }))
+  }, [filteredInvoices, filteredReceipts, filteredExpenses])
+
   return (
     <div className="space-y-6 text-white">
       {/* Header */}
@@ -441,51 +695,27 @@ export default function ReportPage() {
         />
       </section>
 
-      {/* Invoice Status Breakdown */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <h2 className="font-semibold text-white mb-4">Invoice Status Breakdown</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="rounded-lg border border-blue-500/20 bg-blue-600/10 px-3 py-2">
-            <div className="text-xs text-blue-200">Draft</div>
-            <div className="mt-1 font-semibold text-white">{metrics.invoices.draft}</div>
-          </div>
-          <div className="rounded-lg border border-purple-500/20 bg-purple-600/10 px-3 py-2">
-            <div className="text-xs text-purple-200">Issued</div>
-            <div className="mt-1 font-semibold text-white">{metrics.invoices.issued}</div>
-          </div>
-          <div className="rounded-lg border border-amber-500/20 bg-amber-600/10 px-3 py-2">
-            <div className="text-xs text-amber-200">Partial</div>
-            <div className="mt-1 font-semibold text-white">{metrics.invoices.partial}</div>
-          </div>
-          <div className="rounded-lg border border-green-500/20 bg-green-600/10 px-3 py-2">
-            <div className="text-xs text-green-200">Paid</div>
-            <div className="mt-1 font-semibold text-white">{metrics.invoices.paid}</div>
-          </div>
-          <div className="rounded-lg border border-red-500/20 bg-red-600/10 px-3 py-2">
-            <div className="text-xs text-red-200">Voided</div>
-            <div className="mt-1 font-semibold text-white">{metrics.invoices.void}</div>
-          </div>
-        </div>
-      </section>
+      <TrendLineChart
+        title="Financial Flow Trend"
+        subtitle="Recommended time-series view for revenue, collections, and cost movement over the last 6 months."
+        points={monthlyTrend}
+        series={[
+          { key: "invoiced", label: "Invoiced", color: "#3b82f6" },
+          { key: "received", label: "Received", color: "#22c55e" },
+          { key: "expenses", label: "Expenses", color: "#f59e0b" },
+        ]}
+      />
 
-      {/* Expense Status Breakdown */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <h2 className="font-semibold text-white mb-4">Expense Status Breakdown</h2>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-lg border border-blue-500/20 bg-blue-600/10 px-3 py-2">
-            <div className="text-xs text-blue-200">Draft</div>
-            <div className="mt-1 font-semibold text-white">{metrics.expenses.draft}</div>
-          </div>
-          <div className="rounded-lg border border-purple-500/20 bg-purple-600/10 px-3 py-2">
-            <div className="text-xs text-purple-200">Submitted</div>
-            <div className="mt-1 font-semibold text-white">{metrics.expenses.submitted}</div>
-          </div>
-          <div className="rounded-lg border border-green-500/20 bg-green-600/10 px-3 py-2">
-            <div className="text-xs text-green-200">Approved</div>
-            <div className="mt-1 font-semibold text-white">{metrics.expenses.approved}</div>
-          </div>
-        </div>
-      </section>
+      <TrendBarChart
+        title="Operational Activity Trend"
+        subtitle="Recommended time-series view of monthly document volume across invoices, receipts, and expenses."
+        points={monthlyTrend}
+        series={[
+          { key: "invoiceCount", label: "Invoices", color: "#60a5fa" },
+          { key: "receiptCount", label: "Receipts", color: "#4ade80" },
+          { key: "expenseCount", label: "Expenses", color: "#fbbf24" },
+        ]}
+      />
 
       {/* Job Summary Dashboard */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
