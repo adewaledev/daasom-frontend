@@ -100,6 +100,7 @@ export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showJobsList, setShowJobsList] = useState(false)
+  const [viewingJob, setViewingJob] = useState<Job | null>(null)
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
   const canWriteJobs = can("jobs.write")
@@ -109,6 +110,11 @@ export default function JobsPage() {
     for (const c of clients as any[]) m.set(String(c.id), c)
     return m
   }, [clients])
+
+  const viewingClient = useMemo(
+    () => (viewingJob ? clientMap.get(String(viewingJob.client)) : null),
+    [viewingJob, clientMap]
+  )
 
   const filteredJobs = useMemo(() => {
     let result = jobs
@@ -700,17 +706,6 @@ export default function JobsPage() {
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Qty</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">BL/AWB</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Port</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Vessel</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">40FT</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">20FT</th>
-                  {showDutyColumn ? (
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Duty Amt</th>
-                  ) : null}
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Refund Amt</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Active</th>
                   <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
                 </tr>
               </thead>
@@ -724,39 +719,20 @@ export default function JobsPage() {
 
                   return (
                     <tr key={j.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/90">{j.file_number}</td>
+                      <td className="px-4 py-3 font-semibold text-white">{j.file_number}</td>
                       <td className="px-4 py-3 text-white/80">{clientLabel}</td>
                       <td className="px-4 py-3 text-white/70 text-xs">{formatDate(j.created_at)}</td>
                       <td className="px-4 py-3">
                         <span className={zoneBadge(j.zone)}>{j.zone}</span>
                       </td>
-                      <td className="px-4 py-3 text-white/90">{j.quantity}</td>
-                      <td className="px-4 py-3 text-white/80">{j.bl_awb || "-"}</td>
-                      <td className="px-4 py-3 text-white/80">{j.port || "-"}</td>
-                      <td className="px-4 py-3 text-white/80">{j.vessel || "-"}</td>
-                      <td className="px-4 py-3 text-white/90">{j.container_40ft}</td>
-                      <td className="px-4 py-3 text-white/90">{j.container_20ft}</td>
-
-                      {showDutyColumn ? (
-                        <td className="px-4 py-3 text-white/80">{j.duty_amount ?? "-"}</td>
-                      ) : null}
-
-                      <td className="px-4 py-3 text-white/80">{j.refund_amount ?? "-"}</td>
-
-                      <td className="px-4 py-3">
-                        <span
-                          className={[
-                            "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
-                            j.is_active
-                              ? "bg-blue-600/15 text-blue-200 border-blue-500/20"
-                              : "bg-white/5 text-white/70 border-white/10",
-                          ].join(" ")}
+                      <td className="px-4 py-3 text-right flex gap-3 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setViewingJob(j)}
+                          className="text-white/60 hover:text-white font-semibold"
                         >
-                          {j.is_active ? "Yes" : "No"}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3 text-right">
+                          View
+                        </button>
                         {canWriteJobs ? (
                           <button
                             type="button"
@@ -765,7 +741,7 @@ export default function JobsPage() {
                           >
                             Edit
                           </button>
-                        ) : <span className="text-white/40">View only</span>}
+                        ) : null}
                       </td>
                     </tr>
                   )
@@ -775,6 +751,86 @@ export default function JobsPage() {
           </div>
         )}
       </section>
+
+      {/* Job detail modal */}
+      {viewingJob && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setViewingJob(null) }}
+        >
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f1117] shadow-2xl text-white">
+            {/* Header */}
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-[#0f1117] border-b border-white/10 px-6 py-4">
+              <div>
+                <h2 className="font-semibold text-white text-lg">{viewingJob.file_number}</h2>
+                <p className="text-xs text-white/55 mt-0.5">
+                  {viewingClient ? `${(viewingClient as any).client_code} — ${(viewingClient as any).client_name}` : `Client ${String(viewingJob.client)}`}
+                  {" · "}{formatDate(viewingJob.created_at)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {canWriteJobs && (
+                  <button
+                    type="button"
+                    onClick={() => { setViewingJob(null); startEdit(viewingJob) }}
+                    className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setViewingJob(null)}
+                  className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition text-lg leading-none"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {/* Status badges */}
+              <div className="flex gap-2 flex-wrap">
+                <span className={zoneBadge(viewingJob.zone)}>{viewingJob.zone}</span>
+                <span className={[
+                  "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
+                  viewingJob.is_active ? "bg-blue-600/15 text-blue-200 border-blue-500/20" : "bg-white/5 text-white/70 border-white/10"
+                ].join(" ")}>
+                  {viewingJob.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
+
+              {/* Detail grid */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                {([
+                  ["File Number", viewingJob.file_number],
+                  ["Quantity", viewingJob.quantity],
+                  ["BL / AWB", viewingJob.bl_awb || "—"],
+                  ["Weight (kg)", viewingJob.weight_kg || "—"],
+                  ["Container No.", viewingJob.container_number || "—"],
+                  ["Container Type",
+                    viewingJob.container_40ft ? "40FT" :
+                      viewingJob.container_20ft ? "20FT" :
+                        viewingJob.others ? "Others" : "—"],
+                  ["Transit Days", viewingJob.transit_days ?? "—"],
+                  ["Port", viewingJob.port || "—"],
+                  ["Vessel", viewingJob.vessel || "—"],
+                  ["Description", viewingJob.description || "—"],
+                  ...(viewingJob.zone === "DUTY" ? [["Duty Amount", viewingJob.duty_amount ?? "—"]] : []),
+                  ["Refund Amount", viewingJob.refund_amount ?? "—"],
+                ] as [string, unknown][]).map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-white/50 text-xs mb-0.5">{label}</p>
+                    <p className="text-white/90 font-medium">{String(value)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
