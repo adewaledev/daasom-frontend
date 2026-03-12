@@ -215,9 +215,9 @@ export default function TrackerPage() {
 
   const sortedEntries = useMemo(() => {
     return [...entries].sort((a, b) => {
-      const byDate = b.entry_date.localeCompare(a.entry_date)
+      const byDate = a.entry_date.localeCompare(b.entry_date)
       if (byDate !== 0) return byDate
-      return String(b.id).localeCompare(String(a.id))
+      return String(a.id).localeCompare(String(b.id))
     })
   }, [entries])
 
