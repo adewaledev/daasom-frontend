@@ -15,7 +15,9 @@ type JobForm = {
   bl_awb: string
   weight_kg: string
 
-  container_type: "20ft" | "40ft" | "others" | ""
+  qty_20ft: string
+  qty_40ft: string
+  has_others: boolean
 
   description: string
   container_number: string
@@ -40,7 +42,9 @@ const emptyForm: JobForm = {
   bl_awb: "",
   weight_kg: "",
 
-  container_type: "",
+  qty_20ft: "",
+  qty_40ft: "",
+  has_others: false,
 
   description: "",
   container_number: "",
@@ -254,7 +258,9 @@ export default function JobsPage() {
       bl_awb: job.bl_awb ?? "",
       weight_kg: job.weight_kg ?? "",
 
-      container_type: (job.container_40ft ?? 0) > 0 ? "40ft" : (job.container_20ft ?? 0) > 0 ? "20ft" : job.others ? "others" : "",
+      qty_20ft: (job.container_20ft ?? 0) > 0 ? String(job.container_20ft) : "",
+      qty_40ft: (job.container_40ft ?? 0) > 0 ? String(job.container_40ft) : "",
+      has_others: !!job.others,
 
       description: job.description ?? "",
       container_number: job.container_number ?? "",
@@ -312,9 +318,9 @@ export default function JobsPage() {
         bl_awb: form.bl_awb,
         weight_kg: form.weight_kg,
 
-        container_40ft: form.container_type === "40ft" ? 1 : 0,
-        container_20ft: form.container_type === "20ft" ? 1 : 0,
-        others: form.container_type === "others" ? "others" : "",
+        container_40ft: Number(form.qty_40ft || "0"),
+        container_20ft: Number(form.qty_20ft || "0"),
+        others: form.has_others ? "others" : "",
 
         description: form.description,
         container_number: form.container_number,
@@ -571,16 +577,53 @@ export default function JobsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Container Type</label>
-                <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.container_type}
-                  onChange={(e) => setForm((f) => ({ ...f, container_type: e.target.value as JobForm["container_type"] }))}
-                >
-                  <option value="">Select type…</option>
-                  <option value="20ft">20FT</option>
-                  <option value="40ft">40FT</option>
-                  <option value="others">Others</option>
-                </select>
+                 <div className="flex flex-col gap-3 mt-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-blue-600"
+                        checked={form.qty_20ft !== ""}
+                        onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.checked ? "1" : "" }))}
+                      />
+                      <span className="text-sm text-white/80 w-14">20FT</span>
+                      {form.qty_20ft !== "" && (
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          value={form.qty_20ft}
+                          onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.value }))}
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-blue-600"
+                        checked={form.qty_40ft !== ""}
+                        onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.checked ? "1" : "" }))}
+                      />
+                      <span className="text-sm text-white/80 w-14">40FT</span>
+                      {form.qty_40ft !== "" && (
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          value={form.qty_40ft}
+                          onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.value }))}
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-blue-600"
+                        checked={form.has_others}
+                        onChange={(e) => setForm((f) => ({ ...f, has_others: e.target.checked }))}
+                      />
+                      <span className="text-sm text-white/80">Others</span>
+                    </div>
+                  </div>
               </div>
 
               <div>
