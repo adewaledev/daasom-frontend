@@ -9,6 +9,11 @@ export interface TrackerEntry {
   updated_at: string
 }
 
+export interface TrackerOptionsResponse {
+  progress_report_options: string[]
+  next_step_options: string[]
+}
+
 export interface TrackerJobRow {
   job_id: string
   file_number: string
@@ -19,6 +24,8 @@ export interface TrackerJobRow {
   tracker_completed_at: string | null
   tracker_completed_by: string | null
   tracker_entries: TrackerEntry[]
+  progress_report_options?: string[]
+  next_step_options?: string[]
   // Additional job metadata from the response
   [key: string]: any
 }
@@ -51,6 +58,11 @@ export async function listTrackerEntries(jobId: string): Promise<TrackerEntry[]>
   const data = res.data
   if (isPaginated<TrackerEntry>(data)) return data.results
   return data as TrackerEntry[]
+}
+
+export async function listTrackerOptions(): Promise<TrackerOptionsResponse> {
+  const res = await http.get("/tracker/options/")
+  return res.data as TrackerOptionsResponse
 }
 
 export async function createTrackerEntry(payload: {

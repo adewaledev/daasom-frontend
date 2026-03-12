@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
-import type { TrackerEntry, TrackerJobRow } from "../api/tracker"
+import type { TrackerEntry, TrackerJobRow, TrackerOptionsResponse } from "../api/tracker"
 import {
   listTrackerJobs,
+  listTrackerEntries,
+  listTrackerOptions,
   createTrackerEntry,
   updateTrackerEntry,
   deleteTrackerEntry,
@@ -49,6 +51,24 @@ const emptyForm: NewEntryForm = {
   next_step: "",
 }
 
+const emptyTrackerOptions: TrackerOptionsResponse = {
+  progress_report_options: [],
+  next_step_options: [],
+}
+
+function mergeOptions(options: string[], currentValue?: string) {
+  const values = new Set(options.filter(Boolean))
+  if (currentValue?.trim()) values.add(currentValue.trim())
+  return Array.from(values)
+}
+
+function formatTrackerOptionLabel(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 export default function TrackerPage() {
   const { can, roleLabel } = useAuth()
   const [jobs, setJobs] = useState<TrackerJobRow[]>([])
@@ -66,6 +86,7 @@ export default function TrackerPage() {
   const [newEntryForm, setNewEntryForm] = useState<NewEntryForm>(emptyForm)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [editingForm, setEditingForm] = useState<NewEntryForm>(emptyForm)
+  const [globalOptions, setGlobalOptions] = useState<TrackerOptionsResponse>(emptyTrackerOptions)
 
   const [trackerStatusFilter, setTrackerStatusFilter] = useState<"all" | "pending" | "completed">("all")
   const [showJobsList, setShowJobsList] = useState(false)
@@ -86,8 +107,30 @@ export default function TrackerPage() {
     }
   }
 
+  async function refreshEntries(jobId: string) {
+    try {
+      const data = await listTrackerEntries(jobId)
+      setEntries(data)
+    } catch (err: any) {
+      setError(extractErrorMessage(err) || "Failed to load tracker entries.")
+    }
+  }
+
+  async function refreshTrackerOptions() {
+    try {
+      const data = await listTrackerOptions()
+      setGlobalOptions({
+        progress_report_options: data.progress_report_options || [],
+        next_step_options: data.next_step_options || [],
+      })
+    } catch {
+      setGlobalOptions(emptyTrackerOptions)
+    }
+  }
+
   useEffect(() => {
     refreshJobs()
+    refreshTrackerOptions()
   }, [])
 
   const selectedJob = useMemo(() => jobs.find((j) => j.job_id === selectedJobId) ?? null, [jobs, selectedJobId])
@@ -162,16 +205,28 @@ export default function TrackerPage() {
     return suggestions.slice(0, 8) // Limit to 8 suggestions
   }, [searchTerm, jobs])
 
+  const progressOptions = useMemo(() => {
+    return (selectedJob?.progress_report_options && selectedJob.progress_report_options.length > 0)
+      ? selectedJob.progress_report_options
+      : globalOptions.progress_report_options
+  }, [globalOptions.progress_report_options, selectedJob])
+
+  const nextStepOptions = useMemo(() => {
+    return (selectedJob?.next_step_options && selectedJob.next_step_options.length > 0)
+      ? selectedJob.next_step_options
+      : globalOptions.next_step_options
+  }, [globalOptions.next_step_options, selectedJob])
+
   useEffect(() => {
-    if (selectedJobId && selectedJob) {
-      setEntries(selectedJob.tracker_entries || [])
+    if (selectedJobId) {
       setShowNewEntryForm(false)
       setNewEntryForm(emptyForm)
       setEditingEntryId(null)
+      refreshEntries(selectedJobId)
     } else {
       setEntries([])
     }
-  }, [selectedJobId, selectedJob])
+  }, [selectedJobId])
 
   function openJob(jobId: string) {
     setSelectedJobId(jobId)
@@ -197,21 +252,14 @@ export default function TrackerPage() {
     setSaving(true)
 
     try {
-      const created = await createTrackerEntry({
+      await createTrackerEntry({
         job: selectedJobId,
         entry_date: newEntryForm.entry_date,
         progress_report: newEntryForm.progress_report,
         next_step: newEntryForm.next_step,
       })
 
-      setEntries((prev) => [...prev, created])
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.job_id === selectedJobId
-            ? { ...j, tracker_entries: [...(j.tracker_entries || []), created] }
-            : j
-        )
-      )
+      await Promise.all([refreshJobs(), refreshEntries(selectedJobId)])
       setNewEntryForm(emptyForm)
       setShowNewEntryForm(false)
       setInfo("Entry created.")
@@ -239,20 +287,15 @@ export default function TrackerPage() {
     setSaving(true)
 
     try {
-      const updated = await updateTrackerEntry(entryId, {
+      await updateTrackerEntry(entryId, {
         entry_date: editingForm.entry_date,
         progress_report: editingForm.progress_report,
         next_step: editingForm.next_step,
       })
 
-      setEntries((prev) => prev.map((e) => (e.id === entryId ? updated : e)))
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.job_id === selectedJobId
-            ? { ...j, tracker_entries: (j.tracker_entries || []).map((e) => (e.id === entryId ? updated : e)) }
-            : j
-        )
-      )
+      if (selectedJobId) {
+        await Promise.all([refreshJobs(), refreshEntries(selectedJobId)])
+      }
       setEditingEntryId(null)
       setEditingForm(emptyForm)
       setInfo("Entry updated.")
@@ -279,14 +322,9 @@ export default function TrackerPage() {
 
     try {
       await deleteTrackerEntry(entryId)
-      setEntries((prev) => prev.filter((e) => e.id !== entryId))
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.job_id === selectedJobId
-            ? { ...j, tracker_entries: (j.tracker_entries || []).filter((e) => e.id !== entryId) }
-            : j
-        )
-      )
+      if (selectedJobId) {
+        await Promise.all([refreshJobs(), refreshEntries(selectedJobId)])
+      }
       setInfo("Entry deleted.")
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
@@ -309,7 +347,7 @@ export default function TrackerPage() {
 
     try {
       await markTrackerCompleted(selectedJobId)
-      await refreshJobs()
+      await Promise.all([refreshJobs(), refreshEntries(selectedJobId)])
       setInfo("Job marked as completed.")
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
@@ -332,7 +370,7 @@ export default function TrackerPage() {
 
     try {
       await reopenTracker(selectedJobId)
-      await refreshJobs()
+      await Promise.all([refreshJobs(), refreshEntries(selectedJobId)])
       setInfo("Tracker reopened.")
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
@@ -633,24 +671,30 @@ export default function TrackerPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Progress Report</label>
-                    <textarea
+                    <label className="block text-sm font-semibold text-white/80 mb-1">Progress Made</label>
+                    <select
                       value={newEntryForm.progress_report}
                       onChange={(e) => setNewEntryForm((f) => ({ ...f, progress_report: e.target.value }))}
-                      placeholder="What progress was made?"
-                      rows={3}
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
+                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">Select progress made…</option>
+                      {progressOptions.map((option) => (
+                        <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-white/80 mb-1">Next Step</label>
-                    <textarea
+                    <select
                       value={newEntryForm.next_step}
                       onChange={(e) => setNewEntryForm((f) => ({ ...f, next_step: e.target.value }))}
-                      placeholder="What is the next step?"
-                      rows={3}
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
+                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="">Select next step…</option>
+                      {nextStepOptions.map((option) => (
+                        <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="flex justify-end gap-2">
                     <button
@@ -685,7 +729,7 @@ export default function TrackerPage() {
                     <thead className="bg-black/60 text-white">
                       <tr className="border-b border-white/10">
                         <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Progress Report</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Progress Made</th>
                         <th className="px-4 py-3 text-left font-semibold text-white/90">Next Step</th>
                         {canWriteTracker && <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>}
                       </tr>
@@ -704,20 +748,28 @@ export default function TrackerPage() {
                                 />
                               </td>
                               <td className="px-4 py-3">
-                                <textarea
+                                <select
                                   value={editingForm.progress_report}
                                   onChange={(e) => setEditingForm((f) => ({ ...f, progress_report: e.target.value }))}
-                                  rows={2}
                                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                />
+                                >
+                                  <option value="">Select progress made…</option>
+                                  {mergeOptions(progressOptions, editingForm.progress_report).map((option) => (
+                                    <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
+                                  ))}
+                                </select>
                               </td>
                               <td className="px-4 py-3">
-                                <textarea
+                                <select
                                   value={editingForm.next_step}
                                   onChange={(e) => setEditingForm((f) => ({ ...f, next_step: e.target.value }))}
-                                  rows={2}
                                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                />
+                                >
+                                  <option value="">Select next step…</option>
+                                  {mergeOptions(nextStepOptions, editingForm.next_step).map((option) => (
+                                    <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
+                                  ))}
+                                </select>
                               </td>
                               <td className="px-4 py-3 text-right flex gap-1 justify-end">
                                 <button
