@@ -198,6 +198,13 @@ export default function TrackerPage() {
       })
 
       setEntries((prev) => [...prev, created])
+      setJobs((prev) =>
+        prev.map((j) =>
+          j.job_id === selectedJobId
+            ? { ...j, tracker_entries: [...(j.tracker_entries || []), created] }
+            : j
+        )
+      )
       setNewEntryForm(emptyForm)
       setShowNewEntryForm(false)
       setInfo("Entry created.")
@@ -232,6 +239,13 @@ export default function TrackerPage() {
       })
 
       setEntries((prev) => prev.map((e) => (e.id === entryId ? updated : e)))
+      setJobs((prev) =>
+        prev.map((j) =>
+          j.job_id === selectedJobId
+            ? { ...j, tracker_entries: (j.tracker_entries || []).map((e) => (e.id === entryId ? updated : e)) }
+            : j
+        )
+      )
       setEditingEntryId(null)
       setEditingForm(emptyForm)
       setInfo("Entry updated.")
@@ -259,6 +273,13 @@ export default function TrackerPage() {
     try {
       await deleteTrackerEntry(entryId)
       setEntries((prev) => prev.filter((e) => e.id !== entryId))
+      setJobs((prev) =>
+        prev.map((j) =>
+          j.job_id === selectedJobId
+            ? { ...j, tracker_entries: (j.tracker_entries || []).filter((e) => e.id !== entryId) }
+            : j
+        )
+      )
       setInfo("Entry deleted.")
       window.setTimeout(() => setInfo(""), 1200)
     } catch (err: any) {
