@@ -213,6 +213,14 @@ export default function TrackerPage() {
       : globalOptions.progress_report_options
   }, [globalOptions.progress_report_options, selectedJob])
 
+  const sortedEntries = useMemo(() => {
+    return [...entries].sort((a, b) => {
+      const byDate = b.entry_date.localeCompare(a.entry_date)
+      if (byDate !== 0) return byDate
+      return String(b.id).localeCompare(String(a.id))
+    })
+  }, [entries])
+
   useEffect(() => {
     if (selectedJobId) {
       setShowNewEntryForm(false)
@@ -717,7 +725,7 @@ export default function TrackerPage() {
                 </div>
               )}
 
-              {entries.length === 0 ? (
+              {sortedEntries.length === 0 ? (
                 <div className="p-4 text-sm text-white/60 rounded-lg border border-white/10 bg-black/20">
                   No entries yet. {!selectedJob.tracker_completed && canWriteTracker ? "Add one to get started." : ""}
                 </div>
@@ -733,7 +741,7 @@ export default function TrackerPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {entries.map((entry) => (
+                      {sortedEntries.map((entry) => (
                         <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition">
                           {editingEntryId === entry.id ? (
                             <>
