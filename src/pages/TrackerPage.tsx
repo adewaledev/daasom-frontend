@@ -63,12 +63,20 @@ function mergeOptions(options: string[], currentValue?: string) {
 }
 
 function formatTrackerOptionLabel(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  const cleaned = value.replace(/\s+/g, " ").trim()
+  const isAllCaps = cleaned === cleaned.toUpperCase() && /[A-Z]/.test(cleaned)
+  const hasUnderscores = cleaned.includes("_")
+
+  if (isAllCaps && hasUnderscores) {
+    // e.g. DATE_INVOICED → Date Invoiced (all-caps phrase, not an acronym)
+    return cleaned
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ")
+  }
+
+  // Just replace underscores, preserve existing casing so acronyms (NEPZA, DTI, TDO, ETA) stay intact
+  return cleaned.replace(/_/g, " ")
 }
 
 export default function TrackerPage() {
@@ -802,7 +810,7 @@ export default function TrackerPage() {
                           ) : (
                             <>
                               <td className="px-4 py-3 align-top text-white/80 whitespace-nowrap">{entry.entry_date}</td>
-                              <td className="px-4 py-3 align-top text-white/70 whitespace-normal break-words">{entry.progress_report || "—"}</td>
+                              <td className="px-4 py-3 align-top text-white/70 whitespace-normal break-words">{entry.progress_report ? formatTrackerOptionLabel(entry.progress_report) : "—"}</td>
                               <td className="px-4 py-3 align-top text-white/70 whitespace-pre-wrap break-words">{entry.next_step || "—"}</td>
                               {canWriteTracker && (
                                 <td className="px-4 py-3 align-top">
