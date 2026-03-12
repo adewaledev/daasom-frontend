@@ -99,6 +99,7 @@ export default function JobsPage() {
   const [viewZone, setViewZone] = useState<ViewZone>("ALL")
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showJobsList, setShowJobsList] = useState(false)
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
   const canWriteJobs = can("jobs.write")
@@ -221,6 +222,7 @@ export default function JobsPage() {
   function selectSuggestion(value: string) {
     setSearchTerm(value)
     setShowSuggestions(false)
+    setShowJobsList(true)
   }
 
   function clearSearch() {
@@ -363,6 +365,14 @@ export default function JobsPage() {
             className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
           >
             Refresh
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowJobsList((prev) => !prev)}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            {showJobsList ? "Hide Jobs" : "View Jobs"}
           </button>
 
           {canWriteJobs && !showCreateForm && !editing ? (
@@ -670,7 +680,9 @@ export default function JobsPage() {
           </span>
         </div>
 
-        {loading ? (
+        {!showJobsList ? (
+          <div className="p-5 text-sm text-white/60">Click View Jobs to open the jobs list.</div>
+        ) : loading ? (
           <div className="p-5 text-sm text-white/60">Loading jobs...</div>
         ) : filteredJobs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No jobs for this view.</div>
