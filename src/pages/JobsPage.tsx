@@ -577,53 +577,53 @@ export default function JobsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Container Type</label>
-                 <div className="flex flex-col gap-3 mt-1">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-3 mt-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-blue-600"
+                      checked={form.qty_20ft !== ""}
+                      onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.checked ? "1" : "" }))}
+                    />
+                    <span className="text-sm text-white/80 w-14">20FT</span>
+                    {form.qty_20ft !== "" && (
                       <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-blue-600"
-                        checked={form.qty_20ft !== ""}
-                        onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.checked ? "1" : "" }))}
+                        type="number"
+                        min="1"
+                        className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={form.qty_20ft}
+                        onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.value }))}
                       />
-                      <span className="text-sm text-white/80 w-14">20FT</span>
-                      {form.qty_20ft !== "" && (
-                        <input
-                          type="number"
-                          min="1"
-                          className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                          value={form.qty_20ft}
-                          onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.value }))}
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-blue-600"
-                        checked={form.qty_40ft !== ""}
-                        onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.checked ? "1" : "" }))}
-                      />
-                      <span className="text-sm text-white/80 w-14">40FT</span>
-                      {form.qty_40ft !== "" && (
-                        <input
-                          type="number"
-                          min="1"
-                          className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                          value={form.qty_40ft}
-                          onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.value }))}
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-blue-600"
-                        checked={form.has_others}
-                        onChange={(e) => setForm((f) => ({ ...f, has_others: e.target.checked }))}
-                      />
-                      <span className="text-sm text-white/80">Others</span>
-                    </div>
+                    )}
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-blue-600"
+                      checked={form.qty_40ft !== ""}
+                      onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.checked ? "1" : "" }))}
+                    />
+                    <span className="text-sm text-white/80 w-14">40FT</span>
+                    {form.qty_40ft !== "" && (
+                      <input
+                        type="number"
+                        min="1"
+                        className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        value={form.qty_40ft}
+                        onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.value }))}
+                      />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-blue-600"
+                      checked={form.has_others}
+                      onChange={(e) => setForm((f) => ({ ...f, has_others: e.target.checked }))}
+                    />
+                    <span className="text-sm text-white/80">Others</span>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -853,9 +853,13 @@ export default function JobsPage() {
                   ["Weight (kg)", viewingJob.weight_kg || "—"],
                   ["Container No.", viewingJob.container_number || "—"],
                   ["Container Type",
-                    viewingJob.container_40ft ? "40FT" :
-                      viewingJob.container_20ft ? "20FT" :
-                        viewingJob.others ? "Others" : "—"],
+                    [
+                      viewingJob.container_40ft > 0 ? `40FT x${viewingJob.container_40ft}` : "",
+                      viewingJob.container_20ft > 0 ? `20FT x${viewingJob.container_20ft}` : "",
+                      viewingJob.others ? "Others" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "—"],
                   ["Transit Days", viewingJob.transit_days ?? "—"],
                   ["Port", viewingJob.port || "—"],
                   ["Vessel", viewingJob.vessel || "—"],
