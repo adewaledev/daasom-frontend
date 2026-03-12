@@ -61,6 +61,7 @@ export default function TrackerPage() {
   const [info, setInfo] = useState("")
 
   const [searchTerm, setSearchTerm] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [showNewEntryForm, setShowNewEntryForm] = useState(false)
   const [newEntryForm, setNewEntryForm] = useState<NewEntryForm>(emptyForm)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
@@ -111,8 +112,54 @@ export default function TrackerPage() {
       )
     }
 
+    // Sort by job_id descending (with assumption that IDs may correlate with creation order)
+    // If the backend provides created_at, this could be improved to sort by that field
+    result = [...result].sort((a, b) => {
+      // Try to use created_at if available on the job object
+      const dateA = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0
+      const dateB = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0
+
+      if (dateA !== 0 && dateB !== 0) {
+        return dateB - dateA // Newest first
+      }
+
+      // Fallback: sort by latest entry date if available
+      const latestEntryA = a.tracker_entries?.[0]?.entry_date || ""
+      const latestEntryB = b.tracker_entries?.[0]?.entry_date || ""
+      if (latestEntryA && latestEntryB) {
+        return latestEntryB.localeCompare(latestEntryA)
+      }
+
+      return 0
+    })
+
     return result
   }, [jobs, trackerStatusFilter, searchTerm])
+
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm.trim()) return []
+
+    const term = searchTerm.toLowerCase()
+    const suggestions: Array<{ type: "file" | "client_code" | "client_name"; value: string; job: TrackerJobRow }> = []
+    const seen = new Set<string>()
+
+    for (const job of jobs) {
+      if (job.file_number.toLowerCase().includes(term) && !seen.has(`file:${job.file_number}`)) {
+        suggestions.push({ type: "file", value: job.file_number, job })
+        seen.add(`file:${job.file_number}`)
+      }
+      if (job.client_code.toLowerCase().includes(term) && !seen.has(`code:${job.client_code}`)) {
+        suggestions.push({ type: "client_code", value: job.client_code, job })
+        seen.add(`code:${job.client_code}`)
+      }
+      if (job.client_name.toLowerCase().includes(term) && !seen.has(`name:${job.client_name}`)) {
+        suggestions.push({ type: "client_name", value: job.client_name, job })
+        seen.add(`name:${job.client_name}`)
+      }
+    }
+
+    return suggestions.slice(0, 8) // Limit to 8 suggestions
+  }, [searchTerm, jobs])
 
   useEffect(() => {
     if (selectedJobId && selectedJob) {
@@ -303,14 +350,46 @@ export default function TrackerPage() {
       )}
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-center relative">
           <input
             type="text"
             placeholder="Search by file number, client code, or client name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             className="flex-1 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
+
+          {showSuggestions && searchSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-black/80 border border-white/10 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+              {searchSuggestions.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setSelectedJobId(suggestion.job.job_id)
+                    setSearchTerm("")
+                    setShowSuggestions(false)
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 transition border-b border-white/5 last:border-b-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
+                        ? "bg-blue-600/20 text-blue-200"
+                        : suggestion.type === "client_code"
+                          ? "bg-purple-600/20 text-purple-200"
+                          : "bg-green-600/20 text-green-200"
+                      }`}>
+                      {suggestion.type === "file" ? "FILE" : suggestion.type === "client_code" ? "CODE" : "NAME"}
+                    </span>
+                    <span className="text-white/90">{suggestion.value}</span>
+                    <span className="text-white/40 text-xs ml-auto">{suggestion.job.file_number}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -352,7 +431,9 @@ export default function TrackerPage() {
           <h2 className="font-semibold text-white">Jobs ({filteredJobs.length})</h2>
         </div>
 
-        {loading ? (
+        {!searchTerm.trim() && !selectedJobId ? (
+          <div className="p-5 text-sm text-white/60">Search for a job or select one from the list to get started.</div>
+        ) : loading ? (
           <div className="p-5 text-sm text-white/60">Loading jobs...</div>
         ) : filteredJobs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No jobs found.</div>
