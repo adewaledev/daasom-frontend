@@ -78,6 +78,32 @@ export default function HomePage() {
         </p>
       </section>
 
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Tracker Alert</div>
+            <div className="mt-2 text-lg font-semibold text-white">
+              {pendingJobCount > 0 ? `${pendingJobCount} job${pendingJobCount === 1 ? "" : "s"} still pending` : "No pending jobs right now"}
+            </div>
+            <p className="mt-1 text-sm text-white/65">
+              {pendingJobCount > 0
+                ? "Open Tracker to review outstanding milestones and complete pending files."
+                : "All tracked jobs are currently clear."}
+            </p>
+          </div>
+
+          <Link
+            to="/tracker"
+            className={`inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition ${pendingJobCount > 0
+                ? "bg-amber-500/15 text-amber-200 border border-amber-500/30 hover:bg-amber-500/20"
+                : "bg-white/5 text-white/80 border border-white/10 hover:bg-white/10"
+              }`}
+          >
+            {pendingJobCount > 0 ? "Review Pending Jobs" : "Open Tracker"}
+          </Link>
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <Tile title="Clients" description="Manage client profiles and status." to="/clients" />
         <Tile title="Jobs" description="Create and manage jobs linked to clients." to="/jobs" />

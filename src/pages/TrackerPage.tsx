@@ -42,13 +42,13 @@ function zoneBadge(zone: string) {
 type NewEntryForm = {
   entry_date: string
   progress_report: string
-  next_step: string
+  notes: string
 }
 
 const emptyForm: NewEntryForm = {
   entry_date: new Date().toISOString().split("T")[0],
   progress_report: "",
-  next_step: "",
+  notes: "",
 }
 
 const emptyTrackerOptions: TrackerOptionsResponse = {
@@ -211,12 +211,6 @@ export default function TrackerPage() {
       : globalOptions.progress_report_options
   }, [globalOptions.progress_report_options, selectedJob])
 
-  const nextStepOptions = useMemo(() => {
-    return (selectedJob?.next_step_options && selectedJob.next_step_options.length > 0)
-      ? selectedJob.next_step_options
-      : globalOptions.next_step_options
-  }, [globalOptions.next_step_options, selectedJob])
-
   useEffect(() => {
     if (selectedJobId) {
       setShowNewEntryForm(false)
@@ -256,7 +250,7 @@ export default function TrackerPage() {
         job: selectedJobId,
         entry_date: newEntryForm.entry_date,
         progress_report: newEntryForm.progress_report,
-        next_step: newEntryForm.next_step,
+        next_step: newEntryForm.notes,
       })
 
       await Promise.all([refreshJobs(), refreshEntries(selectedJobId)])
@@ -290,7 +284,7 @@ export default function TrackerPage() {
       await updateTrackerEntry(entryId, {
         entry_date: editingForm.entry_date,
         progress_report: editingForm.progress_report,
-        next_step: editingForm.next_step,
+        next_step: editingForm.notes,
       })
 
       if (selectedJobId) {
@@ -684,17 +678,14 @@ export default function TrackerPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Next Step</label>
-                    <select
-                      value={newEntryForm.next_step}
-                      onChange={(e) => setNewEntryForm((f) => ({ ...f, next_step: e.target.value }))}
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    >
-                      <option value="">Select next step…</option>
-                      {nextStepOptions.map((option) => (
-                        <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
-                      ))}
-                    </select>
+                    <label className="block text-sm font-semibold text-white/80 mb-1">Notes (optional)</label>
+                    <textarea
+                      value={newEntryForm.notes}
+                      onChange={(e) => setNewEntryForm((f) => ({ ...f, notes: e.target.value }))}
+                      rows={4}
+                      placeholder="Add any context, blockers, follow-up details, or handover notes..."
+                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
                   </div>
                   <div className="flex justify-end gap-2">
                     <button
@@ -725,13 +716,13 @@ export default function TrackerPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
+                  <table className="min-w-[1100px] w-full text-sm table-fixed">
                     <thead className="bg-black/60 text-white">
                       <tr className="border-b border-white/10">
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Progress Made</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Next Step</th>
-                        {canWriteTracker && <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>}
+                        <th className="w-40 px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                        <th className="w-80 px-4 py-3 text-left font-semibold text-white/90">Progress Made</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Notes</th>
+                        {canWriteTracker && <th className="w-32 px-4 py-3 text-right font-semibold text-white/90">Action</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -739,7 +730,7 @@ export default function TrackerPage() {
                         <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition">
                           {editingEntryId === entry.id ? (
                             <>
-                              <td className="px-4 py-3">
+                              <td className="px-4 py-3 align-top">
                                 <input
                                   type="date"
                                   value={editingForm.entry_date}
@@ -747,7 +738,7 @@ export default function TrackerPage() {
                                   className="bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
                                 />
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-4 py-3 align-top">
                                 <select
                                   value={editingForm.progress_report}
                                   onChange={(e) => setEditingForm((f) => ({ ...f, progress_report: e.target.value }))}
@@ -759,67 +750,68 @@ export default function TrackerPage() {
                                   ))}
                                 </select>
                               </td>
-                              <td className="px-4 py-3">
-                                <select
-                                  value={editingForm.next_step}
-                                  onChange={(e) => setEditingForm((f) => ({ ...f, next_step: e.target.value }))}
-                                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                >
-                                  <option value="">Select next step…</option>
-                                  {mergeOptions(nextStepOptions, editingForm.next_step).map((option) => (
-                                    <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
-                                  ))}
-                                </select>
+                              <td className="px-4 py-3 align-top">
+                                <textarea
+                                  value={editingForm.notes}
+                                  onChange={(e) => setEditingForm((f) => ({ ...f, notes: e.target.value }))}
+                                  rows={4}
+                                  placeholder="Optional notes..."
+                                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                />
                               </td>
-                              <td className="px-4 py-3 text-right flex gap-1 justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => updateEntry(entry.id)}
-                                  disabled={saving}
-                                  className="text-green-300 hover:text-green-200 font-semibold text-xs"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingEntryId(null)
-                                    setEditingForm(emptyForm)
-                                  }}
-                                  className="text-white/60 hover:text-white/80 font-semibold text-xs"
-                                >
-                                  Cancel
-                                </button>
+                              <td className="px-4 py-3 align-top">
+                                <div className="flex gap-1 justify-end whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateEntry(entry.id)}
+                                    disabled={saving}
+                                    className="text-green-300 hover:text-green-200 font-semibold text-xs"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingEntryId(null)
+                                      setEditingForm(emptyForm)
+                                    }}
+                                    className="text-white/60 hover:text-white/80 font-semibold text-xs"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
                               </td>
                             </>
                           ) : (
                             <>
-                              <td className="px-4 py-3 text-white/80">{entry.entry_date}</td>
-                              <td className="px-4 py-3 text-white/70 max-w-xs truncate">{entry.progress_report || "—"}</td>
-                              <td className="px-4 py-3 text-white/70 max-w-xs truncate">{entry.next_step || "—"}</td>
+                              <td className="px-4 py-3 align-top text-white/80 whitespace-nowrap">{entry.entry_date}</td>
+                              <td className="px-4 py-3 align-top text-white/70 whitespace-normal break-words">{entry.progress_report || "—"}</td>
+                              <td className="px-4 py-3 align-top text-white/70 whitespace-pre-wrap break-words">{entry.next_step || "—"}</td>
                               {canWriteTracker && (
-                                <td className="px-4 py-3 text-right flex gap-2 justify-end">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingEntryId(entry.id)
-                                      setEditingForm({
-                                        entry_date: entry.entry_date,
-                                        progress_report: entry.progress_report,
-                                        next_step: entry.next_step,
-                                      })
-                                    }}
-                                    className="text-blue-300 hover:text-blue-200 font-semibold text-xs"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteEntry(entry.id)}
-                                    className="text-red-300 hover:text-red-200 font-semibold text-xs"
-                                  >
-                                    Delete
-                                  </button>
+                                <td className="px-4 py-3 align-top">
+                                  <div className="flex gap-2 justify-end whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingEntryId(entry.id)
+                                        setEditingForm({
+                                          entry_date: entry.entry_date,
+                                          progress_report: entry.progress_report,
+                                          notes: entry.next_step,
+                                        })
+                                      }}
+                                      className="text-blue-300 hover:text-blue-200 font-semibold text-xs"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteEntry(entry.id)}
+                                      className="text-red-300 hover:text-red-200 font-semibold text-xs"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </td>
                               )}
                             </>
