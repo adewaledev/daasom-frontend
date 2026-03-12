@@ -620,6 +620,44 @@ export default function ReportPage() {
       }))
   }, [filteredInvoices, filteredReceipts, filteredExpenses])
 
+  const monthlyJobTrend = useMemo(() => {
+    const buckets = new Map<string, {
+      totalJobs: number
+      pendingJobs: number
+      completedJobs: number
+    }>()
+
+    function ensureBucket(monthKey: string) {
+      if (!monthKey) return null
+      if (!buckets.has(monthKey)) {
+        buckets.set(monthKey, {
+          totalJobs: 0,
+          pendingJobs: 0,
+          completedJobs: 0,
+        })
+      }
+      return buckets.get(monthKey)!
+    }
+
+    filteredJobs.forEach((job) => {
+      const monthKey = toMonthKey(job.created_at)
+      const bucket = ensureBucket(monthKey)
+      if (!bucket) return
+
+      bucket.totalJobs += 1
+      if (job.is_active) bucket.pendingJobs += 1
+      else bucket.completedJobs += 1
+    })
+
+    return [...buckets.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([key, value]) => ({
+        label: toMonthLabel(key),
+        ...value,
+      }))
+  }, [filteredJobs])
+
   return (
     <div className="space-y-6 text-white">
       {/* Header */}
@@ -707,13 +745,13 @@ export default function ReportPage() {
       />
 
       <TrendBarChart
-        title="Operational Activity Trend"
-        subtitle="Recommended time-series view of monthly document volume across invoices, receipts, and expenses."
-        points={monthlyTrend}
+        title="Job Lifecycle Trend"
+        subtitle="Recommended time-series view of total jobs, pending jobs, and completed jobs over the last 6 months."
+        points={monthlyJobTrend}
         series={[
-          { key: "invoiceCount", label: "Invoices", color: "#60a5fa" },
-          { key: "receiptCount", label: "Receipts", color: "#4ade80" },
-          { key: "expenseCount", label: "Expenses", color: "#fbbf24" },
+          { key: "totalJobs", label: "Total Jobs", color: "#60a5fa" },
+          { key: "pendingJobs", label: "Pending", color: "#fbbf24" },
+          { key: "completedJobs", label: "Completed", color: "#34d399" },
         ]}
       />
 
