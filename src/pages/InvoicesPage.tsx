@@ -145,6 +145,7 @@ export default function InvoicesPage() {
   const [editing, setEditing] = useState<Invoice | null>(null)
   const [form, setForm] = useState<InvoiceForm>(emptyForm)
   const [showForm, setShowForm] = useState(false)
+  const [jobSearch, setJobSearch] = useState("")
 
   const title = useMemo(() => (editing ? "Edit Invoice" : "Create Invoice"), [editing])
   const canWriteInvoices = can("invoices.write")
@@ -272,9 +273,26 @@ export default function InvoicesPage() {
     return j ? `${j.file_number} • ${j.zone}` : `Job ${String(jobId)}`
   }
 
+  function jobOptionLabel(job: Job) {
+    return `${job.file_number} — ${job.zone}`
+  }
+
+  const filteredJobOptions = useMemo(() => {
+    const q = jobSearch.trim().toLowerCase()
+    if (!q) return jobs
+    return jobs.filter((j) => {
+      const file = String(j.file_number ?? "").toLowerCase()
+      const zone = String(j.zone ?? "").toLowerCase()
+      const label = jobOptionLabel(j).toLowerCase()
+      return file.includes(q) || zone.includes(q) || label.includes(q)
+    })
+  }, [jobs, jobSearch])
+
   function startEdit(x: Invoice) {
+    const selectedJob = jobMap.get(String(x.job))
     setShowForm(true)
     setEditing(x)
+    setJobSearch(selectedJob ? jobOptionLabel(selectedJob) : "")
     setForm({
       job: String(x.job),
       invoice_number: x.invoice_number ?? "",
@@ -295,6 +313,7 @@ export default function InvoicesPage() {
   function startCreate() {
     setEditing(null)
     setForm(emptyForm)
+    setJobSearch("")
     setShowForm(true)
   }
 
@@ -305,6 +324,28 @@ export default function InvoicesPage() {
       ...currentForm,
       job: jobId,
       invoice_number: selectedJob ? generateInvoiceNumber(selectedJob.file_number) : "",
+    }))
+  }
+
+  function handleJobSearchChange(value: string) {
+    setJobSearch(value)
+
+    const exactMatch = jobs.find((j) => {
+      const label = jobOptionLabel(j).toLowerCase()
+      const fileOnly = String(j.file_number ?? "").toLowerCase()
+      const v = value.trim().toLowerCase()
+      return label === v || fileOnly === v
+    })
+
+    if (exactMatch) {
+      handleJobChange(String(exactMatch.id))
+      return
+    }
+
+    setForm((f) => ({
+      ...f,
+      job: "",
+      invoice_number: editing ? f.invoice_number : "",
     }))
   }
 
@@ -540,20 +581,19 @@ export default function InvoicesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
-                <select
+                <input
+                  list="invoice-job-options"
                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
-                  value={form.job}
-                  onChange={(e) => handleJobChange(e.target.value)}
-                  required
+                  value={jobSearch}
+                  onChange={(e) => handleJobSearchChange(e.target.value)}
+                  placeholder="Search and select job..."
                   disabled={!!editing} // can't change job on edit (OneToOne)
-                >
-                  <option value="">Select job…</option>
-                  {jobs.map((j) => (
-                    <option key={j.id} value={String(j.id)}>
-                      {j.file_number} — {j.zone}
-                    </option>
+                />
+                <datalist id="invoice-job-options">
+                  {filteredJobOptions.map((j) => (
+                    <option key={j.id} value={jobOptionLabel(j)} />
                   ))}
-                </select>
+                </datalist>
               </div>
 
               <div>

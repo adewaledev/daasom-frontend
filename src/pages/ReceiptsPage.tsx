@@ -115,6 +115,7 @@ export default function ReceiptsPage() {
   const [editing, setEditing] = useState<Receipt | null>(null)
   const [form, setForm] = useState<ReceiptForm>(emptyForm)
   const [showForm, setShowForm] = useState(false)
+  const [invoiceSearch, setInvoiceSearch] = useState("")
   const canWriteReceipts = can("receipts.write")
 
   const invoiceMap = useMemo(() => {
@@ -160,6 +161,21 @@ export default function ReceiptsPage() {
       )
     })
   }, [invoiceMap, receipts, search])
+
+  function invoiceOptionLabel(inv: Invoice): string {
+    return `${inv.invoice_number} — ${inv.currency} ${formatAmountWithCommas(String(getExpectedInvoiceTotal(inv)))} — ${inv.status}`
+  }
+
+  const filteredInvoiceOptions = useMemo(() => {
+    const q = invoiceSearch.trim().toLowerCase()
+    if (!q) return invoices
+    return invoices.filter((inv) => {
+      const label = invoiceOptionLabel(inv).toLowerCase()
+      const number = String(inv.invoice_number ?? "").toLowerCase()
+      const status = String(inv.status ?? "").toLowerCase()
+      return label.includes(q) || number.includes(q) || status.includes(q)
+    })
+  }, [invoiceSearch, invoices])
 
   const searchSuggestions = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -234,8 +250,10 @@ export default function ReceiptsPage() {
   }, [])
 
   function startEdit(x: Receipt) {
+    const selectedInvoice = invoiceMap.get(String(x.invoice))
     setShowForm(true)
     setEditing(x)
+    setInvoiceSearch(selectedInvoice ? invoiceOptionLabel(selectedInvoice) : "")
     setForm({
       invoice: String(x.invoice),
       amount: formatAmountWithCommas(String(x.amount ?? "")),
@@ -256,7 +274,21 @@ export default function ReceiptsPage() {
   function startCreate() {
     setEditing(null)
     setForm(emptyForm)
+    setInvoiceSearch("")
     setShowForm(true)
+  }
+
+  function handleInvoiceSearchChange(value: string) {
+    setInvoiceSearch(value)
+
+    const exactMatch = invoices.find((inv) => {
+      const label = invoiceOptionLabel(inv).toLowerCase()
+      const number = String(inv.invoice_number ?? "").toLowerCase()
+      const v = value.trim().toLowerCase()
+      return label === v || number === v
+    })
+
+    setForm((f) => ({ ...f, invoice: exactMatch ? String(exactMatch.id) : "" }))
   }
 
   async function syncInvoiceStatusFromReceipts(invoiceId: string) {
@@ -487,19 +519,19 @@ export default function ReceiptsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
-                <select
+                <input
+                  list="receipt-invoice-options"
                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.invoice}
-                  onChange={(e) => setForm((f) => ({ ...f, invoice: e.target.value }))}
+                  value={invoiceSearch}
+                  onChange={(e) => handleInvoiceSearchChange(e.target.value)}
+                  placeholder="Search and select invoice..."
                   required
-                >
-                  <option value="">Select invoice</option>
-                  {invoices.map((inv) => (
-                    <option key={inv.id} value={String(inv.id)}>
-                      {inv.invoice_number} — {inv.currency} {formatAmountWithCommas(String(getExpectedInvoiceTotal(inv)))} — {inv.status}
-                    </option>
+                />
+                <datalist id="receipt-invoice-options">
+                  {filteredInvoiceOptions.map((inv) => (
+                    <option key={inv.id} value={invoiceOptionLabel(inv)} />
                   ))}
-                </select>
+                </datalist>
                 {form.invoice ? (
                   <div className="mt-1 text-xs text-white/55">
                     {(() => {
