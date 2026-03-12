@@ -569,9 +569,9 @@ export default function TrackerPage() {
                         type="button"
                         onClick={completeTracker}
                         disabled={saving}
-                        className="px-3 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-green-600 text-white border border-green-400/40 shadow-[0_6px_18px_rgba(16,185,129,0.35)] hover:bg-green-500 hover:shadow-[0_8px_22px_rgba(16,185,129,0.45)] focus:outline-none focus:ring-2 focus:ring-green-300/70 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Job Completed
+                        Mark as Completed
                       </button>
                     ) : (
                       <button
