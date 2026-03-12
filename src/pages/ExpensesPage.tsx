@@ -337,15 +337,61 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6 text-white">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            <span className="text-blue-300">Expenses</span>
-          </h1>
-          <p className="mt-1 text-sm text-white/60">Create and track expenses per job. Status: Draft → Submitted → Approved.</p>
+      <div>
+        <h1 className="text-2xl font-semibold">
+          <span className="text-blue-300">Expenses</span>
+        </h1>
+        <p className="mt-1 text-sm text-white/60">Create and track expenses per job. Status: Draft → Submitted → Approved.</p>
+      </div>
+
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 space-y-3">
+        <div className="relative w-full md:max-w-xl">
+          <input
+            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setShowSuggestions(true)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+            placeholder="Search expenses..."
+          />
+
+          {search ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("")
+                setShowSuggestions(false)
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
+              aria-label="Clear expense search"
+            >
+              ×
+            </button>
+          ) : null}
+
+          {showSuggestions && searchSuggestions.length > 0 ? (
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+              {searchSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => {
+                    setSearch(suggestion)
+                    setShowSuggestions(false)
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {canWriteExpenses ? (
             <button
               type="button"
@@ -356,51 +402,13 @@ export default function ExpensesPage() {
             </button>
           ) : null}
 
-          <div className="relative w-72">
-            <input
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setShowSuggestions(true)
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
-              placeholder="Search expenses..."
-            />
-
-            {search ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("")
-                  setShowSuggestions(false)
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
-                aria-label="Clear expense search"
-              >
-                ×
-              </button>
-            ) : null}
-
-            {showSuggestions && searchSuggestions.length > 0 ? (
-              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
-                {searchSuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => {
-                      setSearch(suggestion)
-                      setShowSuggestions(false)
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowExpenseList((v) => !v)}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            {showExpenseList ? "Hide Expense List" : "Show Expense List"}
+          </button>
 
           <button
             type="button"
@@ -409,16 +417,8 @@ export default function ExpensesPage() {
           >
             Refresh
           </button>
-
-          <button
-            type="button"
-            onClick={() => setShowExpenseList((v) => !v)}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-          >
-            {showExpenseList ? "Hide Expense List" : "Show Expense List"}
-          </button>
         </div>
-      </div>
+      </section>
 
       {!canWriteExpenses ? (
         <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
