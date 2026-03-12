@@ -70,7 +70,20 @@ export async function updateExpense(id: string, payload: Partial<Expense>): Prom
 }
 
 export async function deleteExpense(id: string): Promise<void> {
-  await http.delete(`/expenses/${id}/`)
+  const cleanId = String(id ?? "").trim()
+  if (!cleanId) throw new Error("Expense ID is required for delete.")
+
+  try {
+    await http.delete(`/expenses/${cleanId}/`)
+  } catch (err: any) {
+    const status = err?.response?.status
+    // Some environments route delete endpoints without a trailing slash.
+    if (status === 404 || status === 405) {
+      await http.delete(`/expenses/${cleanId}`)
+      return
+    }
+    throw err
+  }
 }
 
 export async function getExpenseTotals(): Promise<any> {

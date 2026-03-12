@@ -262,8 +262,13 @@ export default function ExpensesPage() {
     setError("")
     setInfo("")
     try {
+      const expenseId = String((x as any).id ?? (x as any).expense_id ?? "").trim()
+      if (!expenseId) {
+        setError("Expense ID is missing. Please refresh and try again.")
+        return
+      }
       const jobId = String(x.job)
-      await deleteExpense(x.id)
+      await deleteExpense(expenseId)
       await refreshInvoiceTotalsForJob(jobId)
       setInfo("Expense deleted.")
       await refreshAll()
