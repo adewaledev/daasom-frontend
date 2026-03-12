@@ -191,7 +191,6 @@ export default function JobsPage() {
   }, [searchTerm, jobs, clients])
 
   const showDutyFields = form.zone === "DUTY"
-  const showDutyColumn = viewZone === "ALL" ? true : viewZone === "DUTY"
 
   async function refreshAll() {
     setError("")
