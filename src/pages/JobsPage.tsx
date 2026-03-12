@@ -394,8 +394,8 @@ export default function JobsPage() {
       ) : null}
 
       {/* Search Section */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
-        <div className="relative">
+      <section className="relative z-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+        <div className="relative z-20">
           <label className="block text-sm font-semibold text-white/80 mb-2">
             Search Jobs
           </label>
@@ -435,7 +435,7 @@ export default function JobsPage() {
 
           {/* Autocomplete Suggestions */}
           {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg overflow-hidden">
+            <div className="absolute z-30 w-full mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg overflow-hidden">
               {searchSuggestions.map((suggestion, idx) => (
                 <button
                   key={idx}
