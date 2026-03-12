@@ -93,6 +93,8 @@ export default function TrackerPage() {
 
   const canWriteTracker = can("tracker.write")
 
+  const pendingJobsCount = useMemo(() => jobs.filter((j) => !j.tracker_completed).length, [jobs])
+
   async function refreshJobs() {
     setError("")
     setInfo("")
@@ -472,12 +474,17 @@ export default function TrackerPage() {
               setTrackerStatusFilter("pending")
               setShowJobsList(true)
             }}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${trackerStatusFilter === "pending"
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition inline-flex items-center gap-2 ${trackerStatusFilter === "pending"
               ? "bg-amber-600 text-white"
               : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
               }`}
           >
             Pending
+            {pendingJobsCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-white/20 text-xs font-semibold">
+                {pendingJobsCount}
+              </span>
+            )}
           </button>
           <button
             type="button"

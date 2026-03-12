@@ -63,7 +63,7 @@ export default function HomePage() {
     }
   }, [])
 
-  const trackerBadge = useMemo(() => (pendingJobCount > 0 ? `${pendingJobCount} pending` : undefined), [pendingJobCount])
+  const trackerBadge = useMemo(() => (pendingJobCount > 0 ? String(pendingJobCount) : undefined), [pendingJobCount])
   const trackerTone: BadgeTone = pendingJobCount > 0 ? "amber" : "blue"
 
   return (
