@@ -225,6 +225,8 @@ function TrendBarChart({
   points: Array<{ label: string;[key: string]: string | number }>
   series: Array<{ key: string; label: string; color: string }>
 }) {
+  const chartWidth = 900
+  const chartHeight = 260
   const maxValue = Math.max(
     1,
     ...points.flatMap((point) => series.map((s) => Number(point[s.key] ?? 0))),
@@ -250,27 +252,65 @@ function TrendBarChart({
       {points.length === 0 ? (
         <div className="text-sm text-white/60 py-3">No time-series data available for current filters.</div>
       ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-[760px] grid grid-cols-6 gap-3 items-end h-64 rounded-xl border border-white/10 bg-black/30 p-4">
+        <>
+          <div className="rounded-xl border border-white/10 bg-black/30 p-3 overflow-x-auto">
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="min-w-[640px] w-full h-52" preserveAspectRatio="none">
+              {[0.25, 0.5, 0.75, 1].map((tick) => (
+                <line
+                  key={tick}
+                  x1="0"
+                  y1={chartHeight - chartHeight * tick}
+                  x2={chartWidth}
+                  y2={chartHeight - chartHeight * tick}
+                  stroke="rgba(255,255,255,0.12)"
+                  strokeDasharray="4 6"
+                  strokeWidth="1"
+                />
+              ))}
+
+              {points.map((point, pointIndex) => {
+                const groupWidth = chartWidth / points.length
+                const gapBetweenGroups = groupWidth * 0.18
+                const innerGroupWidth = groupWidth - gapBetweenGroups
+                const barGap = innerGroupWidth * 0.08
+                const barWidth = (innerGroupWidth - barGap * (series.length - 1)) / series.length
+                const groupStartX = pointIndex * groupWidth + gapBetweenGroups / 2
+
+                return series.map((s, seriesIndex) => {
+                  const value = Number(point[s.key] ?? 0)
+                  const barHeight = (value / maxValue) * chartHeight
+                  const x = groupStartX + seriesIndex * (barWidth + barGap)
+                  const y = chartHeight - barHeight
+
+                  return (
+                    <rect
+                      key={`${point.label}-${s.key}`}
+                      x={x}
+                      y={y}
+                      width={barWidth}
+                      height={Math.max(barHeight, 1)}
+                      rx="2"
+                      fill={s.color}
+                    />
+                  )
+                })
+              })}
+            </svg>
+          </div>
+
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
             {points.map((point) => (
-              <div key={point.label} className="h-full flex flex-col justify-end gap-2">
-                <div className="flex items-end gap-1.5 h-full">
-                  {series.map((s) => {
-                    const value = Number(point[s.key] ?? 0)
-                    const heightPct = `${Math.max((value / maxValue) * 100, 3)}%`
-                    return (
-                      <div key={s.key} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="text-[10px] text-white/70">{value}</div>
-                        <div className="w-full rounded-t-sm" style={{ height: heightPct, backgroundColor: s.color }} />
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="text-[11px] text-white/60 text-center">{point.label}</div>
+              <div key={point.label} className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
+                <div className="text-[11px] text-white/55">{point.label}</div>
+                {series.map((s) => (
+                  <div key={s.key} className="text-xs mt-1" style={{ color: s.color }}>
+                    {s.label}: {Number(point[s.key] ?? 0)}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
-        </div>
+        </>
       )}
     </section>
   )
