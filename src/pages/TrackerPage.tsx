@@ -173,6 +173,13 @@ export default function TrackerPage() {
     }
   }, [selectedJobId, selectedJob])
 
+  function openJob(jobId: string) {
+    setSelectedJobId(jobId)
+    setSearchTerm("")
+    setShowSuggestions(false)
+    setShowJobsList(false)
+  }
+
   async function addEntry() {
     if (!selectedJobId) return
     if (!canWriteTracker) {
@@ -389,10 +396,9 @@ export default function TrackerPage() {
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => {
-                    setSelectedJobId(suggestion.job.job_id)
-                    setSearchTerm("")
-                    setShowSuggestions(false)
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    openJob(suggestion.job.job_id)
                   }}
                   className="w-full text-left px-4 py-2.5 hover:bg-white/10 transition border-b border-white/5 last:border-b-0"
                 >
@@ -517,7 +523,7 @@ export default function TrackerPage() {
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => setSelectedJobId(job.job_id)}
+                        onClick={() => openJob(job.job_id)}
                         className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
                       >
                         View
