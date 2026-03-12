@@ -89,6 +89,10 @@ export default function ExpensesPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [search, setSearch] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showExpenseList, setShowExpenseList] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -129,6 +133,59 @@ export default function ExpensesPage() {
       )
     })
   }, [expenses, jobMap, search])
+
+  const searchSuggestions = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+
+    const suggestions: string[] = []
+    const seen = new Set<string>()
+
+    for (const x of expenses) {
+      const j = jobMap.get(String(x.job))
+      const candidates = [
+        j?.file_number,
+        j ? `${j.file_number} — ${j.zone}` : null,
+        x.category,
+        x.description,
+        x.status,
+        x.expense_date,
+        formatAmountWithCommas(String(x.amount ?? "")),
+      ]
+
+      for (const candidate of candidates) {
+        const value = String(candidate ?? "").trim()
+        if (!value) continue
+        if (!value.toLowerCase().includes(q)) continue
+
+        const key = value.toLowerCase()
+        if (seen.has(key)) continue
+        seen.add(key)
+        suggestions.push(value)
+
+        if (suggestions.length >= 10) return suggestions
+      }
+    }
+
+    return suggestions
+  }, [expenses, jobMap, search])
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredExpenses.length / itemsPerPage))
+  }, [filteredExpenses.length, itemsPerPage])
+
+  const paginatedExpenses = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredExpenses.slice(start, start + itemsPerPage)
+  }, [filteredExpenses, currentPage, itemsPerPage])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   async function refreshAll() {
     setError("")
@@ -299,12 +356,51 @@ export default function ExpensesPage() {
             </button>
           ) : null}
 
-          <input
-            className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search expenses..."
-          />
+          <div className="relative w-72">
+            <input
+              className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setShowSuggestions(true)
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+              placeholder="Search expenses..."
+            />
+
+            {search ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("")
+                  setShowSuggestions(false)
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
+                aria-label="Clear expense search"
+              >
+                ×
+              </button>
+            ) : null}
+
+            {showSuggestions && searchSuggestions.length > 0 ? (
+              <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+                {searchSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => {
+                      setSearch(suggestion)
+                      setShowSuggestions(false)
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
           <button
             type="button"
@@ -312,6 +408,14 @@ export default function ExpensesPage() {
             className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
           >
             Refresh
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowExpenseList((v) => !v)}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            {showExpenseList ? "Hide Expense List" : "Show Expense List"}
           </button>
         </div>
       </div>
@@ -507,10 +611,14 @@ export default function ExpensesPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Expenses List</h2>
-          <span className="text-sm text-white/60">{filteredExpenses.length} of {expenses.length}</span>
+          <span className="text-sm text-white/60">
+            {showExpenseList ? `${filteredExpenses.length} of ${expenses.length}` : `Hidden • ${expenses.length} total`}
+          </span>
         </div>
 
-        {loading ? (
+        {!showExpenseList ? (
+          <div className="p-5 text-sm text-white/60">Expense list is hidden. Click "Show Expense List" to view entries.</div>
+        ) : loading ? (
           <div className="p-5 text-sm text-white/60">Loading expenses...</div>
         ) : expenses.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No expenses yet.</div>
@@ -531,7 +639,7 @@ export default function ExpensesPage() {
               </thead>
 
               <tbody>
-                {filteredExpenses.map((x) => {
+                {paginatedExpenses.map((x) => {
                   const j = jobMap.get(String(x.job))
                   const jobLabel = j ? `${j.file_number} • ${j.zone}` : `Job ${String(x.job)}`
 
@@ -573,6 +681,32 @@ export default function ExpensesPage() {
                 })}
               </tbody>
             </table>
+
+            {filteredExpenses.length > itemsPerPage ? (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </section>
