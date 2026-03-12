@@ -217,6 +217,7 @@ export default function JobsPage() {
   function handleSearchChange(value: string) {
     setSearchTerm(value)
     setShowSuggestions(true)
+    setShowJobsList(value.trim().length > 0)
   }
 
   function selectSuggestion(value: string) {
@@ -228,6 +229,7 @@ export default function JobsPage() {
   function clearSearch() {
     setSearchTerm("")
     setShowSuggestions(false)
+    setShowJobsList(false)
   }
 
   useEffect(() => {
@@ -440,7 +442,10 @@ export default function JobsPage() {
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => selectSuggestion(suggestion.value)}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    selectSuggestion(suggestion.value)
+                  }}
                   className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition flex items-center gap-2"
                 >
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
@@ -680,7 +685,7 @@ export default function JobsPage() {
           </span>
         </div>
 
-        {!showJobsList ? (
+        {!showJobsList && !searchTerm.trim() ? (
           <div className="p-5 text-sm text-white/60">Click View Jobs to open the jobs list.</div>
         ) : loading ? (
           <div className="p-5 text-sm text-white/60">Loading jobs...</div>
