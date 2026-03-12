@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { listJobMilestones } from "../api/jobMilestones"
-import type { JobMilestone } from "../api/jobMilestones"
+import { listTrackerJobs } from "../api/tracker"
+import type { TrackerJobRow } from "../api/tracker"
 
 type BadgeTone = "blue" | "amber"
 
@@ -46,12 +46,9 @@ export default function HomePage() {
 
     async function loadPending() {
       try {
-        const ms = (await listJobMilestones()) as JobMilestone[]
-        const jobIds = new Set<string>()
-        for (const m of ms) {
-          if (m.status === "PENDING" && m.job) jobIds.add(String(m.job))
-        }
-        if (alive) setPendingJobCount(jobIds.size)
+        const jobs = (await listTrackerJobs()) as TrackerJobRow[]
+        const pendingCount = jobs.filter((job) => !job.tracker_completed).length
+        if (alive) setPendingJobCount(pendingCount)
       } catch {
         if (alive) setPendingJobCount(0)
       }
