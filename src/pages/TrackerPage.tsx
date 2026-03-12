@@ -68,6 +68,7 @@ export default function TrackerPage() {
   const [editingForm, setEditingForm] = useState<NewEntryForm>(emptyForm)
 
   const [trackerStatusFilter, setTrackerStatusFilter] = useState<"all" | "pending" | "completed">("all")
+  const [showJobsList, setShowJobsList] = useState(false)
 
   const canWriteTracker = can("tracker.write")
 
@@ -376,10 +377,10 @@ export default function TrackerPage() {
                 >
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
-                        ? "bg-blue-600/20 text-blue-200"
-                        : suggestion.type === "client_code"
-                          ? "bg-purple-600/20 text-purple-200"
-                          : "bg-green-600/20 text-green-200"
+                      ? "bg-blue-600/20 text-blue-200"
+                      : suggestion.type === "client_code"
+                        ? "bg-purple-600/20 text-purple-200"
+                        : "bg-green-600/20 text-green-200"
                       }`}>
                       {suggestion.type === "file" ? "FILE" : suggestion.type === "client_code" ? "CODE" : "NAME"}
                     </span>
@@ -395,7 +396,10 @@ export default function TrackerPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setTrackerStatusFilter("all")}
+            onClick={() => {
+              setTrackerStatusFilter("all")
+              setShowJobsList(true)
+            }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${trackerStatusFilter === "all"
               ? "bg-blue-600 text-white"
               : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
@@ -405,7 +409,10 @@ export default function TrackerPage() {
           </button>
           <button
             type="button"
-            onClick={() => setTrackerStatusFilter("pending")}
+            onClick={() => {
+              setTrackerStatusFilter("pending")
+              setShowJobsList(true)
+            }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${trackerStatusFilter === "pending"
               ? "bg-amber-600 text-white"
               : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
@@ -415,7 +422,10 @@ export default function TrackerPage() {
           </button>
           <button
             type="button"
-            onClick={() => setTrackerStatusFilter("completed")}
+            onClick={() => {
+              setTrackerStatusFilter("completed")
+              setShowJobsList(true)
+            }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${trackerStatusFilter === "completed"
               ? "bg-green-600 text-white"
               : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
@@ -429,9 +439,18 @@ export default function TrackerPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Jobs ({filteredJobs.length})</h2>
+          {showJobsList && (
+            <button
+              type="button"
+              onClick={() => setShowJobsList(false)}
+              className="text-white/60 hover:text-white/80 transition text-sm font-semibold"
+            >
+              Close
+            </button>
+          )}
         </div>
 
-        {!searchTerm.trim() && !selectedJobId ? (
+        {!searchTerm.trim() && !selectedJobId && !showJobsList ? (
           <div className="p-5 text-sm text-white/60">Search for a job or select one from the list to get started.</div>
         ) : loading ? (
           <div className="p-5 text-sm text-white/60">Loading jobs...</div>
