@@ -67,6 +67,8 @@ function formatTrackerOptionLabel(value: string) {
     .replace(/_/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 export default function TrackerPage() {
