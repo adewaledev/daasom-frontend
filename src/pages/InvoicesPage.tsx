@@ -130,6 +130,10 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [search, setSearch] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showInvoiceList, setShowInvoiceList] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -188,6 +192,59 @@ export default function InvoicesPage() {
       )
     })
   }, [invoices, jobMap, search])
+
+  const searchSuggestions = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return []
+
+    const suggestions: string[] = []
+    const seen = new Set<string>()
+
+    for (const x of invoices) {
+      const j = jobMap.get(String(x.job))
+      const candidates = [
+        x.invoice_number,
+        x.status,
+        x.currency,
+        formatAmountWithCommas(pickInvoiceAmount(x)),
+        x.notes,
+        j?.file_number,
+        j ? `${j.file_number} — ${j.zone}` : null,
+      ]
+
+      for (const candidate of candidates) {
+        const value = String(candidate ?? "").trim()
+        if (!value) continue
+        if (!value.toLowerCase().includes(q)) continue
+
+        const key = value.toLowerCase()
+        if (seen.has(key)) continue
+        seen.add(key)
+        suggestions.push(value)
+
+        if (suggestions.length >= 10) return suggestions
+      }
+    }
+
+    return suggestions
+  }, [invoices, jobMap, search])
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredInvoices.length / itemsPerPage))
+  }, [filteredInvoices.length, itemsPerPage])
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredInvoices.slice(start, start + itemsPerPage)
+  }, [filteredInvoices, currentPage, itemsPerPage])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   async function refreshAll() {
     setError("")
@@ -353,17 +410,63 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6 text-white">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            <span className="text-blue-300">Invoices</span>
-          </h1>
-          <p className="mt-1 text-sm text-white/60">
-            One invoice per job. Use actions to issue, mark paid/partial, refresh totals, or void.
-          </p>
+      <div>
+        <h1 className="text-2xl font-semibold">
+          <span className="text-blue-300">Invoices</span>
+        </h1>
+        <p className="mt-1 text-sm text-white/60">
+          One invoice per job. Use actions to issue, mark paid/partial, refresh totals, or void.
+        </p>
+      </div>
+
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 space-y-3">
+        <div className="relative w-full md:max-w-xl">
+          <input
+            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setShowSuggestions(true)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+            placeholder="Search invoices..."
+          />
+
+          {search ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("")
+                setShowSuggestions(false)
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
+              aria-label="Clear invoice search"
+            >
+              ×
+            </button>
+          ) : null}
+
+          {showSuggestions && searchSuggestions.length > 0 ? (
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+              {searchSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => {
+                    setSearch(suggestion)
+                    setShowSuggestions(false)
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {canWriteInvoices ? (
             <button
               type="button"
@@ -374,12 +477,13 @@ export default function InvoicesPage() {
             </button>
           ) : null}
 
-          <input
-            className="w-64 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search invoices..."
-          />
+          <button
+            type="button"
+            onClick={() => setShowInvoiceList((v) => !v)}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          >
+            {showInvoiceList ? "Hide Invoice List" : "Show Invoice List"}
+          </button>
 
           <button
             type="button"
@@ -389,7 +493,7 @@ export default function InvoicesPage() {
             Refresh
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Alerts */}
       {error ? (
@@ -554,10 +658,14 @@ export default function InvoicesPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Invoices List</h2>
-          <span className="text-sm text-white/60">{filteredInvoices.length} of {invoices.length}</span>
+          <span className="text-sm text-white/60">
+            {showInvoiceList ? `${filteredInvoices.length} of ${invoices.length}` : `Hidden • ${invoices.length} total`}
+          </span>
         </div>
 
-        {loading ? (
+        {!showInvoiceList ? (
+          <div className="p-5 text-sm text-white/60">Invoice list is hidden. Click "Show Invoice List" to view entries.</div>
+        ) : loading ? (
           <div className="p-5 text-sm text-white/60">Loading invoices...</div>
         ) : invoices.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No invoices yet.</div>
@@ -577,7 +685,7 @@ export default function InvoicesPage() {
               </thead>
 
               <tbody>
-                {filteredInvoices.map((x) => {
+                {paginatedInvoices.map((x) => {
                   const isBusy = busyActionId === x.id
 
                   return (
@@ -673,6 +781,32 @@ export default function InvoicesPage() {
                 })}
               </tbody>
             </table>
+
+            {filteredInvoices.length > itemsPerPage ? (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </section>
