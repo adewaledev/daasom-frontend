@@ -118,6 +118,10 @@ function toMonthLabel(monthKey: string): string {
   return parsed.toLocaleString(undefined, { month: "short", year: "2-digit" })
 }
 
+function getJobLifecycleDate(job: Job): string {
+  return job.date || job.created_at
+}
+
 function isJobActive(value: unknown): boolean {
   if (typeof value === "boolean") return value
   if (typeof value === "number") return value === 1
@@ -606,7 +610,7 @@ export default function ReportPage() {
     }
 
     filteredJobs.forEach((job) => {
-      const monthKey = toMonthKey(job.created_at)
+      const monthKey = toMonthKey(getJobLifecycleDate(job))
       const bucket = ensureBucket(monthKey)
       if (!bucket) return
 
