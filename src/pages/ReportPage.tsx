@@ -30,6 +30,10 @@ function money(n: number | string): string {
   return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function pct(n: number): string {
+  return n.toFixed(1) + "%"
+}
+
 function StatCard({
   label,
   value,
@@ -91,7 +95,6 @@ function buildLinePath(points: SeriesPoint[], maxValue: number, width: number, h
     const y = height - ((points[0].value / maxValue) * height || 0)
     return `M 0 ${y} L ${width} ${y}`
   }
-
   const stepX = width / (points.length - 1)
   return points
     .map((point, i) => {
@@ -124,34 +127,29 @@ function getJobLifecycleDate(job: Job, overrides: Record<string, string> = {}): 
   return overrides[String(job.id)] || job.date || job.created_at
 }
 
-function getYearFromRawDate(rawDate: string | null | undefined): number | null {
-  if (!rawDate) return null
-  const parsed = new Date(rawDate)
-  if (!Number.isFinite(parsed.getTime())) return null
-  return parsed.getFullYear()
-}
-
-function buildVisibleYearMonthKeys(year: number): string[] {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth() + 1
-
-  if (year > currentYear) return []
-
-  const monthCount = year === currentYear ? currentMonth : 12
-  return Array.from({ length: monthCount }, (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`)
+function buildMonthRange(startKey: string, endKey: string): string[] {
+  if (!startKey || !endKey) return []
+  const [sy, sm] = startKey.split("-").map(Number)
+  const [ey, em] = endKey.split("-").map(Number)
+  if (!sy || !sm || !ey || !em) return []
+  const keys: string[] = []
+  let y = sy
+  let m = sm
+  while (y < ey || (y === ey && m <= em)) {
+    keys.push(`${y}-${String(m).padStart(2, "0")}`)
+    m++
+    if (m > 12) { m = 1; y++ }
+  }
+  return keys
 }
 
 function isJobActive(value: unknown): boolean {
   if (typeof value === "boolean") return value
   if (typeof value === "number") return value === 1
-
   const normalized = String(value ?? "").trim().toLowerCase()
   if (!normalized) return false
   if (["true", "1", "yes", "y", "active", "pending"].includes(normalized)) return true
   if (["false", "0", "no", "n", "inactive", "complete", "completed"].includes(normalized)) return false
-
-  // Fallback for unexpected truthy strings from backend.
   return Boolean(value)
 }
 
@@ -170,12 +168,11 @@ function TrendLineCard({
 }) {
   const width = 340
   const height = 140
-  const maxValue = Math.max(1, ...points.map((point) => point.value))
+  const maxValue = Math.max(1, ...points.map((p) => p.value))
   const path = buildLinePath(points, maxValue, width, height)
 
   const latest = points.length > 0 ? points[points.length - 1].value : 0
   const previous = points.length > 1 ? points[points.length - 2].value : 0
-
   let pctChange = 0
   if (previous === 0) {
     pctChange = latest === 0 ? 0 : 100
@@ -185,7 +182,8 @@ function TrendLineCard({
 
   const pctText = `${pctChange >= 0 ? "+" : ""}${pctChange.toFixed(1)}%`
   const pctTone = pctChange > 0 ? "text-green-300" : pctChange < 0 ? "text-red-300" : "text-white/60"
-  const latestValueText = valueType === "count" ? String(Math.round(latest)) : `${valuePrefix} ${money(latest)}`
+  const latestValueText =
+    valueType === "count" ? String(Math.round(latest)) : `${valuePrefix} ${money(latest)}`
 
   return (
     <article className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-3">
@@ -237,8 +235,6 @@ function TrendLineCard({
   )
 }
 
-type JobStatus = "PENDING" | "COMPLETE"
-
 export default function ReportPage() {
   const [jobs, setJobs] = useState<Job[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -248,7 +244,8 @@ export default function ReportPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
+  const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
+  const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
 
   const jobDateOverrides = useMemo<Record<string, string>>(() => {
     try {
@@ -256,17 +253,14 @@ export default function ReportPage() {
       return raw ? JSON.parse(raw) : {}
     } catch { return {} }
   }, [])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedChartYear, setSelectedChartYear] = useState<number | null>(null)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
-  const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
 
   async function refreshAll() {
     setError("")
     setLoading(true)
     try {
-      const [j, c, i, e, r] = await Promise.all([listJobs(), listClients(), listInvoices(), listExpenses(), listReceipts()])
+      const [j, c, i, e, r] = await Promise.all([
+        listJobs(), listClients(), listInvoices(), listExpenses(), listReceipts(),
+      ])
       setJobs(j)
       setClients(c)
       setInvoices(i)
@@ -279,112 +273,33 @@ export default function ReportPage() {
     }
   }
 
-  useEffect(() => {
-    refreshAll()
-  }, [])
+  useEffect(() => { refreshAll() }, [])
 
-  // Client map for quick lookup
   const clientMap = useMemo(() => {
     const m = new Map<string, Client>()
     clients.forEach((c) => m.set(String(c.id), c))
     return m
   }, [clients])
 
-  // Filtered jobs (applies both status and search filters)
-  const filteredJobs = useMemo(() => {
-    let result = jobs
-
-    // Apply status filter
-    if (jobStatusFilter !== "all") {
-      const statusMap: Record<JobStatus, boolean> = {
-        PENDING: true,
-        COMPLETE: false,
-      }
-      result = result.filter((j) => isJobActive(j.is_active) === statusMap[jobStatusFilter])
-    }
-
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim()
-      result = result.filter((job) => {
-        const fileNumberMatch = job.file_number.toLowerCase().includes(term)
-        const zoneMatch = job.zone.toLowerCase().includes(term)
-        const client = clientMap.get(String(job.client))
-        const clientNameMatch = client?.client_name.toLowerCase().includes(term) ?? false
-        return fileNumberMatch || zoneMatch || clientNameMatch
-      })
-    }
-
-    return result
-  }, [jobs, jobStatusFilter, searchTerm, clientMap])
-
-  const searchSuggestions = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase()
-    if (!q) return []
-
-    const suggestions: string[] = []
-    const seen = new Set<string>()
-
-    for (const job of jobs) {
-      const client = clientMap.get(String(job.client))
-      const candidates = [
-        job.file_number,
-        job.zone,
-        client?.client_name,
-        client?.client_code,
-      ]
-      for (const c of candidates) {
-        const val = String(c ?? "").trim()
-        if (!val || !val.toLowerCase().includes(q)) continue
-        if (seen.has(val.toLowerCase())) continue
-        seen.add(val.toLowerCase())
-        suggestions.push(val)
-        if (suggestions.length >= 10) return suggestions
-      }
-    }
-
-    return suggestions
-  }, [searchTerm, jobs, clientMap])
-
-  // Track filtered job IDs for quick lookup
-  const filteredJobIds = useMemo(() => {
-    return new Set(filteredJobs.map((j) => String(j.id)))
-  }, [filteredJobs])
-
-  // Filter data based on selected jobs
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((inv) => filteredJobIds.has(String(inv.job)))
-  }, [invoices, filteredJobIds])
-
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter((exp) => filteredJobIds.has(String(exp.job)))
-  }, [expenses, filteredJobIds])
-
-  const filteredReceipts = useMemo(() => {
-    const filteredInvIds = new Set(filteredInvoices.map((i) => String(i.id)))
-    return receipts.filter((rec) => filteredInvIds.has(String(rec.invoice)))
-  }, [receipts, filteredInvoices])
-
-  // Build filtered maps
-  const filteredInvoicesByJob = useMemo(() => {
+  const invoicesByJob = useMemo(() => {
     const m = new Map<string, Invoice[]>()
-    filteredInvoices.forEach((inv) => {
-      const jobId = String(inv.job)
-      if (!m.has(jobId)) m.set(jobId, [])
-      m.get(jobId)!.push(inv)
+    invoices.forEach((inv) => {
+      const id = String(inv.job)
+      if (!m.has(id)) m.set(id, [])
+      m.get(id)!.push(inv)
     })
     return m
-  }, [filteredInvoices])
+  }, [invoices])
 
-  const filteredExpensesByJob = useMemo(() => {
+  const expensesByJob = useMemo(() => {
     const m = new Map<string, Expense[]>()
-    filteredExpenses.forEach((exp) => {
-      const jobId = String(exp.job)
-      if (!m.has(jobId)) m.set(jobId, [])
-      m.get(jobId)!.push(exp)
+    expenses.forEach((exp) => {
+      const id = String(exp.job)
+      if (!m.has(id)) m.set(id, [])
+      m.get(id)!.push(exp)
     })
     return m
-  }, [filteredExpenses])
+  }, [expenses])
 
   const jobMap = useMemo(() => {
     const m = new Map<string, Job>()
@@ -392,101 +307,51 @@ export default function ReportPage() {
     return m
   }, [jobs])
 
-  const filteredReceiptsByInvoice = useMemo(() => {
+  const receiptsByInvoice = useMemo(() => {
     const m = new Map<string, Receipt[]>()
-    filteredReceipts.forEach((rec) => {
-      const invId = String(rec.invoice)
-      if (!m.has(invId)) m.set(invId, [])
-      m.get(invId)!.push(rec)
+    receipts.forEach((rec) => {
+      const id = String(rec.invoice)
+      if (!m.has(id)) m.set(id, [])
+      m.get(id)!.push(rec)
     })
     return m
-  }, [filteredReceipts])
+  }, [receipts])
 
-  const filteredInvoiceMap = useMemo(() => {
+  const invoiceMap = useMemo(() => {
     const m = new Map<string, Invoice>()
-    filteredInvoices.forEach((inv) => m.set(String(inv.id), inv))
+    invoices.forEach((inv) => m.set(String(inv.id), inv))
     return m
-  }, [filteredInvoices])
+  }, [invoices])
 
-  const availableChartYears = useMemo(() => {
-    const years = new Set<number>()
-
-    filteredInvoices.forEach((inv) => {
-      const year = getYearFromRawDate(inv.issued_date || inv.created_at)
-      if (year !== null) years.add(year)
-    })
-
-    filteredReceipts.forEach((rec) => {
-      const year = getYearFromRawDate(rec.payment_date)
-      if (year !== null) years.add(year)
-    })
-
-    filteredExpenses.forEach((exp) => {
-      const year = getYearFromRawDate(exp.expense_date)
-      if (year !== null) years.add(year)
-    })
-
-    filteredJobs.forEach((job) => {
-      const year = getYearFromRawDate(getJobLifecycleDate(job, jobDateOverrides))
-      if (year !== null) years.add(year)
-    })
-
-    return Array.from(years).sort((a, b) => b - a)
-  }, [filteredExpenses, filteredInvoices, filteredJobs, filteredReceipts])
-
-  useEffect(() => {
-    if (availableChartYears.length === 0) {
-      setSelectedChartYear(new Date().getFullYear())
-      return
-    }
-
-    setSelectedChartYear((current) => (current && availableChartYears.includes(current) ? current : availableChartYears[0]))
-  }, [availableChartYears])
-
-  // Computed metrics (based on filtered data for whole page)
   const metrics = useMemo(() => {
     let totalInvoiceAmount = 0
     let totalExpenseAmount = 0
     let totalReceiptAmount = 0
-    let draftInvoices = 0
-    let issuedInvoices = 0
-    let partialInvoices = 0
-    let paidInvoices = 0
-    let voidInvoices = 0
-    let draftExpenses = 0
-    let submittedExpenses = 0
-    let approvedExpenses = 0
     const currencies = new Set<string>()
 
-    filteredInvoices.forEach((inv) => {
+    invoices.forEach((inv) => {
       const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
       if (Number.isFinite(amt)) totalInvoiceAmount += amt
-      currencies.add(inv.currency)
-      if (inv.status === "DRAFT") draftInvoices++
-      else if (inv.status === "ISSUED") issuedInvoices++
-      else if (inv.status === "PARTIALLY_PAID") partialInvoices++
-      else if (inv.status === "PAID") paidInvoices++
-      else if (inv.status === "VOID") voidInvoices++
+      if (inv.currency) currencies.add(inv.currency)
     })
-
-    filteredExpenses.forEach((exp) => {
+    expenses.forEach((exp) => {
       const amt = parseFloat(exp.amount || "0")
       if (Number.isFinite(amt)) totalExpenseAmount += amt
-      currencies.add(exp.currency)
-      if (exp.status === "DRAFT") draftExpenses++
-      else if (exp.status === "SUBMITTED") submittedExpenses++
-      else if (exp.status === "APPROVED") approvedExpenses++
+      if (exp.currency) currencies.add(exp.currency)
     })
-
-    filteredReceipts.forEach((rec) => {
+    receipts.forEach((rec) => {
       const amt = parseFloat(rec.amount || "0")
       if (Number.isFinite(amt)) totalReceiptAmount += amt
-      currencies.add(rec.currency)
+      if (rec.currency) currencies.add(rec.currency)
     })
 
     const rawOutstanding = totalInvoiceAmount - totalReceiptAmount
     const outstanding = Math.max(rawOutstanding, 0)
     const overpaid = Math.max(-rawOutstanding, 0)
+    const collectionRate = totalInvoiceAmount > 0 ? (totalReceiptAmount / totalInvoiceAmount) * 100 : 0
+    const grossMargin = totalInvoiceAmount > 0
+      ? ((totalInvoiceAmount - totalExpenseAmount) / totalInvoiceAmount) * 100
+      : 0
 
     return {
       totalInvoiceAmount,
@@ -494,70 +359,203 @@ export default function ReportPage() {
       totalReceiptAmount,
       outstanding,
       overpaid,
-      invoices: {
-        draft: draftInvoices,
-        issued: issuedInvoices,
-        partial: partialInvoices,
-        paid: paidInvoices,
-        void: voidInvoices,
-        total: filteredInvoices.length,
-      },
-      expenses: {
-        draft: draftExpenses,
-        submitted: submittedExpenses,
-        approved: approvedExpenses,
-        total: filteredExpenses.length,
-      },
-      receipts: {
-        total: filteredReceipts.length,
-      },
+      collectionRate,
+      grossMargin,
+      netRevenue: totalInvoiceAmount - totalExpenseAmount,
+      invoiceCount: invoices.length,
+      expenseCount: expenses.length,
+      receiptCount: receipts.length,
+      jobCount: jobs.length,
       currencies: Array.from(currencies),
     }
-  }, [filteredInvoices, filteredExpenses, filteredReceipts])
+  }, [invoices, expenses, receipts, jobs])
 
-  // Job summaries
-  const jobSummaries = useMemo(() => {
-    return filteredJobs.map((job) => {
-      const jobInvoices = filteredInvoicesByJob.get(String(job.id)) || []
-      const jobExpenses = filteredExpensesByJob.get(String(job.id)) || []
+  // Shared chart month range: first data date across all sources → current month
+  const chartMonthRange = useMemo(() => {
+    const allKeys: string[] = []
+    invoices.forEach((inv) => { const k = toMonthKey(inv.issued_date || inv.created_at); if (k) allKeys.push(k) })
+    expenses.forEach((exp) => { const k = toMonthKey(exp.expense_date); if (k) allKeys.push(k) })
+    receipts.forEach((rec) => { const k = toMonthKey(rec.payment_date); if (k) allKeys.push(k) })
+    jobs.forEach((job) => { const k = toMonthKey(getJobLifecycleDate(job, jobDateOverrides)); if (k) allKeys.push(k) })
+    if (!allKeys.length) return []
+    const sorted = [...allKeys].sort()
+    const now = new Date()
+    const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+    return buildMonthRange(sorted[0], nowKey)
+  }, [jobs, invoices, expenses, receipts, jobDateOverrides])
 
-      let invoicedAmount = 0
-      let receivedAmount = 0
-      let jobExpenseAmount = 0
+  const monthlyTrend = useMemo(() => {
+    if (!chartMonthRange.length) return []
+    const buckets = new Map(chartMonthRange.map((k) => [k, { invoiced: 0, received: 0, expenses: 0 }]))
 
-      jobInvoices.forEach((inv) => {
-        const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
-        if (Number.isFinite(amt)) invoicedAmount += amt
-      })
+    invoices.forEach((inv) => {
+      const k = toMonthKey(inv.issued_date || inv.created_at)
+      const b = k ? buckets.get(k) : undefined
+      if (b) b.invoiced += parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
+    })
+    receipts.forEach((rec) => {
+      const k = toMonthKey(rec.payment_date)
+      const b = k ? buckets.get(k) : undefined
+      if (b) b.received += parseFloat(rec.amount || "0") || 0
+    })
+    expenses.forEach((exp) => {
+      const k = toMonthKey(exp.expense_date)
+      const b = k ? buckets.get(k) : undefined
+      if (b) b.expenses += parseFloat(exp.amount || "0") || 0
+    })
 
-      jobExpenses.forEach((exp) => {
-        const amt = parseFloat(exp.amount || "0")
-        if (Number.isFinite(amt)) jobExpenseAmount += amt
-      })
+    return [...buckets.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
+  }, [invoices, receipts, expenses, chartMonthRange])
 
-      jobInvoices.forEach((inv) => {
-        const invReceipts = filteredReceiptsByInvoice.get(String(inv.id)) || []
-        invReceipts.forEach((rec) => {
-          const amt = parseFloat(rec.amount || "0")
-          if (Number.isFinite(amt)) receivedAmount += amt
-        })
-      })
+  const monthlyJobTrend = useMemo(() => {
+    if (!chartMonthRange.length) return []
+    const buckets = new Map(
+      chartMonthRange.map((k) => [k, { totalJobs: 0, pendingJobs: 0, completedJobs: 0 }]),
+    )
 
-      return {
-        job,
-        invoiceCount: jobInvoices.length,
-        invoicedAmount,
-        expenseCount: jobExpenses.length,
-        expenseAmount: jobExpenseAmount,
-        receivedAmount,
-        paidStatus: receivedAmount >= invoicedAmount ? "PAID" : receivedAmount > 0 ? "PARTIAL" : "UNPAID",
-        currency: jobInvoices[0]?.currency || jobExpenses[0]?.currency || "NGN",
+    jobs.forEach((job) => {
+      const k = toMonthKey(getJobLifecycleDate(job, jobDateOverrides))
+      const b = k ? buckets.get(k) : undefined
+      if (b) {
+        b.totalJobs++
+        if (isJobActive(job.is_active)) b.pendingJobs++
+        else b.completedJobs++
       }
     })
-  }, [filteredJobs, filteredInvoicesByJob, filteredExpensesByJob, filteredReceiptsByInvoice])
+
+    return [...buckets.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
+  }, [jobs, chartMonthRange, jobDateOverrides])
+
+  // Profitability by Job — jobs with any financial activity, sorted by invoiced desc
+  const profitabilityRows = useMemo(() => {
+    return jobs
+      .map((job) => {
+        const jobInvoices = invoicesByJob.get(String(job.id)) || []
+        const jobExpenses = expensesByJob.get(String(job.id)) || []
+        const invoiced = jobInvoices.reduce((s, i) => s + (parseFloat(i.invoice_amount || i.grand_total || "0") || 0), 0)
+        const expenseTotal = jobExpenses.reduce((s, e) => s + (parseFloat(e.amount || "0") || 0), 0)
+        const received = jobInvoices
+          .flatMap((inv) => receiptsByInvoice.get(String(inv.id)) || [])
+          .reduce((s, r) => s + (parseFloat(r.amount || "0") || 0), 0)
+        const net = invoiced - expenseTotal
+        const margin = invoiced > 0 ? (net / invoiced) * 100 : 0
+        const collectionRate = invoiced > 0 ? (received / invoiced) * 100 : 0
+        const currency = jobInvoices[0]?.currency || jobExpenses[0]?.currency || "NGN"
+        return {
+          job,
+          clientName: clientMap.get(String(job.client))?.client_name || "-",
+          invoiced,
+          expenseTotal,
+          received,
+          net,
+          margin,
+          collectionRate,
+          currency,
+        }
+      })
+      .filter((r) => r.invoiced > 0 || r.expenseTotal > 0)
+      .sort((a, b) => b.invoiced - a.invoiced)
+  }, [jobs, invoicesByJob, expensesByJob, receiptsByInvoice, clientMap])
+
+  // AR Aging — open invoices (ISSUED / PARTIALLY_PAID) bucketed by age
+  const arAging = useMemo(() => {
+    const now = new Date()
+    const buckets: Record<string, { count: number; amount: number }> = {
+      "0–30 days": { count: 0, amount: 0 },
+      "31–60 days": { count: 0, amount: 0 },
+      "61–90 days": { count: 0, amount: 0 },
+      "91+ days": { count: 0, amount: 0 },
+    }
+    const currency = invoices[0]?.currency || "NGN"
+    let totalOutstanding = 0
+
+    invoices.forEach((inv) => {
+      if (inv.status !== "ISSUED" && inv.status !== "PARTIALLY_PAID") return
+      const invoiced = parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
+      const received = (receiptsByInvoice.get(String(inv.id)) || [])
+        .reduce((s, r) => s + (parseFloat(r.amount || "0") || 0), 0)
+      const outstanding = Math.max(invoiced - received, 0)
+      if (outstanding <= 0) return
+
+      const issueDate = new Date(inv.issued_date || inv.created_at)
+      if (!Number.isFinite(issueDate.getTime())) return
+      const ageDays = Math.floor((now.getTime() - issueDate.getTime()) / 86_400_000)
+      totalOutstanding += outstanding
+
+      if (ageDays <= 30) { buckets["0–30 days"].count++; buckets["0–30 days"].amount += outstanding }
+      else if (ageDays <= 60) { buckets["31–60 days"].count++; buckets["31–60 days"].amount += outstanding }
+      else if (ageDays <= 90) { buckets["61–90 days"].count++; buckets["61–90 days"].amount += outstanding }
+      else { buckets["91+ days"].count++; buckets["91+ days"].amount += outstanding }
+    })
+
+    return { buckets, currency, totalOutstanding }
+  }, [invoices, receiptsByInvoice])
+
+  // Top Clients by Revenue (up to 10)
+  const topClients = useMemo(() => {
+    const data = new Map<string, {
+      clientName: string; jobCount: number; invoiced: number; received: number; currency: string
+    }>()
+
+    jobs.forEach((job) => {
+      const client = clientMap.get(String(job.client))
+      if (!client) return
+      const cid = String(job.client)
+      if (!data.has(cid)) {
+        data.set(cid, { clientName: client.client_name, jobCount: 0, invoiced: 0, received: 0, currency: "NGN" })
+      }
+      const d = data.get(cid)!
+      d.jobCount++
+      const jobInvoices = invoicesByJob.get(String(job.id)) || []
+      jobInvoices.forEach((inv) => {
+        d.invoiced += parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
+        if (inv.currency) d.currency = inv.currency
+        ;(receiptsByInvoice.get(String(inv.id)) || []).forEach((r) => {
+          d.received += parseFloat(r.amount || "0") || 0
+        })
+      })
+    })
+
+    return [...data.values()]
+      .filter((c) => c.invoiced > 0)
+      .sort((a, b) => b.invoiced - a.invoiced)
+      .slice(0, 10)
+  }, [jobs, clientMap, invoicesByJob, receiptsByInvoice])
+
+  // Expense Category Breakdown
+  const expenseCategories = useMemo(() => {
+    const categoryMap = new Map<string, { count: number; amount: number; currency: string }>()
+    const totalAmt = expenses.reduce((s, e) => s + (parseFloat(e.amount || "0") || 0), 0)
+
+    expenses.forEach((exp) => {
+      const cat = exp.category || "Uncategorized"
+      if (!categoryMap.has(cat)) {
+        categoryMap.set(cat, { count: 0, amount: 0, currency: exp.currency || "NGN" })
+      }
+      const d = categoryMap.get(cat)!
+      d.count++
+      d.amount += parseFloat(exp.amount || "0") || 0
+    })
+
+    return {
+      rows: [...categoryMap.entries()]
+        .map(([category, d]) => ({
+          category,
+          ...d,
+          share: totalAmt > 0 ? (d.amount / totalAmt) * 100 : 0,
+        }))
+        .sort((a, b) => b.amount - a.amount),
+      total: totalAmt,
+      currency: expenses[0]?.currency || "NGN",
+    }
+  }, [expenses])
 
   const expenseBreakdownRows = useMemo(() => {
-    return [...filteredExpenses]
+    return [...expenses]
       .sort((a, b) => String(b.expense_date).localeCompare(String(a.expense_date)))
       .map((exp) => {
         const job = jobMap.get(String(exp.job))
@@ -573,13 +571,13 @@ export default function ReportPage() {
           zone: job?.zone || "-",
         }
       })
-  }, [filteredExpenses, jobMap])
+  }, [expenses, jobMap])
 
   const receiptBreakdownRows = useMemo(() => {
-    return [...filteredReceipts]
+    return [...receipts]
       .sort((a, b) => String(b.payment_date).localeCompare(String(a.payment_date)))
       .map((rec) => {
-        const invoice = filteredInvoiceMap.get(String(rec.invoice))
+        const invoice = invoiceMap.get(String(rec.invoice))
         const job = invoice ? jobMap.get(String(invoice.job)) : undefined
         return {
           id: rec.id,
@@ -593,109 +591,11 @@ export default function ReportPage() {
           zone: job?.zone || "-",
         }
       })
-  }, [filteredReceipts, filteredInvoiceMap, jobMap])
+  }, [receipts, invoiceMap, jobMap])
 
-  const monthlyTrend = useMemo(() => {
-    if (!selectedChartYear) return []
-
-    const buckets = new Map<string, {
-      invoiced: number
-      received: number
-      expenses: number
-      invoiceCount: number
-      receiptCount: number
-      expenseCount: number
-    }>()
-
-    const initialBucket = () => ({
-      invoiced: 0,
-      received: 0,
-      expenses: 0,
-      invoiceCount: 0,
-      receiptCount: 0,
-      expenseCount: 0,
-    })
-
-    buildVisibleYearMonthKeys(selectedChartYear).forEach((monthKey) => {
-      buckets.set(monthKey, initialBucket())
-    })
-
-    function ensureBucket(monthKey: string) {
-      if (!monthKey || !buckets.has(monthKey)) return null
-      return buckets.get(monthKey)!
-    }
-
-    filteredInvoices.forEach((inv) => {
-      const monthKey = toMonthKey(inv.issued_date || inv.created_at)
-      const bucket = ensureBucket(monthKey)
-      if (!bucket) return
-      bucket.invoiced += Number.parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
-      bucket.invoiceCount += 1
-    })
-
-    filteredReceipts.forEach((rec) => {
-      const monthKey = toMonthKey(rec.payment_date)
-      const bucket = ensureBucket(monthKey)
-      if (!bucket) return
-      bucket.received += Number.parseFloat(rec.amount || "0") || 0
-      bucket.receiptCount += 1
-    })
-
-    filteredExpenses.forEach((exp) => {
-      const monthKey = toMonthKey(exp.expense_date)
-      const bucket = ensureBucket(monthKey)
-      if (!bucket) return
-      bucket.expenses += Number.parseFloat(exp.amount || "0") || 0
-      bucket.expenseCount += 1
-    })
-
-    return [...buckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => ({
-        label: toMonthLabel(key),
-        ...value,
-      }))
-  }, [filteredInvoices, filteredReceipts, filteredExpenses, selectedChartYear])
-
-  const monthlyJobTrend = useMemo(() => {
-    if (!selectedChartYear) return []
-
-    const buckets = new Map<string, {
-      totalJobs: number
-      pendingJobs: number
-      completedJobs: number
-    }>()
-
-    buildVisibleYearMonthKeys(selectedChartYear).forEach((monthKey) => {
-      buckets.set(monthKey, {
-        totalJobs: 0,
-        pendingJobs: 0,
-        completedJobs: 0,
-      })
-    })
-
-    function ensureBucket(monthKey: string) {
-      if (!monthKey || !buckets.has(monthKey)) return null
-      return buckets.get(monthKey)!
-    }
-
-    filteredJobs.forEach((job) => {
-      const monthKey = toMonthKey(getJobLifecycleDate(job, jobDateOverrides))
-      const bucket = ensureBucket(monthKey)
-      if (!bucket) return
-
-      bucket.totalJobs += 1
-      if (isJobActive(job.is_active)) bucket.pendingJobs += 1
-      else bucket.completedJobs += 1
-    })
-
-    return [...buckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => ({
-        label: toMonthLabel(key),
-        ...value,
-      }))
-  }, [filteredJobs, selectedChartYear])
+  const currency0 = metrics.currencies[0] || "NGN"
+  const pendingJobCount = jobs.filter((j) => isJobActive(j.is_active)).length
+  const completedJobCount = jobs.filter((j) => !isJobActive(j.is_active)).length
 
   return (
     <div className="space-y-6 text-white">
@@ -703,9 +603,10 @@ export default function ReportPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-blue-300">Reports & Analytics</h1>
-          <p className="mt-1 text-sm text-white/60">Executive dashboard with job, expense, invoice and receipt summaries.</p>
+          <p className="mt-1 text-sm text-white/60">
+            Executive dashboard — financial flow, job lifecycle, profitability, and receivables.
+          </p>
         </div>
-
         <button
           type="button"
           onClick={refreshAll}
@@ -716,241 +617,212 @@ export default function ReportPage() {
         </button>
       </div>
 
-      {/* Error message */}
       {error && (
-        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">{error}</div>
+        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+          {error}
+        </div>
       )}
 
-      {/* Search Bar */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search by file number or client name..."
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setShowSuggestions(true) }}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
-            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-4 pr-9 py-3 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
-          />
-          {searchTerm ? (
-            <button
-              type="button"
-              onClick={() => { setSearchTerm(""); setShowSuggestions(false) }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition text-lg leading-none"
-              aria-label="Clear search"
-            >×</button>
-          ) : null}
-          {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
-              {searchSuggestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => { setSearchTerm(s); setShowSuggestions(false) }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-white/85 hover:bg-white/10 transition"
-                >{s}</button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      {/* Key Metrics Cards */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Primary KPI row */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           label="Total Invoiced"
           value={metrics.totalInvoiceAmount}
-          currency={metrics.currencies[0] || "NGN"}
+          currency={currency0}
           color="blue"
-          subtext={`${metrics.invoices.total} invoices`}
+          subtext={`${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""}`}
         />
         <StatCard
           label="Total Received"
           value={metrics.totalReceiptAmount}
-          currency={metrics.currencies[0] || "NGN"}
+          currency={currency0}
           color="green"
-          subtext={`${metrics.receipts.total} receipts`}
+          subtext={`${metrics.receiptCount} receipt${metrics.receiptCount !== 1 ? "s" : ""} · ${pct(metrics.collectionRate)} collected`}
           onClick={() => setShowReceiptBreakdown(true)}
         />
         <StatCard
           label="Total Expenses"
           value={metrics.totalExpenseAmount}
-          currency={metrics.currencies[0] || "NGN"}
+          currency={currency0}
           color="amber"
-          subtext={`${metrics.expenses.total} expenses`}
+          subtext={`${metrics.expenseCount} expense${metrics.expenseCount !== 1 ? "s" : ""}`}
           onClick={() => setShowExpenseBreakdown(true)}
         />
         <StatCard
           label="Outstanding Balance"
           value={metrics.outstanding}
-          currency={metrics.currencies[0] || "NGN"}
+          currency={currency0}
           color={metrics.outstanding > 0 ? "red" : "green"}
           subtext={
             metrics.outstanding > 0
               ? "Due from clients"
               : metrics.overpaid > 0
-                ? `Overpaid by ${metrics.currencies[0] || "NGN"} ${money(metrics.overpaid)}`
+                ? `Overpaid by ${currency0} ${money(metrics.overpaid)}`
                 : "All paid"
           }
         />
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="font-semibold text-white">Financial Flow Trend</h2>
-            <p className="text-xs text-white/55 mt-1">12-month time-series view for revenue, collections, and cost movement in the selected year.</p>
+      {/* Secondary KPI row */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="text-xs text-white/60">Gross Margin</div>
+          <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
+            {pct(metrics.grossMargin)}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">Year</span>
-            {availableChartYears.map((year) => (
-              <button
-                key={year}
-                type="button"
-                onClick={() => setSelectedChartYear(year)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${selectedChartYear === year
-                  ? "bg-blue-600 text-white"
-                  : "bg-white/5 text-white/65 border border-white/10 hover:bg-white/10"
-                  }`}
-              >
-                {year}
-              </button>
-            ))}
+          <div className="mt-1 text-xs text-white/45">(Invoiced − Expenses) ÷ Invoiced</div>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="text-xs text-white/60">Collection Rate</div>
+          <div
+            className={`mt-1 text-lg font-semibold ${
+              metrics.collectionRate >= 80
+                ? "text-green-300"
+                : metrics.collectionRate >= 50
+                  ? "text-amber-300"
+                  : "text-red-300"
+            }`}
+          >
+            {pct(metrics.collectionRate)}
+          </div>
+          <div className="mt-1 text-xs text-white/45">Received ÷ Invoiced</div>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="text-xs text-white/60">Total Jobs</div>
+          <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
+          <div className="mt-1 text-xs text-white/45">
+            {pendingJobCount} pending · {completedJobCount} complete
           </div>
         </div>
+        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="text-xs text-white/60">Net Revenue</div>
+          <div
+            className={`mt-1 text-lg font-semibold ${
+              metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"
+            }`}
+          >
+            {currency0} {money(metrics.netRevenue)}
+          </div>
+          <div className="mt-1 text-xs text-white/45">Invoiced − Expenses</div>
+        </div>
+      </section>
 
+      {/* Financial Flow Trend */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-white">Financial Flow Trend</h2>
+          <p className="text-xs text-white/55 mt-1">
+            Monthly time-series from first recorded financial activity to present.
+          </p>
+        </div>
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <TrendLineCard
             title="Expenses"
             color="#f59e0b"
-            valuePrefix={metrics.currencies[0] || "NGN"}
-            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.expenses ?? 0) }))}
+            valuePrefix={currency0}
+            points={monthlyTrend.map((p) => ({ label: p.label, value: p.expenses }))}
           />
           <TrendLineCard
             title="Invoiced"
             color="#3b82f6"
-            valuePrefix={metrics.currencies[0] || "NGN"}
-            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.invoiced ?? 0) }))}
+            valuePrefix={currency0}
+            points={monthlyTrend.map((p) => ({ label: p.label, value: p.invoiced }))}
           />
           <TrendLineCard
             title="Received"
             color="#22c55e"
-            valuePrefix={metrics.currencies[0] || "NGN"}
-            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.received ?? 0) }))}
+            valuePrefix={currency0}
+            points={monthlyTrend.map((p) => ({ label: p.label, value: p.received }))}
           />
         </div>
       </section>
 
+      {/* Job Lifecycle Trend */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="font-semibold text-white">Job Lifecycle Trend (Line View)</h2>
-            <p className="text-xs text-white/55 mt-1">12-month line-card view of total jobs, pending jobs, and completed jobs in the selected year.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">Year</span>
-            {availableChartYears.map((year) => (
-              <button
-                key={`jobs-year-${year}`}
-                type="button"
-                onClick={() => setSelectedChartYear(year)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${selectedChartYear === year
-                  ? "bg-blue-600 text-white"
-                  : "bg-white/5 text-white/65 border border-white/10 hover:bg-white/10"
-                  }`}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
+        <div>
+          <h2 className="font-semibold text-white">Job Lifecycle Trend</h2>
+          <p className="text-xs text-white/55 mt-1">
+            Monthly job volume from first job date to present.
+          </p>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <TrendLineCard
             title="Total"
             color="#60a5fa"
             valuePrefix=""
             valueType="count"
-            points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.totalJobs ?? 0) }))}
+            points={monthlyJobTrend.map((p) => ({ label: p.label, value: p.totalJobs }))}
           />
           <TrendLineCard
             title="Pending"
             color="#fbbf24"
             valuePrefix=""
             valueType="count"
-            points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.pendingJobs ?? 0) }))}
+            points={monthlyJobTrend.map((p) => ({ label: p.label, value: p.pendingJobs }))}
           />
           <TrendLineCard
             title="Complete"
             color="#34d399"
             valuePrefix=""
             valueType="count"
-            points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.completedJobs ?? 0) }))}
+            points={monthlyJobTrend.map((p) => ({ label: p.label, value: p.completedJobs }))}
           />
         </div>
       </section>
 
-      {/* Job Summary Dashboard */}
+      {/* Profitability by Job */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-white">Job Summary</h2>
-          <div className="flex gap-2">
-            {["all", "PENDING", "COMPLETE"].map((status) => (
-              <button
-                key={status}
-                onClick={() => setJobStatusFilter(status as any)}
-                className={`px-3 py-1 rounded-lg text-sm font-semibold transition ${jobStatusFilter === status
-                  ? "bg-blue-600 text-white"
-                  : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
-                  }`}
-              >
-                {status === "all" ? "All" : status === "PENDING" ? "Active" : "Complete"}
-              </button>
-            ))}
-          </div>
+        <div>
+          <h2 className="font-semibold text-white">Profitability by Job</h2>
+          <p className="text-xs text-white/55 mt-1">
+            Jobs with financial activity, sorted by invoiced amount. Margin = (Invoiced − Expenses) ÷ Invoiced.
+          </p>
         </div>
-
-        {jobSummaries.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
+        {profitabilityRows.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No jobs with financial activity yet.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
+              <thead className="bg-black/60">
                 <tr className="border-b border-white/10">
                   <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Invoices</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced Amount</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
                   <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Net</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Margin</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
                 </tr>
               </thead>
               <tbody>
-                {jobSummaries.map((summary) => (
-                  <tr key={summary.job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                    <td className="px-4 py-3 font-semibold text-white">{summary.job.file_number}</td>
-                    <td className="px-4 py-3 text-white/80">{summary.job.zone}</td>
-                    <td className="px-4 py-3 text-white/80">{summary.invoiceCount}</td>
-                    <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                      {summary.currency} {money(summary.invoicedAmount)}
+                {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
+                  <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                    <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                    <td className="px-4 py-3 text-white/80">{clientName}</td>
+                    <td className="px-4 py-3 text-white/70">{job.zone}</td>
+                    <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
+                    <td className="px-4 py-3 text-right text-amber-200">{currency} {money(expenseTotal)}</td>
+                    <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>
+                      {currency} {money(net)}
                     </td>
-                    <td className="px-4 py-3 text-right text-white/80">{summary.expenseCount}</td>
-                    <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                      {summary.currency} {money(summary.receivedAmount)}
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${
+                        margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
+                      }`}
+                    >
+                      {pct(margin)}
                     </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${summary.paidStatus === "PAID"
-                          ? "bg-green-600/10 text-green-200 border border-green-500/20"
-                          : summary.paidStatus === "PARTIAL"
-                            ? "bg-amber-600/10 text-amber-200 border border-amber-500/20"
-                            : "bg-red-600/10 text-red-200 border border-red-500/20"
-                          }`}
-                      >
-                        {summary.paidStatus}
-                      </span>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${
+                        collectionRate >= 100
+                          ? "text-green-300"
+                          : collectionRate > 0
+                            ? "text-amber-300"
+                            : "text-white/40"
+                      }`}
+                    >
+                      {pct(collectionRate)}
                     </td>
                   </tr>
                 ))}
@@ -960,198 +832,175 @@ export default function ReportPage() {
         )}
       </section>
 
-      {/* Expenses per Job */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <h2 className="font-semibold text-white mb-4">Expenses per Job</h2>
-
-        {filteredJobs.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Draft</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Submitted</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Approved</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Amount</th>
+      {/* Accounts Receivable Aging */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-white">Accounts Receivable Aging</h2>
+          <p className="text-xs text-white/55 mt-1">
+            Outstanding amounts on issued or partially-paid invoices, grouped by age from issue date.
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-black/60">
+              <tr className="border-b border-white/10">
+                <th className="px-4 py-3 text-left font-semibold text-white/90">Age Bucket</th>
+                <th className="px-4 py-3 text-right font-semibold text-white/90">Invoices</th>
+                <th className="px-4 py-3 text-right font-semibold text-white/90">Amount Due</th>
+                <th className="px-4 py-3 text-right font-semibold text-white/90">% of Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
+                <tr key={label} className="border-b border-white/5 hover:bg-white/5 transition">
+                  <td className="px-4 py-3 text-white/85">{label}</td>
+                  <td className="px-4 py-3 text-right text-white/80">{count}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-white">
+                    {arAging.currency} {money(amount)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-white/70">
+                    {arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredJobs.map((job) => {
-                  const jobExpenses = filteredExpensesByJob.get(String(job.id)) || []
-                  const currency = jobExpenses[0]?.currency || "NGN"
-                  const status = {
-                    DRAFT: jobExpenses.filter((e) => e.status === "DRAFT").length,
-                    SUBMITTED: jobExpenses.filter((e) => e.status === "SUBMITTED").length,
-                    APPROVED: jobExpenses.filter((e) => e.status === "APPROVED").length,
-                  }
-                  const total = jobExpenses.reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0)
-
-                  return (
-                    <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                      <td className="px-4 py-3 text-white/80">{job.zone}</td>
-                      <td className="px-4 py-3 text-right text-white/80">{jobExpenses.length}</td>
-                      <td className="px-4 py-3 text-right text-blue-200 font-semibold">{status.DRAFT}</td>
-                      <td className="px-4 py-3 text-right text-purple-200 font-semibold">{status.SUBMITTED}</td>
-                      <td className="px-4 py-3 text-right text-green-200 font-semibold">{status.APPROVED}</td>
-                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                        {currency} {money(total)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Invoices per Job */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <h2 className="font-semibold text-white mb-4">Invoices per Job</h2>
-
-        {filteredJobs.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Draft</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Issued</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Partial</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Paid</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJobs.map((job) => {
-                  const jobInvoices = filteredInvoicesByJob.get(String(job.id)) || []
-                  const currency = jobInvoices[0]?.currency || "NGN"
-                  const status = {
-                    DRAFT: jobInvoices.filter((i) => i.status === "DRAFT").length,
-                    ISSUED: jobInvoices.filter((i) => i.status === "ISSUED").length,
-                    PARTIAL: jobInvoices.filter((i) => i.status === "PARTIALLY_PAID").length,
-                    PAID: jobInvoices.filter((i) => i.status === "PAID").length,
-                  }
-                  const total = jobInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
-
-                  return (
-                    <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                      <td className="px-4 py-3 text-white/80">{job.zone}</td>
-                      <td className="px-4 py-3 text-right text-white/80">{jobInvoices.length}</td>
-                      <td className="px-4 py-3 text-right text-blue-200 font-semibold">{status.DRAFT}</td>
-                      <td className="px-4 py-3 text-right text-purple-200 font-semibold">{status.ISSUED}</td>
-                      <td className="px-4 py-3 text-right text-amber-200 font-semibold">{status.PARTIAL}</td>
-                      <td className="px-4 py-3 text-right text-green-200 font-semibold">{status.PAID}</td>
-                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                        {currency} {money(total)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Receipts per Job */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <h2 className="font-semibold text-white mb-4">Receipts per Job</h2>
-
-        {filteredJobs.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs match your search.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Receipt Count</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Received</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Total Invoiced</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJobs.map((job) => {
-                  const jobInvoices = filteredInvoicesByJob.get(String(job.id)) || []
-                  const jobReceipts = jobInvoices.flatMap((inv) => filteredReceiptsByInvoice.get(String(inv.id)) || [])
-                  const currency = jobInvoices[0]?.currency || "NGN"
-
-                  const totalInvoiced = jobInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
-                  const totalReceived = jobReceipts.reduce((sum, r) => sum + parseFloat(r.amount || "0"), 0)
-
-                  return (
-                    <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                      <td className="px-4 py-3 text-white/80">{job.zone}</td>
-                      <td className="px-4 py-3 text-right text-white/80">{jobReceipts.length}</td>
-                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                        {currency} {money(totalReceived)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                        {currency} {money(totalInvoiced)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                        {currency} {money(Math.max(totalInvoiced - totalReceived, 0))}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Currency Breakdown */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <h2 className="font-semibold text-white mb-4">Currency Breakdown</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {metrics.currencies.map((currency) => {
-            const currencyInvoices = filteredInvoices.filter((i) => i.currency === currency)
-            const currencyExpenses = filteredExpenses.filter((e) => e.currency === currency)
-            const currencyReceipts = filteredReceipts.filter((r) => r.currency === currency)
-
-            const invoiceTotal = currencyInvoices.reduce((sum, i) => sum + parseFloat(i.invoice_amount || i.grand_total || "0"), 0)
-            const expenseTotal = currencyExpenses.reduce((sum, e) => sum + parseFloat(e.amount || "0"), 0)
-            const receiptTotal = currencyReceipts.reduce((sum, r) => sum + parseFloat(r.amount || "0"), 0)
-
-            return (
-              <div key={currency} className="rounded-lg border border-white/10 bg-black/30 p-4 space-y-2">
-                <div className="font-semibold text-white">{currency}</div>
-                <div className="text-xs text-white/60">Invoiced</div>
-                <div className="font-semibold text-white">{currency} {money(invoiceTotal)}</div>
-                <div className="mt-2 text-xs text-white/60">Expenses</div>
-                <div className="font-semibold text-white">{currency} {money(expenseTotal)}</div>
-                <div className="mt-2 text-xs text-white/60">Received</div>
-                <div className="font-semibold text-white">{currency} {money(receiptTotal)}</div>
-              </div>
-            )
-          })}
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-white/20 bg-white/5">
+                <td className="px-4 py-3 font-semibold text-white">Total Outstanding</td>
+                <td className="px-4 py-3 text-right font-semibold text-white">
+                  {Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-red-300">
+                  {arAging.currency} {money(arAging.totalOutstanding)}
+                </td>
+                <td className="px-4 py-3 text-right text-white/70">100%</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </section>
 
-      {showExpenseBreakdown ? (
+      {/* Top Clients by Revenue */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-white">Top Clients by Revenue</h2>
+          <p className="text-xs text-white/55 mt-1">Up to 10 clients ranked by total invoiced amount.</p>
+        </div>
+        {topClients.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">#</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Jobs</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Collection</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
+                  const outstanding = Math.max(invoiced - received, 0)
+                  const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
+                  return (
+                    <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 text-white/40">{i + 1}</td>
+                      <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
+                      <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
+                      <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
+                      <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
+                      <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
+                      <td
+                        className={`px-4 py-3 text-right font-semibold ${
+                          collection >= 100
+                            ? "text-green-300"
+                            : collection >= 50
+                              ? "text-amber-300"
+                              : "text-red-300"
+                        }`}
+                      >
+                        {pct(collection)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Expense Category Breakdown */}
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-white">Expense Category Breakdown</h2>
+          <p className="text-xs text-white/55 mt-1">All expenses grouped by category, sorted by total amount.</p>
+        </div>
+        {expenseCategories.rows.length === 0 ? (
+          <div className="text-sm text-white/60 py-4">No expense data yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-black/60">
+                <tr className="border-b border-white/10">
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                  <th className="px-4 py-3 text-right font-semibold text-white/90">Share</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90 w-44">Distribution</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenseCategories.rows.map(({ category, count, amount, currency, share }) => (
+                  <tr key={category} className="border-b border-white/5 hover:bg-white/5 transition">
+                    <td className="px-4 py-3 font-semibold text-white">{category}</td>
+                    <td className="px-4 py-3 text-right text-white/80">{count}</td>
+                    <td className="px-4 py-3 text-right text-amber-200 font-semibold">
+                      {currency} {money(amount)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-white/70">{pct(share)}</td>
+                    <td className="px-4 py-3">
+                      <div className="bg-white/10 rounded-full h-2 w-full">
+                        <div
+                          className="bg-amber-400 h-2 rounded-full"
+                          style={{ width: `${Math.min(share, 100)}%` }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-white/20 bg-white/5">
+                  <td className="px-4 py-3 font-semibold text-white">Total</td>
+                  <td className="px-4 py-3 text-right text-white/80">
+                    {expenseCategories.rows.reduce((s, r) => s + r.count, 0)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-amber-200">
+                    {expenseCategories.currency} {money(expenseCategories.total)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-white/70">100%</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Expense Breakdown Modal */}
+      {showExpenseBreakdown && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-6xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
             <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-white">Expenses Breakdown</h2>
                 <p className="text-xs text-white/60 mt-1">
-                  Total: {metrics.currencies[0] || "NGN"} {money(metrics.totalExpenseAmount)} • Draft: {metrics.expenses.draft} • Submitted: {metrics.expenses.submitted} • Approved: {metrics.expenses.approved}
+                  Total: {currency0} {money(metrics.totalExpenseAmount)} · {metrics.expenseCount} records
                 </p>
               </div>
               <button
@@ -1162,9 +1011,8 @@ export default function ReportPage() {
                 Close
               </button>
             </div>
-
             {expenseBreakdownRows.length === 0 ? (
-              <div className="p-5 text-sm text-white/60">No expenses to display for current filters.</div>
+              <div className="p-5 text-sm text-white/60">No expenses to display.</div>
             ) : (
               <div className="overflow-auto max-h-[70vh]">
                 <table className="min-w-full text-sm">
@@ -1199,16 +1047,17 @@ export default function ReportPage() {
             )}
           </div>
         </div>
-      ) : null}
+      )}
 
-      {showReceiptBreakdown ? (
+      {/* Receipt Breakdown Modal */}
+      {showReceiptBreakdown && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-6xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
             <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-white">Receipts Breakdown</h2>
                 <p className="text-xs text-white/60 mt-1">
-                  Total: {metrics.currencies[0] || "NGN"} {money(metrics.totalReceiptAmount)} • Count: {metrics.receipts.total}
+                  Total: {currency0} {money(metrics.totalReceiptAmount)} · {metrics.receiptCount} records
                 </p>
               </div>
               <button
@@ -1219,9 +1068,8 @@ export default function ReportPage() {
                 Close
               </button>
             </div>
-
             {receiptBreakdownRows.length === 0 ? (
-              <div className="p-5 text-sm text-white/60">No receipts to display for current filters.</div>
+              <div className="p-5 text-sm text-white/60">No receipts to display.</div>
             ) : (
               <div className="overflow-auto max-h-[70vh]">
                 <table className="min-w-full text-sm">
@@ -1256,7 +1104,7 @@ export default function ReportPage() {
             )}
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   )
 }
