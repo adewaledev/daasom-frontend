@@ -827,9 +827,27 @@ export default function ReportPage() {
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Job Lifecycle Trend (Line View)</h2>
-          <p className="text-xs text-white/55 mt-1">12-month line-card view of total jobs, pending jobs, and completed jobs in the selected year.</p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="font-semibold text-white">Job Lifecycle Trend (Line View)</h2>
+            <p className="text-xs text-white/55 mt-1">12-month line-card view of total jobs, pending jobs, and completed jobs in the selected year.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">Year</span>
+            {availableChartYears.map((year) => (
+              <button
+                key={`jobs-year-${year}`}
+                type="button"
+                onClick={() => setSelectedChartYear(year)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${selectedChartYear === year
+                  ? "bg-blue-600 text-white"
+                  : "bg-white/5 text-white/65 border border-white/10 hover:bg-white/10"
+                  }`}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
