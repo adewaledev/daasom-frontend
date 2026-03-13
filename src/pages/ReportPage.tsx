@@ -507,26 +507,14 @@ export default function ReportPage() {
       .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
   }, [filteredInvoices, filteredReceipts, filteredExpenses, chartMonthRange])
 
-  const monthlyJobTrend = useMemo(() => {
-    if (!chartMonthRange.length) return []
-    const buckets = new Map(
-      chartMonthRange.map((k) => [k, { totalJobs: 0, pendingJobs: 0, completedJobs: 0 }]),
-    )
-
-    filteredJobs.forEach((job) => {
-      const k = toMonthKey(getJobLifecycleDate(job, jobDateOverrides))
-      const b = k ? buckets.get(k) : undefined
-      if (b) {
-        b.totalJobs++
-        if (isJobPending(job, trackerCompletionByJobId.get(String(job.id)))) b.pendingJobs++
-        else b.completedJobs++
-      }
-    })
-
-    return [...buckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
-  }, [filteredJobs, chartMonthRange, jobDateOverrides, trackerCompletionByJobId])
+  const monthlyCashHealth = useMemo(() => {
+    return monthlyTrend.map((p) => ({
+      label: p.label,
+      netCash: Number(p.received || 0) - Number(p.expenses || 0),
+      billingGap: Number(p.invoiced || 0) - Number(p.received || 0),
+      grossSurplus: Number(p.invoiced || 0) - Number(p.expenses || 0),
+    }))
+  }, [monthlyTrend])
 
   // Profitability by Job — jobs with any financial activity, sorted by invoiced desc
   const profitabilityRows = useMemo(() => {
@@ -886,35 +874,32 @@ export default function ReportPage() {
         </div>
       </section>
 
-      {/* Job Lifecycle Trend */}
+      {/* Cash Health Trend */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
         <div>
-          <h2 className="font-semibold text-white">Job Lifecycle Trend</h2>
+          <h2 className="font-semibold text-white">Cash Health Trend</h2>
           <p className="text-xs text-white/55 mt-1">
-            Monthly job volume from first job date to present.
+            Monthly financial performance view showing cash generation, receivables buildup, and margin pressure.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <TrendLineCard
-            title="Total"
-            color="#60a5fa"
-            valuePrefix=""
-            valueType="count"
-            points={monthlyJobTrend.map((p) => ({ label: p.label, value: p.totalJobs }))}
+            title="Net Cash"
+            color="#22c55e"
+            valuePrefix={currency0}
+            points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.netCash }))}
           />
           <TrendLineCard
-            title="Pending"
-            color="#fbbf24"
-            valuePrefix=""
-            valueType="count"
-            points={monthlyJobTrend.map((p) => ({ label: p.label, value: p.pendingJobs }))}
+            title="Billing Gap"
+            color="#f59e0b"
+            valuePrefix={currency0}
+            points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.billingGap }))}
           />
           <TrendLineCard
-            title="Complete"
-            color="#34d399"
-            valuePrefix=""
-            valueType="count"
-            points={monthlyJobTrend.map((p) => ({ label: p.label, value: p.completedJobs }))}
+            title="Gross Surplus"
+            color="#3b82f6"
+            valuePrefix={currency0}
+            points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.grossSurplus }))}
           />
         </div>
       </section>
