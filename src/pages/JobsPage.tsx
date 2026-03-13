@@ -90,6 +90,17 @@ function zoneBadge(zone: JobZone) {
 
 type ViewZone = "ALL" | JobZone
 
+const JOB_DATE_OVERRIDES_KEY = "jobs_date_overrides_v1"
+
+function toInputDate(rawDate: string): string {
+  const d = new Date(rawDate)
+  if (!Number.isFinite(d.getTime())) return ""
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 export default function JobsPage() {
   const { can, roleLabel } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
@@ -108,6 +119,17 @@ export default function JobsPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showJobsList, setShowJobsList] = useState(false)
   const [viewingJob, setViewingJob] = useState<Job | null>(null)
+  const [jobDateOverrides, setJobDateOverrides] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {}
+    try {
+      const raw = window.localStorage.getItem(JOB_DATE_OVERRIDES_KEY)
+      if (!raw) return {}
+      const parsed = JSON.parse(raw)
+      return parsed && typeof parsed === "object" ? parsed : {}
+    } catch {
+      return {}
+    }
+  })
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
   const canWriteJobs = can("jobs.write")
@@ -246,8 +268,8 @@ export default function JobsPage() {
     }
   }
 
-  function getJobDate(job: Pick<Job, "created_at"> & { date?: string | null }): string {
-    return job.date || job.created_at
+  function getJobDate(job: Pick<Job, "id" | "created_at"> & { date?: string | null }): string {
+    return jobDateOverrides[String(job.id)] || job.date || job.created_at
   }
 
   function getTransitDays(jobId: string): number | null {
@@ -294,13 +316,18 @@ export default function JobsPage() {
     refreshAll()
   }, [])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(JOB_DATE_OVERRIDES_KEY, JSON.stringify(jobDateOverrides))
+  }, [jobDateOverrides])
+
   function startEdit(job: Job) {
     setEditing(job)
     setShowCreateForm(true)
     setForm({
       client: String(job.client),
       zone: job.zone,
-      date: job.date ?? "",
+      date: toInputDate(getJobDate(job)),
 
       file_number: job.file_number ?? "",
       quantity: String(job.quantity ?? 0),
@@ -385,11 +412,17 @@ export default function JobsPage() {
         is_active: form.is_active,
       }
 
-      if (editing) {
-        await updateJob(editing.id, payload)
-      } else {
-        await createJob(payload)
-      }
+      const savedJob = editing
+        ? await updateJob(editing.id, payload)
+        : await createJob(payload)
+
+      setJobDateOverrides((prev) => {
+        const next = { ...prev }
+        const normalized = form.date.trim()
+        if (normalized) next[String(savedJob.id)] = normalized
+        else delete next[String(savedJob.id)]
+        return next
+      })
 
       cancelEdit()
       await refreshAll()
