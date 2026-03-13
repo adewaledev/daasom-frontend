@@ -133,6 +133,17 @@ function buildYearMonthKeys(year: number): string[] {
   return Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`)
 }
 
+function buildVisibleYearMonthKeys(year: number): string[] {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+
+  if (year > currentYear) return []
+
+  const monthCount = year === currentYear ? currentMonth : 12
+  return Array.from({ length: monthCount }, (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`)
+}
+
 function isJobActive(value: unknown): boolean {
   if (typeof value === "boolean") return value
   if (typeof value === "number") return value === 1
@@ -600,7 +611,7 @@ export default function ReportPage() {
       expenseCount: 0,
     })
 
-    buildYearMonthKeys(selectedChartYear).forEach((monthKey) => {
+    buildVisibleYearMonthKeys(selectedChartYear).forEach((monthKey) => {
       buckets.set(monthKey, initialBucket())
     })
 
@@ -650,7 +661,7 @@ export default function ReportPage() {
       completedJobs: number
     }>()
 
-    buildYearMonthKeys(selectedChartYear).forEach((monthKey) => {
+    buildVisibleYearMonthKeys(selectedChartYear).forEach((monthKey) => {
       buckets.set(monthKey, {
         totalJobs: 0,
         pendingJobs: 0,
