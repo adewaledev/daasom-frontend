@@ -122,6 +122,17 @@ function getJobLifecycleDate(job: Job): string {
   return job.date || job.created_at
 }
 
+function getYearFromRawDate(rawDate: string | null | undefined): number | null {
+  if (!rawDate) return null
+  const parsed = new Date(rawDate)
+  if (!Number.isFinite(parsed.getTime())) return null
+  return parsed.getFullYear()
+}
+
+function buildYearMonthKeys(year: number): string[] {
+  return Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`)
+}
+
 function isJobActive(value: unknown): boolean {
   if (typeof value === "boolean") return value
   if (typeof value === "number") return value === 1
@@ -230,6 +241,7 @@ export default function ReportPage() {
   const [error, setError] = useState("")
   const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedChartYear, setSelectedChartYear] = useState<number | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
   const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
@@ -379,6 +391,41 @@ export default function ReportPage() {
     filteredInvoices.forEach((inv) => m.set(String(inv.id), inv))
     return m
   }, [filteredInvoices])
+
+  const availableChartYears = useMemo(() => {
+    const years = new Set<number>()
+
+    filteredInvoices.forEach((inv) => {
+      const year = getYearFromRawDate(inv.issued_date || inv.created_at)
+      if (year !== null) years.add(year)
+    })
+
+    filteredReceipts.forEach((rec) => {
+      const year = getYearFromRawDate(rec.payment_date)
+      if (year !== null) years.add(year)
+    })
+
+    filteredExpenses.forEach((exp) => {
+      const year = getYearFromRawDate(exp.expense_date)
+      if (year !== null) years.add(year)
+    })
+
+    filteredJobs.forEach((job) => {
+      const year = getYearFromRawDate(getJobLifecycleDate(job))
+      if (year !== null) years.add(year)
+    })
+
+    return Array.from(years).sort((a, b) => b - a)
+  }, [filteredExpenses, filteredInvoices, filteredJobs, filteredReceipts])
+
+  useEffect(() => {
+    if (availableChartYears.length === 0) {
+      setSelectedChartYear(new Date().getFullYear())
+      return
+    }
+
+    setSelectedChartYear((current) => (current && availableChartYears.includes(current) ? current : availableChartYears[0]))
+  }, [availableChartYears])
 
   // Computed metrics (based on filtered data for whole page)
   const metrics = useMemo(() => {
@@ -533,6 +580,8 @@ export default function ReportPage() {
   }, [filteredReceipts, filteredInvoiceMap, jobMap])
 
   const monthlyTrend = useMemo(() => {
+    if (!selectedChartYear) return []
+
     const buckets = new Map<string, {
       invoiced: number
       received: number
@@ -542,18 +591,21 @@ export default function ReportPage() {
       expenseCount: number
     }>()
 
+    const initialBucket = () => ({
+      invoiced: 0,
+      received: 0,
+      expenses: 0,
+      invoiceCount: 0,
+      receiptCount: 0,
+      expenseCount: 0,
+    })
+
+    buildYearMonthKeys(selectedChartYear).forEach((monthKey) => {
+      buckets.set(monthKey, initialBucket())
+    })
+
     function ensureBucket(monthKey: string) {
-      if (!monthKey) return null
-      if (!buckets.has(monthKey)) {
-        buckets.set(monthKey, {
-          invoiced: 0,
-          received: 0,
-          expenses: 0,
-          invoiceCount: 0,
-          receiptCount: 0,
-          expenseCount: 0,
-        })
-      }
+      if (!monthKey || !buckets.has(monthKey)) return null
       return buckets.get(monthKey)!
     }
 
@@ -583,29 +635,31 @@ export default function ReportPage() {
 
     return [...buckets.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-6)
       .map(([key, value]) => ({
         label: toMonthLabel(key),
         ...value,
       }))
-  }, [filteredInvoices, filteredReceipts, filteredExpenses])
+  }, [filteredInvoices, filteredReceipts, filteredExpenses, selectedChartYear])
 
   const monthlyJobTrend = useMemo(() => {
+    if (!selectedChartYear) return []
+
     const buckets = new Map<string, {
       totalJobs: number
       pendingJobs: number
       completedJobs: number
     }>()
 
+    buildYearMonthKeys(selectedChartYear).forEach((monthKey) => {
+      buckets.set(monthKey, {
+        totalJobs: 0,
+        pendingJobs: 0,
+        completedJobs: 0,
+      })
+    })
+
     function ensureBucket(monthKey: string) {
-      if (!monthKey) return null
-      if (!buckets.has(monthKey)) {
-        buckets.set(monthKey, {
-          totalJobs: 0,
-          pendingJobs: 0,
-          completedJobs: 0,
-        })
-      }
+      if (!monthKey || !buckets.has(monthKey)) return null
       return buckets.get(monthKey)!
     }
 
@@ -621,12 +675,11 @@ export default function ReportPage() {
 
     return [...buckets.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-6)
       .map(([key, value]) => ({
         label: toMonthLabel(key),
         ...value,
       }))
-  }, [filteredJobs])
+  }, [filteredJobs, selectedChartYear])
 
   return (
     <div className="space-y-6 text-white">
@@ -728,9 +781,27 @@ export default function ReportPage() {
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Financial Flow Trend</h2>
-          <p className="text-xs text-white/55 mt-1">Recommended time-series view for revenue, collections, and cost movement over the last 6 months.</p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="font-semibold text-white">Financial Flow Trend</h2>
+            <p className="text-xs text-white/55 mt-1">12-month time-series view for revenue, collections, and cost movement in the selected year.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">Year</span>
+            {availableChartYears.map((year) => (
+              <button
+                key={year}
+                type="button"
+                onClick={() => setSelectedChartYear(year)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${selectedChartYear === year
+                  ? "bg-blue-600 text-white"
+                  : "bg-white/5 text-white/65 border border-white/10 hover:bg-white/10"
+                  }`}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -758,7 +829,7 @@ export default function ReportPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
         <div>
           <h2 className="font-semibold text-white">Job Lifecycle Trend (Line View)</h2>
-          <p className="text-xs text-white/55 mt-1">Time-series line cards for total jobs, pending jobs, and completed jobs over the last 6 months.</p>
+          <p className="text-xs text-white/55 mt-1">12-month line-card view of total jobs, pending jobs, and completed jobs in the selected year.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
