@@ -9,6 +9,8 @@ export interface Job {
   client: ClientId
   zone: JobZone
 
+  date?: string | null
+
   file_number: string
   quantity: number
 
@@ -66,6 +68,13 @@ function toDecimalStringOrNull(v: unknown): string | null {
   return s
 }
 
+function toDateStringOrNull(v: unknown): string | null {
+  if (v === null || v === undefined) return null
+  const s = String(v).trim()
+  if (!s) return null
+  return s
+}
+
 /**
  * Build payload aligned to the Django model fields.
  * IMPORTANT: client FK may be UUID or integer depending on Client PK — do not coerce.
@@ -75,6 +84,7 @@ export function buildJobPayload(input: Partial<Job>): Record<string, any> {
 
   if (input.client !== undefined) out.client = input.client
   if (input.zone !== undefined) out.zone = input.zone
+  if (input.date !== undefined) out.date = toDateStringOrNull(input.date)
 
   if (input.file_number !== undefined) out.file_number = String(input.file_number).trim()
 

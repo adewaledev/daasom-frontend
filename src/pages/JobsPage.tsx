@@ -3,11 +3,14 @@ import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
 import type { Job, JobZone } from "../api/jobs"
 import { createJob, listJobs, updateJob } from "../api/jobs"
+import { listTrackerJobs } from "../api/tracker"
+import type { TrackerEntry, TrackerJobRow } from "../api/tracker"
 import { useAuth } from "../state/auth"
 
 type JobForm = {
   client: string // store raw id as string (uuid or number string)
   zone: JobZone
+  date: string
 
   file_number: string
   quantity: string
@@ -21,7 +24,6 @@ type JobForm = {
 
   description: string
   container_number: string
-  transit_days: string
 
   port: string
   vessel: string
@@ -35,6 +37,7 @@ type JobForm = {
 const emptyForm: JobForm = {
   client: "",
   zone: "DUTY",
+  date: "",
 
   file_number: "",
   quantity: "0",
@@ -48,7 +51,6 @@ const emptyForm: JobForm = {
 
   description: "",
   container_number: "",
-  transit_days: "",
 
   port: "",
   vessel: "",
@@ -92,6 +94,7 @@ export default function JobsPage() {
   const { can, roleLabel } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
+  const [trackerJobs, setTrackerJobs] = useState<TrackerJobRow[]>([])
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -108,6 +111,38 @@ export default function JobsPage() {
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
   const canWriteJobs = can("jobs.write")
+
+  const transitDaysByJobId = useMemo(() => {
+    const entriesByJob = new Map<string, TrackerEntry[]>()
+    for (const trackerJob of trackerJobs) {
+      entriesByJob.set(String(trackerJob.job_id), trackerJob.tracker_entries || [])
+    }
+
+    const result = new Map<string, number | null>()
+    for (const job of jobs) {
+      const entries = entriesByJob.get(String(job.id)) || []
+      if (entries.length < 2) {
+        result.set(String(job.id), entries.length === 1 ? 0 : null)
+        continue
+      }
+
+      const timestamps = entries
+        .map((entry) => new Date(entry.entry_date).getTime())
+        .filter((value) => Number.isFinite(value))
+
+      if (timestamps.length === 0) {
+        result.set(String(job.id), null)
+        continue
+      }
+
+      const oldest = Math.min(...timestamps)
+      const newest = Math.max(...timestamps)
+      const diffDays = Math.round((newest - oldest) / (1000 * 60 * 60 * 24))
+      result.set(String(job.id), diffDays)
+    }
+
+    return result
+  }, [jobs, trackerJobs])
 
   const clientMap = useMemo(() => {
     const m = new Map<string, Client>()
@@ -142,8 +177,8 @@ export default function JobsPage() {
 
     // Sort by created_at descending (most recent first)
     result = [...result].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime()
-      const dateB = new Date(b.created_at).getTime()
+      const dateA = new Date(a.date || a.created_at).getTime()
+      const dateB = new Date(b.date || b.created_at).getTime()
       return dateB - dateA
     })
 
@@ -200,14 +235,28 @@ export default function JobsPage() {
     setError("")
     setLoading(true)
     try {
-      const [c, j] = await Promise.all([listClients(), listJobs()])
+      const [c, j, tracker] = await Promise.all([listClients(), listJobs(), listTrackerJobs()])
       setClients(c)
       setJobs(j)
+      setTrackerJobs(tracker)
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to load jobs.")
     } finally {
       setLoading(false)
     }
+  }
+
+  function getJobDate(job: Pick<Job, "created_at"> & { date?: string | null }): string {
+    return job.date || job.created_at
+  }
+
+  function getTransitDays(jobId: string): number | null {
+    return transitDaysByJobId.get(String(jobId)) ?? null
+  }
+
+  function formatTransitDays(value: number | null): string {
+    if (value === null || value === undefined) return "—"
+    return `${value} day${value === 1 ? "" : "s"}`
   }
 
   function formatDate(dateString: string): string {
@@ -251,6 +300,7 @@ export default function JobsPage() {
     setForm({
       client: String(job.client),
       zone: job.zone,
+      date: job.date ?? "",
 
       file_number: job.file_number ?? "",
       quantity: String(job.quantity ?? 0),
@@ -264,7 +314,6 @@ export default function JobsPage() {
 
       description: job.description ?? "",
       container_number: job.container_number ?? "",
-      transit_days: job.transit_days === null || job.transit_days === undefined ? "" : String(job.transit_days),
 
       port: job.port ?? "",
       vessel: job.vessel ?? "",
@@ -311,6 +360,7 @@ export default function JobsPage() {
       const payload: Partial<Job> = {
         client: clientIdRaw, // IMPORTANT: send raw id (uuid or number string)
         zone: form.zone,
+        date: form.date || null,
 
         file_number: fileNumber,
         quantity: Number(form.quantity || "0"),
@@ -324,7 +374,7 @@ export default function JobsPage() {
 
         description: form.description,
         container_number: form.container_number,
-        transit_days: form.transit_days ? Number(form.transit_days) : undefined,
+        transit_days: getTransitDays(editing?.id || "") ?? undefined,
 
         port: form.port,
         vessel: form.vessel,
@@ -534,6 +584,16 @@ export default function JobsPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-semibold text-white/80 mb-1">Date</label>
+                <input
+                  type="date"
+                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  value={form.date}
+                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">File Number</label>
                 <input
                   className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -638,11 +698,12 @@ export default function JobsPage() {
               <div>
                 <label className="block text-sm font-semibold text-white/80 mb-1">Transit Days</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  value={form.transit_days}
-                  onChange={(e) => setForm((f) => ({ ...f, transit_days: e.target.value }))}
-                  inputMode="numeric"
+                  readOnly
+                  className="w-full bg-black/30 text-white/70 border border-white/10 rounded-lg px-3 py-2 focus:outline-none"
+                  value={formatTransitDays(editing ? getTransitDays(editing.id) : null)}
+                  placeholder="Calculated from tracker dates"
                 />
+                <p className="mt-1 text-xs text-white/45">Calculated automatically from the oldest and newest tracker entry dates for this file.</p>
               </div>
             </div>
 
@@ -748,10 +809,10 @@ export default function JobsPage() {
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
                   <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                  <th className="px-4 py-3 text-left font-semibold text-white/90">Transit</th>
                   <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
                 </tr>
               </thead>
-
               <tbody>
                 {filteredJobs.map((j) => {
                   const c = clientMap.get(String(j.client))
@@ -763,10 +824,11 @@ export default function JobsPage() {
                     <tr key={j.id} className="border-b border-white/5 hover:bg-white/5 transition">
                       <td className="px-4 py-3 font-semibold text-white">{j.file_number}</td>
                       <td className="px-4 py-3 text-white/80">{clientLabel}</td>
-                      <td className="px-4 py-3 text-white/70 text-xs">{formatDate(j.created_at)}</td>
+                      <td className="px-4 py-3 text-white/70 text-xs">{formatDate(getJobDate(j))}</td>
                       <td className="px-4 py-3">
                         <span className={zoneBadge(j.zone)}>{j.zone}</span>
                       </td>
+                      <td className="px-4 py-3 text-white/70">{formatTransitDays(getTransitDays(j.id))}</td>
                       <td className="px-4 py-3 text-right flex gap-3 justify-end">
                         <button
                           type="button"
@@ -807,7 +869,7 @@ export default function JobsPage() {
                 <h2 className="font-semibold text-white text-lg">{viewingJob.file_number}</h2>
                 <p className="text-xs text-white/55 mt-0.5">
                   {viewingClient ? `${(viewingClient as any).client_code} — ${(viewingClient as any).client_name}` : `Client ${String(viewingJob.client)}`}
-                  {" · "}{formatDate(viewingJob.created_at)}
+                  {" · "}{formatDate(getJobDate(viewingJob))}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -848,6 +910,7 @@ export default function JobsPage() {
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 {([
                   ["File Number", viewingJob.file_number],
+                  ["Date", formatDate(getJobDate(viewingJob))],
                   ["Quantity", viewingJob.quantity],
                   ["BL / AWB", viewingJob.bl_awb || "—"],
                   ["Weight (kg)", viewingJob.weight_kg || "—"],
@@ -860,7 +923,7 @@ export default function JobsPage() {
                     ]
                       .filter(Boolean)
                       .join(", ") || "—"],
-                  ["Transit Days", viewingJob.transit_days ?? "—"],
+                  ["Transit Days", formatTransitDays(getTransitDays(viewingJob.id))],
                   ["Port", viewingJob.port || "—"],
                   ["Vessel", viewingJob.vessel || "—"],
                   ["Description", viewingJob.description || "—"],
