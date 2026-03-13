@@ -89,6 +89,12 @@ type SeriesPoint = {
   value: number
 }
 
+type SearchSuggestion = {
+  key: string
+  value: string
+  label: string
+}
+
 function buildLinePath(points: SeriesPoint[], maxValue: number, width: number, height: number): string {
   if (!points.length) return ""
   if (points.length === 1) {
@@ -246,6 +252,8 @@ export default function ReportPage() {
   const [error, setError] = useState("")
   const [showExpenseBreakdown, setShowExpenseBreakdown] = useState(false)
   const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const jobDateOverrides = useMemo<Record<string, string>>(() => {
     try {
@@ -281,47 +289,109 @@ export default function ReportPage() {
     return m
   }, [clients])
 
+  const filteredJobs = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return jobs
+
+    return jobs.filter((job) => {
+      const client = clientMap.get(String(job.client))
+      const fileMatch = job.file_number.toLowerCase().includes(term)
+      const clientNameMatch = client?.client_name.toLowerCase().includes(term) ?? false
+      const clientCodeMatch = client?.client_code?.toLowerCase().includes(term) ?? false
+      return fileMatch || clientNameMatch || clientCodeMatch
+    })
+  }, [jobs, searchTerm, clientMap])
+
+  const searchSuggestions = useMemo<SearchSuggestion[]>(() => {
+    const q = searchTerm.trim().toLowerCase()
+    if (!q) return []
+
+    const suggestions: SearchSuggestion[] = []
+    const seen = new Set<string>()
+
+    for (const job of jobs) {
+      const client = clientMap.get(String(job.client))
+      const candidates = [
+        { value: job.file_number, label: `File: ${job.file_number}` },
+        { value: client?.client_name || "", label: `Client: ${client?.client_name || ""}` },
+      ]
+
+      for (const c of candidates) {
+        const value = c.value.trim()
+        if (!value) continue
+        if (!value.toLowerCase().includes(q)) continue
+        const key = `${c.label.toLowerCase()}|${value.toLowerCase()}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        suggestions.push({ key, value, label: c.label })
+        if (suggestions.length >= 10) return suggestions
+      }
+    }
+
+    return suggestions
+  }, [searchTerm, jobs, clientMap])
+
+  const filteredJobIds = useMemo(() => {
+    return new Set(filteredJobs.map((j) => String(j.id)))
+  }, [filteredJobs])
+
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((inv) => filteredJobIds.has(String(inv.job)))
+  }, [invoices, filteredJobIds])
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((exp) => filteredJobIds.has(String(exp.job)))
+  }, [expenses, filteredJobIds])
+
+  const filteredInvoiceIds = useMemo(() => {
+    return new Set(filteredInvoices.map((inv) => String(inv.id)))
+  }, [filteredInvoices])
+
+  const filteredReceipts = useMemo(() => {
+    return receipts.filter((rec) => filteredInvoiceIds.has(String(rec.invoice)))
+  }, [receipts, filteredInvoiceIds])
+
   const invoicesByJob = useMemo(() => {
     const m = new Map<string, Invoice[]>()
-    invoices.forEach((inv) => {
+    filteredInvoices.forEach((inv) => {
       const id = String(inv.job)
       if (!m.has(id)) m.set(id, [])
       m.get(id)!.push(inv)
     })
     return m
-  }, [invoices])
+  }, [filteredInvoices])
 
   const expensesByJob = useMemo(() => {
     const m = new Map<string, Expense[]>()
-    expenses.forEach((exp) => {
+    filteredExpenses.forEach((exp) => {
       const id = String(exp.job)
       if (!m.has(id)) m.set(id, [])
       m.get(id)!.push(exp)
     })
     return m
-  }, [expenses])
+  }, [filteredExpenses])
 
   const jobMap = useMemo(() => {
     const m = new Map<string, Job>()
-    jobs.forEach((j) => m.set(String(j.id), j))
+    filteredJobs.forEach((j) => m.set(String(j.id), j))
     return m
-  }, [jobs])
+  }, [filteredJobs])
 
   const receiptsByInvoice = useMemo(() => {
     const m = new Map<string, Receipt[]>()
-    receipts.forEach((rec) => {
+    filteredReceipts.forEach((rec) => {
       const id = String(rec.invoice)
       if (!m.has(id)) m.set(id, [])
       m.get(id)!.push(rec)
     })
     return m
-  }, [receipts])
+  }, [filteredReceipts])
 
   const invoiceMap = useMemo(() => {
     const m = new Map<string, Invoice>()
-    invoices.forEach((inv) => m.set(String(inv.id), inv))
+    filteredInvoices.forEach((inv) => m.set(String(inv.id), inv))
     return m
-  }, [invoices])
+  }, [filteredInvoices])
 
   const metrics = useMemo(() => {
     let totalInvoiceAmount = 0
@@ -329,17 +399,17 @@ export default function ReportPage() {
     let totalReceiptAmount = 0
     const currencies = new Set<string>()
 
-    invoices.forEach((inv) => {
+    filteredInvoices.forEach((inv) => {
       const amt = parseFloat(inv.invoice_amount || inv.grand_total || "0")
       if (Number.isFinite(amt)) totalInvoiceAmount += amt
       if (inv.currency) currencies.add(inv.currency)
     })
-    expenses.forEach((exp) => {
+    filteredExpenses.forEach((exp) => {
       const amt = parseFloat(exp.amount || "0")
       if (Number.isFinite(amt)) totalExpenseAmount += amt
       if (exp.currency) currencies.add(exp.currency)
     })
-    receipts.forEach((rec) => {
+    filteredReceipts.forEach((rec) => {
       const amt = parseFloat(rec.amount || "0")
       if (Number.isFinite(amt)) totalReceiptAmount += amt
       if (rec.currency) currencies.add(rec.currency)
@@ -362,43 +432,43 @@ export default function ReportPage() {
       collectionRate,
       grossMargin,
       netRevenue: totalInvoiceAmount - totalExpenseAmount,
-      invoiceCount: invoices.length,
-      expenseCount: expenses.length,
-      receiptCount: receipts.length,
-      jobCount: jobs.length,
+      invoiceCount: filteredInvoices.length,
+      expenseCount: filteredExpenses.length,
+      receiptCount: filteredReceipts.length,
+      jobCount: filteredJobs.length,
       currencies: Array.from(currencies),
     }
-  }, [invoices, expenses, receipts, jobs])
+  }, [filteredInvoices, filteredExpenses, filteredReceipts, filteredJobs])
 
   // Shared chart month range: first data date across all sources → current month
   const chartMonthRange = useMemo(() => {
     const allKeys: string[] = []
-    invoices.forEach((inv) => { const k = toMonthKey(inv.issued_date || inv.created_at); if (k) allKeys.push(k) })
-    expenses.forEach((exp) => { const k = toMonthKey(exp.expense_date); if (k) allKeys.push(k) })
-    receipts.forEach((rec) => { const k = toMonthKey(rec.payment_date); if (k) allKeys.push(k) })
-    jobs.forEach((job) => { const k = toMonthKey(getJobLifecycleDate(job, jobDateOverrides)); if (k) allKeys.push(k) })
+    filteredInvoices.forEach((inv) => { const k = toMonthKey(inv.issued_date || inv.created_at); if (k) allKeys.push(k) })
+    filteredExpenses.forEach((exp) => { const k = toMonthKey(exp.expense_date); if (k) allKeys.push(k) })
+    filteredReceipts.forEach((rec) => { const k = toMonthKey(rec.payment_date); if (k) allKeys.push(k) })
+    filteredJobs.forEach((job) => { const k = toMonthKey(getJobLifecycleDate(job, jobDateOverrides)); if (k) allKeys.push(k) })
     if (!allKeys.length) return []
     const sorted = [...allKeys].sort()
     const now = new Date()
     const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
     return buildMonthRange(sorted[0], nowKey)
-  }, [jobs, invoices, expenses, receipts, jobDateOverrides])
+  }, [filteredJobs, filteredInvoices, filteredExpenses, filteredReceipts, jobDateOverrides])
 
   const monthlyTrend = useMemo(() => {
     if (!chartMonthRange.length) return []
     const buckets = new Map(chartMonthRange.map((k) => [k, { invoiced: 0, received: 0, expenses: 0 }]))
 
-    invoices.forEach((inv) => {
+    filteredInvoices.forEach((inv) => {
       const k = toMonthKey(inv.issued_date || inv.created_at)
       const b = k ? buckets.get(k) : undefined
       if (b) b.invoiced += parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
     })
-    receipts.forEach((rec) => {
+    filteredReceipts.forEach((rec) => {
       const k = toMonthKey(rec.payment_date)
       const b = k ? buckets.get(k) : undefined
       if (b) b.received += parseFloat(rec.amount || "0") || 0
     })
-    expenses.forEach((exp) => {
+    filteredExpenses.forEach((exp) => {
       const k = toMonthKey(exp.expense_date)
       const b = k ? buckets.get(k) : undefined
       if (b) b.expenses += parseFloat(exp.amount || "0") || 0
@@ -407,7 +477,7 @@ export default function ReportPage() {
     return [...buckets.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
-  }, [invoices, receipts, expenses, chartMonthRange])
+  }, [filteredInvoices, filteredReceipts, filteredExpenses, chartMonthRange])
 
   const monthlyJobTrend = useMemo(() => {
     if (!chartMonthRange.length) return []
@@ -415,7 +485,7 @@ export default function ReportPage() {
       chartMonthRange.map((k) => [k, { totalJobs: 0, pendingJobs: 0, completedJobs: 0 }]),
     )
 
-    jobs.forEach((job) => {
+    filteredJobs.forEach((job) => {
       const k = toMonthKey(getJobLifecycleDate(job, jobDateOverrides))
       const b = k ? buckets.get(k) : undefined
       if (b) {
@@ -428,11 +498,11 @@ export default function ReportPage() {
     return [...buckets.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
-  }, [jobs, chartMonthRange, jobDateOverrides])
+  }, [filteredJobs, chartMonthRange, jobDateOverrides])
 
   // Profitability by Job — jobs with any financial activity, sorted by invoiced desc
   const profitabilityRows = useMemo(() => {
-    return jobs
+    return filteredJobs
       .map((job) => {
         const jobInvoices = invoicesByJob.get(String(job.id)) || []
         const jobExpenses = expensesByJob.get(String(job.id)) || []
@@ -459,7 +529,7 @@ export default function ReportPage() {
       })
       .filter((r) => r.invoiced > 0 || r.expenseTotal > 0)
       .sort((a, b) => b.invoiced - a.invoiced)
-  }, [jobs, invoicesByJob, expensesByJob, receiptsByInvoice, clientMap])
+  }, [filteredJobs, invoicesByJob, expensesByJob, receiptsByInvoice, clientMap])
 
   // AR Aging — open invoices (ISSUED / PARTIALLY_PAID) bucketed by age
   const arAging = useMemo(() => {
@@ -470,10 +540,10 @@ export default function ReportPage() {
       "61–90 days": { count: 0, amount: 0 },
       "91+ days": { count: 0, amount: 0 },
     }
-    const currency = invoices[0]?.currency || "NGN"
+    const currency = filteredInvoices[0]?.currency || "NGN"
     let totalOutstanding = 0
 
-    invoices.forEach((inv) => {
+    filteredInvoices.forEach((inv) => {
       if (inv.status !== "ISSUED" && inv.status !== "PARTIALLY_PAID") return
       const invoiced = parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
       const received = (receiptsByInvoice.get(String(inv.id)) || [])
@@ -493,7 +563,7 @@ export default function ReportPage() {
     })
 
     return { buckets, currency, totalOutstanding }
-  }, [invoices, receiptsByInvoice])
+  }, [filteredInvoices, receiptsByInvoice])
 
   // Top Clients by Revenue (up to 10)
   const topClients = useMemo(() => {
@@ -501,7 +571,7 @@ export default function ReportPage() {
       clientName: string; jobCount: number; invoiced: number; received: number; currency: string
     }>()
 
-    jobs.forEach((job) => {
+    filteredJobs.forEach((job) => {
       const client = clientMap.get(String(job.client))
       if (!client) return
       const cid = String(job.client)
@@ -514,9 +584,9 @@ export default function ReportPage() {
       jobInvoices.forEach((inv) => {
         d.invoiced += parseFloat(inv.invoice_amount || inv.grand_total || "0") || 0
         if (inv.currency) d.currency = inv.currency
-        ;(receiptsByInvoice.get(String(inv.id)) || []).forEach((r) => {
-          d.received += parseFloat(r.amount || "0") || 0
-        })
+          ; (receiptsByInvoice.get(String(inv.id)) || []).forEach((r) => {
+            d.received += parseFloat(r.amount || "0") || 0
+          })
       })
     })
 
@@ -524,14 +594,14 @@ export default function ReportPage() {
       .filter((c) => c.invoiced > 0)
       .sort((a, b) => b.invoiced - a.invoiced)
       .slice(0, 10)
-  }, [jobs, clientMap, invoicesByJob, receiptsByInvoice])
+  }, [filteredJobs, clientMap, invoicesByJob, receiptsByInvoice])
 
   // Expense Category Breakdown
   const expenseCategories = useMemo(() => {
     const categoryMap = new Map<string, { count: number; amount: number; currency: string }>()
-    const totalAmt = expenses.reduce((s, e) => s + (parseFloat(e.amount || "0") || 0), 0)
+    const totalAmt = filteredExpenses.reduce((s, e) => s + (parseFloat(e.amount || "0") || 0), 0)
 
-    expenses.forEach((exp) => {
+    filteredExpenses.forEach((exp) => {
       const cat = exp.category || "Uncategorized"
       if (!categoryMap.has(cat)) {
         categoryMap.set(cat, { count: 0, amount: 0, currency: exp.currency || "NGN" })
@@ -550,12 +620,12 @@ export default function ReportPage() {
         }))
         .sort((a, b) => b.amount - a.amount),
       total: totalAmt,
-      currency: expenses[0]?.currency || "NGN",
+      currency: filteredExpenses[0]?.currency || "NGN",
     }
-  }, [expenses])
+  }, [filteredExpenses])
 
   const expenseBreakdownRows = useMemo(() => {
-    return [...expenses]
+    return [...filteredExpenses]
       .sort((a, b) => String(b.expense_date).localeCompare(String(a.expense_date)))
       .map((exp) => {
         const job = jobMap.get(String(exp.job))
@@ -571,10 +641,10 @@ export default function ReportPage() {
           zone: job?.zone || "-",
         }
       })
-  }, [expenses, jobMap])
+  }, [filteredExpenses, jobMap])
 
   const receiptBreakdownRows = useMemo(() => {
-    return [...receipts]
+    return [...filteredReceipts]
       .sort((a, b) => String(b.payment_date).localeCompare(String(a.payment_date)))
       .map((rec) => {
         const invoice = invoiceMap.get(String(rec.invoice))
@@ -591,11 +661,11 @@ export default function ReportPage() {
           zone: job?.zone || "-",
         }
       })
-  }, [receipts, invoiceMap, jobMap])
+  }, [filteredReceipts, invoiceMap, jobMap])
 
   const currency0 = metrics.currencies[0] || "NGN"
-  const pendingJobCount = jobs.filter((j) => isJobActive(j.is_active)).length
-  const completedJobCount = jobs.filter((j) => !isJobActive(j.is_active)).length
+  const pendingJobCount = filteredJobs.filter((j) => isJobActive(j.is_active)).length
+  const completedJobCount = filteredJobs.filter((j) => !isJobActive(j.is_active)).length
 
   return (
     <div className="space-y-6 text-white">
@@ -622,6 +692,59 @@ export default function ReportPage() {
           {error}
         </div>
       )}
+
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by file number or client..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              setShowSuggestions(true)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
+            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-4 pr-10 py-3 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+          {searchTerm ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("")
+                setShowSuggestions(false)
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition text-lg leading-none"
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          ) : null}
+
+          {showSuggestions && searchSuggestions.length > 0 ? (
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+              {searchSuggestions.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm(s.value)
+                    setShowSuggestions(false)
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        {searchTerm.trim() ? (
+          <p className="mt-2 text-xs text-white/55">
+            Showing {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} matching "{searchTerm.trim()}".
+          </p>
+        ) : null}
+      </section>
 
       {/* Primary KPI row */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -675,13 +798,12 @@ export default function ReportPage() {
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="text-xs text-white/60">Collection Rate</div>
           <div
-            className={`mt-1 text-lg font-semibold ${
-              metrics.collectionRate >= 80
+            className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80
                 ? "text-green-300"
                 : metrics.collectionRate >= 50
                   ? "text-amber-300"
                   : "text-red-300"
-            }`}
+              }`}
           >
             {pct(metrics.collectionRate)}
           </div>
@@ -697,9 +819,8 @@ export default function ReportPage() {
         <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
           <div className="text-xs text-white/60">Net Revenue</div>
           <div
-            className={`mt-1 text-lg font-semibold ${
-              metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"
-            }`}
+            className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"
+              }`}
           >
             {currency0} {money(metrics.netRevenue)}
           </div>
@@ -807,20 +928,18 @@ export default function ReportPage() {
                       {currency} {money(net)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-semibold ${
-                        margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
-                      }`}
+                      className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
+                        }`}
                     >
                       {pct(margin)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-semibold ${
-                        collectionRate >= 100
+                      className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
                           ? "text-green-300"
                           : collectionRate > 0
                             ? "text-amber-300"
                             : "text-white/40"
-                      }`}
+                        }`}
                     >
                       {pct(collectionRate)}
                     </td>
@@ -915,13 +1034,12 @@ export default function ReportPage() {
                       <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
                       <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
                       <td
-                        className={`px-4 py-3 text-right font-semibold ${
-                          collection >= 100
+                        className={`px-4 py-3 text-right font-semibold ${collection >= 100
                             ? "text-green-300"
                             : collection >= 50
                               ? "text-amber-300"
                               : "text-red-300"
-                        }`}
+                          }`}
                       >
                         {pct(collection)}
                       </td>
