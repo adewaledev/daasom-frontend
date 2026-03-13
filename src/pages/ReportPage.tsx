@@ -159,6 +159,15 @@ function isJobActive(value: unknown): boolean {
   return Boolean(value)
 }
 
+function isJobPending(job: Job): boolean {
+  const status = String((job as any)?.status ?? "").trim().toLowerCase()
+
+  if (["complete", "completed", "closed", "done", "inactive"].includes(status)) return false
+  if (["pending", "active", "open", "in_progress", "in progress"].includes(status)) return true
+
+  return isJobActive(job.is_active)
+}
+
 function TrendLineCard({
   title,
   color,
@@ -490,7 +499,7 @@ export default function ReportPage() {
       const b = k ? buckets.get(k) : undefined
       if (b) {
         b.totalJobs++
-        if (isJobActive(job.is_active)) b.pendingJobs++
+        if (isJobPending(job)) b.pendingJobs++
         else b.completedJobs++
       }
     })
@@ -664,8 +673,8 @@ export default function ReportPage() {
   }, [filteredReceipts, invoiceMap, jobMap])
 
   const currency0 = metrics.currencies[0] || "NGN"
-  const pendingJobCount = filteredJobs.filter((j) => isJobActive(j.is_active)).length
-  const completedJobCount = filteredJobs.filter((j) => !isJobActive(j.is_active)).length
+  const pendingJobCount = filteredJobs.filter((j) => isJobPending(j)).length
+  const completedJobCount = filteredJobs.filter((j) => !isJobPending(j)).length
 
   return (
     <div className="space-y-6 text-white">
@@ -799,10 +808,10 @@ export default function ReportPage() {
           <div className="text-xs text-white/60">Collection Rate</div>
           <div
             className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80
-                ? "text-green-300"
-                : metrics.collectionRate >= 50
-                  ? "text-amber-300"
-                  : "text-red-300"
+              ? "text-green-300"
+              : metrics.collectionRate >= 50
+                ? "text-amber-300"
+                : "text-red-300"
               }`}
           >
             {pct(metrics.collectionRate)}
@@ -935,10 +944,10 @@ export default function ReportPage() {
                     </td>
                     <td
                       className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
-                          ? "text-green-300"
-                          : collectionRate > 0
-                            ? "text-amber-300"
-                            : "text-white/40"
+                        ? "text-green-300"
+                        : collectionRate > 0
+                          ? "text-amber-300"
+                          : "text-white/40"
                         }`}
                     >
                       {pct(collectionRate)}
@@ -1035,10 +1044,10 @@ export default function ReportPage() {
                       <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
                       <td
                         className={`px-4 py-3 text-right font-semibold ${collection >= 100
-                            ? "text-green-300"
-                            : collection >= 50
-                              ? "text-amber-300"
-                              : "text-red-300"
+                          ? "text-green-300"
+                          : collection >= 50
+                            ? "text-amber-300"
+                            : "text-red-300"
                           }`}
                       >
                         {pct(collection)}
