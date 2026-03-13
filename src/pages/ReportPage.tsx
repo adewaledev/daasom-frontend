@@ -118,6 +118,19 @@ function toMonthLabel(monthKey: string): string {
   return parsed.toLocaleString(undefined, { month: "short", year: "2-digit" })
 }
 
+function isJobActive(value: unknown): boolean {
+  if (typeof value === "boolean") return value
+  if (typeof value === "number") return value === 1
+
+  const normalized = String(value ?? "").trim().toLowerCase()
+  if (!normalized) return false
+  if (["true", "1", "yes", "y", "active", "pending"].includes(normalized)) return true
+  if (["false", "0", "no", "n", "inactive", "complete", "completed"].includes(normalized)) return false
+
+  // Fallback for unexpected truthy strings from backend.
+  return Boolean(value)
+}
+
 function TrendLineChart({
   title,
   subtitle,
@@ -278,6 +291,7 @@ function TrendBarChart({
 
                 return series.map((s, seriesIndex) => {
                   const value = Number(point[s.key] ?? 0)
+                  if (value === 0) return null
                   const barHeight = (value / maxValue) * chartHeight
                   const x = groupStartX + seriesIndex * (barWidth + barGap)
                   const y = chartHeight - barHeight
@@ -371,7 +385,7 @@ export default function ReportPage() {
         PENDING: true,
         COMPLETE: false,
       }
-      result = result.filter((j) => j.is_active === statusMap[jobStatusFilter])
+      result = result.filter((j) => isJobActive(j.is_active) === statusMap[jobStatusFilter])
     }
 
     // Apply search filter
@@ -714,7 +728,7 @@ export default function ReportPage() {
       if (!bucket) return
 
       bucket.totalJobs += 1
-      if (job.is_active) bucket.pendingJobs += 1
+      if (isJobActive(job.is_active)) bucket.pendingJobs += 1
       else bucket.completedJobs += 1
     })
 
