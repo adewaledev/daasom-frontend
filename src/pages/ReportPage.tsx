@@ -824,6 +824,12 @@ export default function ReportPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <TrendLineCard
+            title="Expenses"
+            color="#f59e0b"
+            valuePrefix={metrics.currencies[0] || "NGN"}
+            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.expenses ?? 0) }))}
+          />
+          <TrendLineCard
             title="Invoiced"
             color="#3b82f6"
             valuePrefix={metrics.currencies[0] || "NGN"}
@@ -834,12 +840,6 @@ export default function ReportPage() {
             color="#22c55e"
             valuePrefix={metrics.currencies[0] || "NGN"}
             points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.received ?? 0) }))}
-          />
-          <TrendLineCard
-            title="Expenses"
-            color="#f59e0b"
-            valuePrefix={metrics.currencies[0] || "NGN"}
-            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.expenses ?? 0) }))}
           />
         </div>
       </section>
