@@ -129,10 +129,6 @@ function getYearFromRawDate(rawDate: string | null | undefined): number | null {
   return parsed.getFullYear()
 }
 
-function buildYearMonthKeys(year: number): string[] {
-  return Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`)
-}
-
 function buildVisibleYearMonthKeys(year: number): string[] {
   const now = new Date()
   const currentYear = now.getFullYear()
