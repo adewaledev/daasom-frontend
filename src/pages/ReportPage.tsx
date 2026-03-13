@@ -844,16 +844,33 @@ export default function ReportPage() {
         </div>
       </section>
 
-      <TrendBarChart
-        title="Job Lifecycle Trend"
-        subtitle="Recommended time-series view of total jobs, pending jobs, and completed jobs over the last 6 months."
-        points={monthlyJobTrend}
-        series={[
-          { key: "totalJobs", label: "Total Jobs", color: "#60a5fa" },
-          { key: "pendingJobs", label: "Pending", color: "#fbbf24" },
-          { key: "completedJobs", label: "Completed", color: "#34d399" },
-        ]}
-      />
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-white">Job Lifecycle Trend</h2>
+          <p className="text-xs text-white/55 mt-1">Time-series view of total jobs, pending jobs, and completed jobs over the last 6 months.</p>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <TrendLineCard
+            title="Total"
+            color="#60a5fa"
+            valuePrefix=""
+            points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.totalJobs ?? 0) }))}
+          />
+          <TrendLineCard
+            title="Pending"
+            color="#fbbf24"
+            valuePrefix=""
+            points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.pendingJobs ?? 0) }))}
+          />
+          <TrendLineCard
+            title="Complete"
+            color="#34d399"
+            valuePrefix=""
+            points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.completedJobs ?? 0) }))}
+          />
+        </div>
+      </section>
 
       {/* Job Summary Dashboard */}
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
