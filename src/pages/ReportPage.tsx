@@ -131,48 +131,53 @@ function isJobActive(value: unknown): boolean {
   return Boolean(value)
 }
 
-function TrendLineChart({
+function TrendLineCard({
   title,
-  subtitle,
+  color,
   points,
-  series,
+  valuePrefix,
 }: {
   title: string
-  subtitle: string
-  points: Array<{ label: string;[key: string]: string | number }>
-  series: Array<{ key: string; label: string; color: string }>
+  color: string
+  points: SeriesPoint[]
+  valuePrefix: string
 }) {
-  const width = 900
-  const height = 260
+  const width = 340
+  const height = 140
+  const maxValue = Math.max(1, ...points.map((point) => point.value))
+  const path = buildLinePath(points, maxValue, width, height)
 
-  const maxValue = Math.max(
-    1,
-    ...points.flatMap((point) => series.map((s) => Number(point[s.key] ?? 0))),
-  )
+  const latest = points.length > 0 ? points[points.length - 1].value : 0
+  const previous = points.length > 1 ? points[points.length - 2].value : 0
+
+  let pctChange = 0
+  if (previous === 0) {
+    pctChange = latest === 0 ? 0 : 100
+  } else {
+    pctChange = ((latest - previous) / Math.abs(previous)) * 100
+  }
+
+  const pctText = `${pctChange >= 0 ? "+" : ""}${pctChange.toFixed(1)}%`
+  const pctTone = pctChange > 0 ? "text-green-300" : pctChange < 0 ? "text-red-300" : "text-white/60"
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <article className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-3">
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <h2 className="font-semibold text-white">{title}</h2>
-          <p className="text-xs text-white/55 mt-1">{subtitle}</p>
+          <div className="text-xs text-white/55">{title}</div>
+          <div className="mt-1 text-lg font-semibold text-white">
+            {valuePrefix} {money(latest)}
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-white/70">
-          {series.map((s) => (
-            <div key={s.key} className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-              <span>{s.label}</span>
-            </div>
-          ))}
-        </div>
+        <div className={`text-xs font-semibold ${pctTone}`}>{pctText} vs prev month</div>
       </div>
 
       {points.length === 0 ? (
-        <div className="text-sm text-white/60 py-3">No time-series data available for current filters.</div>
+        <div className="text-sm text-white/60 py-3">No trend data.</div>
       ) : (
         <>
-          <div className="rounded-xl border border-white/10 bg-black/30 p-3 overflow-x-auto">
-            <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[640px] w-full h-48" preserveAspectRatio="none">
+          <div className="rounded-lg border border-white/10 bg-black/40 p-2">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28" preserveAspectRatio="none">
               {[0.25, 0.5, 0.75, 1].map((tick) => (
                 <line
                   key={tick}
@@ -185,45 +190,16 @@ function TrendLineChart({
                   strokeWidth="1"
                 />
               ))}
-
-              {series.map((s) => {
-                const path = buildLinePath(
-                  points.map((p) => ({ label: p.label, value: Number(p[s.key] ?? 0) })),
-                  maxValue,
-                  width,
-                  height,
-                )
-
-                return (
-                  <path
-                    key={s.key}
-                    d={path}
-                    fill="none"
-                    stroke={s.color}
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                )
-              })}
+              <path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-            {points.map((point) => (
-              <div key={point.label} className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
-                <div className="text-[11px] text-white/55">{point.label}</div>
-                {series.map((s) => (
-                  <div key={s.key} className="text-xs mt-1" style={{ color: s.color }}>
-                    {s.label}: {money(Number(point[s.key] ?? 0))}
-                  </div>
-                ))}
-              </div>
-            ))}
+          <div className="flex items-center justify-between text-[11px] text-white/55">
+            <span>{points[0]?.label || "-"}</span>
+            <span>{points[points.length - 1]?.label || "-"}</span>
           </div>
         </>
       )}
-    </section>
+    </article>
   )
 }
 
@@ -840,16 +816,33 @@ export default function ReportPage() {
         />
       </section>
 
-      <TrendLineChart
-        title="Financial Flow Trend"
-        subtitle="Recommended time-series view for revenue, collections, and cost movement over the last 6 months."
-        points={monthlyTrend}
-        series={[
-          { key: "invoiced", label: "Invoiced", color: "#3b82f6" },
-          { key: "received", label: "Received", color: "#22c55e" },
-          { key: "expenses", label: "Expenses", color: "#f59e0b" },
-        ]}
-      />
+      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold text-white">Financial Flow Trend</h2>
+          <p className="text-xs text-white/55 mt-1">Recommended time-series view for revenue, collections, and cost movement over the last 6 months.</p>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <TrendLineCard
+            title="Invoiced"
+            color="#3b82f6"
+            valuePrefix={metrics.currencies[0] || "NGN"}
+            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.invoiced ?? 0) }))}
+          />
+          <TrendLineCard
+            title="Received"
+            color="#22c55e"
+            valuePrefix={metrics.currencies[0] || "NGN"}
+            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.received ?? 0) }))}
+          />
+          <TrendLineCard
+            title="Expenses"
+            color="#f59e0b"
+            valuePrefix={metrics.currencies[0] || "NGN"}
+            points={monthlyTrend.map((point) => ({ label: point.label, value: Number(point.expenses ?? 0) }))}
+          />
+        </div>
+      </section>
 
       <TrendBarChart
         title="Job Lifecycle Trend"
