@@ -856,11 +856,11 @@ export default function ReportPage() {
 
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
         <div>
-          <h2 className="font-semibold text-white">Job Lifecycle Trend</h2>
-          <p className="text-xs text-white/55 mt-1">Time-series view of total jobs, pending jobs, and completed jobs over the last 6 months.</p>
+          <h2 className="font-semibold text-white">Job Lifecycle Trend (Line View)</h2>
+          <p className="text-xs text-white/55 mt-1">Time-series line cards for total jobs, pending jobs, and completed jobs over the last 6 months.</p>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <TrendLineCard
             title="Total"
             color="#60a5fa"
