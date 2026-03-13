@@ -9,6 +9,8 @@ import type { Receipt } from "../api/receipts"
 import { listReceipts } from "../api/receipts"
 import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
+import type { TrackerJobRow } from "../api/tracker"
+import { listTrackerJobs } from "../api/tracker"
 
 function extractErrorMessage(err: any): string {
   if (!err?.response?.status) return "Network error. Backend may be unavailable."
@@ -159,7 +161,9 @@ function isJobActive(value: unknown): boolean {
   return Boolean(value)
 }
 
-function isJobPending(job: Job): boolean {
+function isJobPending(job: Job, trackerCompleted?: boolean): boolean {
+  if (trackerCompleted === true) return false
+  if (trackerCompleted === false) return true
   const status = String((job as any)?.status ?? "").trim().toLowerCase()
 
   if (["complete", "completed", "closed", "done", "inactive"].includes(status)) return false
@@ -256,6 +260,7 @@ export default function ReportPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [receipts, setReceipts] = useState<Receipt[]>([])
+  const [trackerJobs, setTrackerJobs] = useState<TrackerJobRow[]>([])
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -275,20 +280,34 @@ export default function ReportPage() {
     setError("")
     setLoading(true)
     try {
-      const [j, c, i, e, r] = await Promise.all([
-        listJobs(), listClients(), listInvoices(), listExpenses(), listReceipts(),
+      const [j, c, i, e, r, t] = await Promise.all([
+        listJobs(),
+        listClients(),
+        listInvoices(),
+        listExpenses(),
+        listReceipts(),
+        listTrackerJobs().catch(() => [] as TrackerJobRow[]),
       ])
       setJobs(j)
       setClients(c)
       setInvoices(i)
       setExpenses(e)
       setReceipts(r)
+      setTrackerJobs(t)
     } catch (err: any) {
       setError(extractErrorMessage(err) || "Failed to load data.")
     } finally {
       setLoading(false)
     }
   }
+
+  const trackerCompletionByJobId = useMemo(() => {
+    const m = new Map<string, boolean>()
+    trackerJobs.forEach((row) => {
+      m.set(String(row.job_id), Boolean(row.tracker_completed))
+    })
+    return m
+  }, [trackerJobs])
 
   useEffect(() => { refreshAll() }, [])
 
@@ -499,7 +518,7 @@ export default function ReportPage() {
       const b = k ? buckets.get(k) : undefined
       if (b) {
         b.totalJobs++
-        if (isJobPending(job)) b.pendingJobs++
+        if (isJobPending(job, trackerCompletionByJobId.get(String(job.id)))) b.pendingJobs++
         else b.completedJobs++
       }
     })
@@ -507,7 +526,7 @@ export default function ReportPage() {
     return [...buckets.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => ({ label: toMonthLabel(key), ...value }))
-  }, [filteredJobs, chartMonthRange, jobDateOverrides])
+  }, [filteredJobs, chartMonthRange, jobDateOverrides, trackerCompletionByJobId])
 
   // Profitability by Job — jobs with any financial activity, sorted by invoiced desc
   const profitabilityRows = useMemo(() => {
@@ -673,8 +692,8 @@ export default function ReportPage() {
   }, [filteredReceipts, invoiceMap, jobMap])
 
   const currency0 = metrics.currencies[0] || "NGN"
-  const pendingJobCount = filteredJobs.filter((j) => isJobPending(j)).length
-  const completedJobCount = filteredJobs.filter((j) => !isJobPending(j)).length
+  const pendingJobCount = filteredJobs.filter((j) => isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
+  const completedJobCount = filteredJobs.filter((j) => !isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
 
   return (
     <div className="space-y-6 text-white">
