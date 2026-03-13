@@ -136,11 +136,13 @@ function TrendLineCard({
   color,
   points,
   valuePrefix,
+  valueType = "money",
 }: {
   title: string
   color: string
   points: SeriesPoint[]
   valuePrefix: string
+  valueType?: "money" | "count"
 }) {
   const width = 340
   const height = 140
@@ -159,15 +161,14 @@ function TrendLineCard({
 
   const pctText = `${pctChange >= 0 ? "+" : ""}${pctChange.toFixed(1)}%`
   const pctTone = pctChange > 0 ? "text-green-300" : pctChange < 0 ? "text-red-300" : "text-white/60"
+  const latestValueText = valueType === "count" ? String(Math.round(latest)) : `${valuePrefix} ${money(latest)}`
 
   return (
     <article className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-xs text-white/55">{title}</div>
-          <div className="mt-1 text-lg font-semibold text-white">
-            {valuePrefix} {money(latest)}
-          </div>
+          <div className="mt-1 text-lg font-semibold text-white">{latestValueText}</div>
         </div>
         <div className={`text-xs font-semibold ${pctTone}`}>{pctText} vs prev month</div>
       </div>
@@ -191,6 +192,15 @@ function TrendLineCard({
                 />
               ))}
               <path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              {points.map((point, i) => {
+                if (points.length === 1) {
+                  const y = height - ((point.value / maxValue) * height || 0)
+                  return <circle key={`${point.label}-${i}`} cx={width / 2} cy={y} r="3" fill={color} />
+                }
+                const x = (i / (points.length - 1)) * width
+                const y = height - ((point.value / maxValue) * height || 0)
+                return <circle key={`${point.label}-${i}`} cx={x} cy={y} r="2.8" fill={color} />
+              })}
             </svg>
           </div>
           <div className="flex items-center justify-between text-[11px] text-white/55">
@@ -855,18 +865,21 @@ export default function ReportPage() {
             title="Total"
             color="#60a5fa"
             valuePrefix=""
+            valueType="count"
             points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.totalJobs ?? 0) }))}
           />
           <TrendLineCard
             title="Pending"
             color="#fbbf24"
             valuePrefix=""
+            valueType="count"
             points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.pendingJobs ?? 0) }))}
           />
           <TrendLineCard
             title="Complete"
             color="#34d399"
             valuePrefix=""
+            valueType="count"
             points={monthlyJobTrend.map((point) => ({ label: point.label, value: Number(point.completedJobs ?? 0) }))}
           />
         </div>
