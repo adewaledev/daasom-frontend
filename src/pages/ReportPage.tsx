@@ -118,8 +118,10 @@ function toMonthLabel(monthKey: string): string {
   return parsed.toLocaleString(undefined, { month: "short", year: "2-digit" })
 }
 
-function getJobLifecycleDate(job: Job): string {
-  return job.date || job.created_at
+const JOB_DATE_OVERRIDES_KEY = "jobs_date_overrides_v1"
+
+function getJobLifecycleDate(job: Job, overrides: Record<string, string> = {}): string {
+  return overrides[String(job.id)] || job.date || job.created_at
 }
 
 function getYearFromRawDate(rawDate: string | null | undefined): number | null {
@@ -247,6 +249,13 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [jobStatusFilter, setJobStatusFilter] = useState<"all" | JobStatus>("all")
+
+  const jobDateOverrides = useMemo<Record<string, string>>(() => {
+    try {
+      const raw = window.localStorage.getItem(JOB_DATE_OVERRIDES_KEY)
+      return raw ? JSON.parse(raw) : {}
+    } catch { return {} }
+  }, [])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedChartYear, setSelectedChartYear] = useState<number | null>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -418,7 +427,7 @@ export default function ReportPage() {
     })
 
     filteredJobs.forEach((job) => {
-      const year = getYearFromRawDate(getJobLifecycleDate(job))
+      const year = getYearFromRawDate(getJobLifecycleDate(job, jobDateOverrides))
       if (year !== null) years.add(year)
     })
 
@@ -671,7 +680,7 @@ export default function ReportPage() {
     }
 
     filteredJobs.forEach((job) => {
-      const monthKey = toMonthKey(getJobLifecycleDate(job))
+      const monthKey = toMonthKey(getJobLifecycleDate(job, jobDateOverrides))
       const bucket = ensureBucket(monthKey)
       if (!bucket) return
 
