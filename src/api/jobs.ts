@@ -75,6 +75,25 @@ function toDateStringOrNull(v: unknown): string | null {
   return s
 }
 
+function toBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") return value
+  if (typeof value === "number") return value === 1
+
+  const normalized = String(value ?? "").trim().toLowerCase()
+  if (!normalized) return false
+  if (["true", "1", "yes", "y", "active", "pending", "open", "on"].includes(normalized)) return true
+  if (["false", "0", "no", "n", "inactive", "complete", "completed", "closed", "done", "off"].includes(normalized)) return false
+
+  return false
+}
+
+function normalizeJob(job: any): Job {
+  return {
+    ...job,
+    is_active: toBoolean(job?.is_active),
+  } as Job
+}
+
 /**
  * Build payload aligned to the Django model fields.
  * IMPORTANT: client FK may be UUID or integer depending on Client PK — do not coerce.
@@ -119,16 +138,16 @@ export function buildJobPayload(input: Partial<Job>): Record<string, any> {
 export async function listJobs(): Promise<Job[]> {
   const res = await http.get("/jobs/")
   const data = res.data
-  if (isPaginated<Job>(data)) return data.results
-  return data as Job[]
+  if (isPaginated<Job>(data)) return data.results.map(normalizeJob)
+  return (data as Job[]).map(normalizeJob)
 }
 
 export async function createJob(payload: Partial<Job>): Promise<Job> {
   const res = await http.post("/jobs/", buildJobPayload(payload))
-  return res.data
+  return normalizeJob(res.data)
 }
 
 export async function updateJob(id: string, payload: Partial<Job>): Promise<Job> {
   const res = await http.patch(`/jobs/${id}/`, buildJobPayload(payload))
-  return res.data
+  return normalizeJob(res.data)
 }
