@@ -1060,14 +1060,14 @@ export default function ReportPage() {
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard
-                label="Total Invoiced"
+                label="Expected Revenue"
                 value={metrics.totalInvoiceAmount}
                 currency={currency0}
                 color="blue"
-                subtext={`${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""}`}
+                subtext={`${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""} · total billed`}
               />
               <StatCard
-                label="Total Received"
+                label="Actual Revenue"
                 value={metrics.totalReceiptAmount}
                 currency={currency0}
                 color="green"
@@ -1102,14 +1102,14 @@ export default function ReportPage() {
                 <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
                   {pct(metrics.grossMargin)}
                 </div>
-                <div className="mt-1 text-xs text-white/45">(Invoiced − Expenses) ÷ Invoiced</div>
+                <div className="mt-1 text-xs text-white/45">(Expected − Expenses) ÷ Expected</div>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Collection Rate</div>
                 <div className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80 ? "text-green-300" : metrics.collectionRate >= 50 ? "text-amber-300" : "text-red-300"}`}>
                   {pct(metrics.collectionRate)}
                 </div>
-                <div className="mt-1 text-xs text-white/45">Received ÷ Invoiced</div>
+                <div className="mt-1 text-xs text-white/45">Actual ÷ Expected</div>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Total Jobs</div>
@@ -1117,11 +1117,11 @@ export default function ReportPage() {
                 <div className="mt-1 text-xs text-white/45">{pendingJobCount} pending · {completedJobCount} complete</div>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                <div className="text-xs text-white/60">Net Revenue</div>
+                <div className="text-xs text-white/60">Net Profit</div>
                 <div className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"}`}>
                   {currency0} {money(metrics.netRevenue)}
                 </div>
-                <div className="mt-1 text-xs text-white/45">Invoiced − Expenses</div>
+                <div className="mt-1 text-xs text-white/45">Actual Revenue − Expenses</div>
               </div>
             </div>
           </>
