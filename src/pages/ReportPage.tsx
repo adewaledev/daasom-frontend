@@ -705,33 +705,6 @@ export default function ReportPage() {
   }, [filteredJobs, clientMap, invoicesByJob, receiptsByInvoice])
 
   // Expense Category Breakdown
-  const expenseCategories = useMemo(() => {
-    const categoryMap = new Map<string, { count: number; amount: number; currency: string }>()
-    const totalAmt = filteredExpenses.reduce((s, e) => s + (parseFloat(e.amount || "0") || 0), 0)
-
-    filteredExpenses.forEach((exp) => {
-      const cat = exp.category || "Uncategorized"
-      if (!categoryMap.has(cat)) {
-        categoryMap.set(cat, { count: 0, amount: 0, currency: exp.currency || "NGN" })
-      }
-      const d = categoryMap.get(cat)!
-      d.count++
-      d.amount += parseFloat(exp.amount || "0") || 0
-    })
-
-    return {
-      rows: [...categoryMap.entries()]
-        .map(([category, d]) => ({
-          category,
-          ...d,
-          share: totalAmt > 0 ? (d.amount / totalAmt) * 100 : 0,
-        }))
-        .sort((a, b) => b.amount - a.amount),
-      total: totalAmt,
-      currency: filteredExpenses[0]?.currency || "NGN",
-    }
-  }, [filteredExpenses])
-
   const expenseBreakdownRows = useMemo(() => {
     return [...filteredExpenses]
       .sort((a, b) => String(b.expense_date).localeCompare(String(a.expense_date)))
