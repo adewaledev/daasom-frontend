@@ -36,6 +36,9 @@ function pct(n: number): string {
   return n.toFixed(1) + "%"
 }
 
+type InsightTone = "neutral" | "good" | "warn" | "risk"
+type WalkthroughSectionId = "position" | "trend" | "risk" | "performance"
+
 function StatCard({
   label,
   value,
@@ -82,6 +85,84 @@ function StatCard({
         {currency} {money(value)}
       </div>
       {subtext && <div className="mt-1 text-xs text-white/50">{subtext}</div>}
+    </div>
+  )
+}
+
+function SectionHeader({
+  step,
+  title,
+  description,
+  verdict,
+  verdictTone = "neutral",
+  open = true,
+  onToggle,
+}: {
+  step: string
+  title: string
+  description: string
+  verdict?: string
+  verdictTone?: InsightTone
+  open?: boolean
+  onToggle?: () => void
+}) {
+  const toneClass = {
+    neutral: "text-white/80 border-white/10 bg-white/5",
+    good: "text-green-200 border-green-500/20 bg-green-600/10",
+    warn: "text-amber-200 border-amber-500/20 bg-amber-600/10",
+    risk: "text-red-200 border-red-500/20 bg-red-600/10",
+  }
+
+  return (
+    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div className="space-y-1">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">{step}</div>
+        <h2 className="font-semibold text-white">{title}</h2>
+        <p className="text-xs text-white/55 max-w-3xl">{description}</p>
+      </div>
+      <div className="flex items-center gap-2 self-start">
+        {verdict ? (
+          <div className={`rounded-lg border px-3 py-2 text-xs font-semibold ${toneClass[verdictTone]}`}>
+            {verdict}
+          </div>
+        ) : null}
+        {onToggle ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10"
+          >
+            {open ? "Collapse" : "Expand"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function InsightCard({
+  title,
+  value,
+  tone = "neutral",
+  note,
+}: {
+  title: string
+  value: string
+  tone?: InsightTone
+  note: string
+}) {
+  const toneClass = {
+    neutral: "text-white",
+    good: "text-green-300",
+    warn: "text-amber-300",
+    risk: "text-red-300",
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+      <div className="text-xs text-white/55">{title}</div>
+      <div className={`mt-1 text-xl font-semibold ${toneClass[tone]}`}>{value}</div>
+      <div className="mt-2 text-xs text-white/45">{note}</div>
     </div>
   )
 }
@@ -268,6 +349,13 @@ export default function ReportPage() {
   const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeSection, setActiveSection] = useState<WalkthroughSectionId>("position")
+  const [expandedSections, setExpandedSections] = useState<Record<WalkthroughSectionId, boolean>>({
+    position: true,
+    trend: false,
+    risk: false,
+    performance: false,
+  })
 
   const jobDateOverrides = useMemo<Record<string, string>>(() => {
     try {
@@ -682,6 +770,86 @@ export default function ReportPage() {
   const currency0 = metrics.currencies[0] || "NGN"
   const pendingJobCount = filteredJobs.filter((j) => isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
   const completedJobCount = filteredJobs.filter((j) => !isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
+  const coverageGap = metrics.totalInvoiceAmount - metrics.totalReceiptAmount
+  const dominantArBucket = Object.entries(arAging.buckets).sort((a, b) => b[1].amount - a[1].amount)[0]?.[0] || "None"
+  const dominantExpenseCategory = expenseCategories.rows[0]?.category || "None"
+  const dominantExpenseShare = expenseCategories.rows[0]?.share || 0
+  const latestCashHealth = monthlyCashHealth[monthlyCashHealth.length - 1] || { netCash: 0, billingGap: 0, grossSurplus: 0 }
+  const averageJobCollectionRate = profitabilityRows.length > 0
+    ? profitabilityRows.reduce((sum, row) => sum + row.collectionRate, 0) / profitabilityRows.length
+    : 0
+
+  const positionVerdict: { text: string; tone: InsightTone } = metrics.outstanding <= 0
+    ? { text: "Position is settled", tone: "good" }
+    : metrics.collectionRate >= 80
+      ? { text: "Collections are healthy", tone: "good" }
+      : metrics.collectionRate >= 50
+        ? { text: "Cash conversion is mixed", tone: "warn" }
+        : { text: "Collections need attention", tone: "risk" }
+
+  const trendVerdict: { text: string; tone: InsightTone } = latestCashHealth.netCash > 0 && latestCashHealth.billingGap <= 0
+    ? { text: "Cash trend is improving", tone: "good" }
+    : latestCashHealth.netCash > 0
+      ? { text: "Cash positive, gap remains", tone: "warn" }
+      : latestCashHealth.billingGap > 0
+        ? { text: "Billings are outrunning cash", tone: "risk" }
+        : { text: "Trend is stable", tone: "neutral" }
+
+  const riskVerdict: { text: string; tone: InsightTone } = dominantArBucket === "91+ days"
+    ? { text: "Old receivables are building", tone: "risk" }
+    : dominantExpenseShare >= 40
+      ? { text: "Cost concentration is high", tone: "warn" }
+      : { text: "Risk spread is manageable", tone: "good" }
+
+  const performanceVerdict: { text: string; tone: InsightTone } = metrics.netRevenue < 0
+    ? { text: "Performance needs intervention", tone: "risk" }
+    : averageJobCollectionRate >= 80
+      ? { text: "Performance is converting well", tone: "good" }
+      : { text: "Performance is profitable but uneven", tone: "warn" }
+
+  const walkthroughSteps: Array<{ id: WalkthroughSectionId; step: string; short: string }> = [
+    { id: "position", step: "01", short: "Position" },
+    { id: "trend", step: "02", short: "Trend" },
+    { id: "risk", step: "03", short: "Risk" },
+    { id: "performance", step: "04", short: "Performance" },
+  ]
+
+  function toggleSection(section: WalkthroughSectionId) {
+    setExpandedSections((current) => ({ ...current, [section]: !current[section] }))
+  }
+
+  function jumpToSection(section: WalkthroughSectionId) {
+    setExpandedSections((current) => ({ ...current, [section]: true }))
+    setActiveSection(section)
+    window.setTimeout(() => {
+      document.getElementById(`report-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 0)
+  }
+
+  useEffect(() => {
+    const ids: WalkthroughSectionId[] = ["position", "trend", "risk", "performance"]
+
+    function updateActiveSection() {
+      let next: WalkthroughSectionId = "position"
+      let bestDistance = Number.POSITIVE_INFINITY
+
+      ids.forEach((id) => {
+        const element = document.getElementById(`report-${id}`)
+        if (!element) return
+        const distance = Math.abs(element.getBoundingClientRect().top - 140)
+        if (distance < bestDistance) {
+          bestDistance = distance
+          next = id
+        }
+      })
+
+      setActiveSection(next)
+    }
+
+    updateActiveSection()
+    window.addEventListener("scroll", updateActiveSection, { passive: true })
+    return () => window.removeEventListener("scroll", updateActiveSection)
+  }, [])
 
   return (
     <div className="space-y-6 text-white">
@@ -762,365 +930,395 @@ export default function ReportPage() {
         ) : null}
       </section>
 
-      {/* Primary KPI row */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="Total Invoiced"
-          value={metrics.totalInvoiceAmount}
-          currency={currency0}
-          color="blue"
-          subtext={`${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""}`}
+      <section className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-600/10 via-slate-900/60 to-emerald-600/5 p-5 space-y-4">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">Walkthrough</div>
+            <h2 className="mt-1 font-semibold text-white">Read the business in four passes</h2>
+            <p className="mt-1 text-xs text-white/55 max-w-3xl">
+              Start with cash position, then inspect trend direction, move into collection risk, and finish with job and client performance.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-white/55 sm:grid-cols-4">
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">1. Position</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">2. Trend</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">3. Risk</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">4. Performance</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <InsightCard
+            title="Cash Position Now"
+            value={`${currency0} ${money(metrics.totalReceiptAmount)}`}
+            tone={metrics.collectionRate >= 80 ? "good" : metrics.collectionRate >= 50 ? "warn" : "risk"}
+            note={`${pct(metrics.collectionRate)} of invoiced value has been collected.`}
+          />
+          <InsightCard
+            title="Largest Current Pressure"
+            value={coverageGap > 0 ? `${currency0} ${money(coverageGap)}` : `${currency0} 0.00`}
+            tone={coverageGap > 0 ? "risk" : "good"}
+            note={coverageGap > 0 ? "Uncollected billings are the main drag on liquidity." : "Collections currently cover billings."}
+          />
+          <InsightCard
+            title="Where To Look First"
+            value={dominantArBucket}
+            tone={dominantArBucket === "91+ days" ? "risk" : dominantArBucket === "61–90 days" ? "warn" : "neutral"}
+            note={`Largest AR concentration bucket. Top expense driver: ${dominantExpenseCategory} (${pct(dominantExpenseShare)}).`}
+          />
+        </div>
+      </section>
+
+      <section className="sticky top-3 z-20 rounded-2xl border border-white/10 bg-[#0b0f16]/85 p-3 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center gap-2">
+          {walkthroughSteps.map((item) => {
+            const isActive = activeSection === item.id
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => jumpToSection(item.id)}
+                className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${isActive
+                  ? "border-blue-500/30 bg-blue-600 text-white"
+                  : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
+                  }`}
+              >
+                {item.step}. {item.short}
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      <section id="report-position" className="space-y-4 scroll-mt-24">
+        <SectionHeader
+          step="01. Position"
+          title="Start with current financial position"
+          description="These headline metrics answer the immediate questions first: how much has been billed, how much cash has landed, what has been spent, and how much is still tied up outside the bank."
+          verdict={positionVerdict.text}
+          verdictTone={positionVerdict.tone}
+          open={expandedSections.position}
+          onToggle={() => toggleSection("position")}
         />
-        <StatCard
-          label="Total Received"
-          value={metrics.totalReceiptAmount}
-          currency={currency0}
-          color="green"
-          subtext={`${metrics.receiptCount} receipt${metrics.receiptCount !== 1 ? "s" : ""} · ${pct(metrics.collectionRate)} collected`}
-          onClick={() => setShowReceiptBreakdown(true)}
+        {expandedSections.position ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard
+                label="Total Invoiced"
+                value={metrics.totalInvoiceAmount}
+                currency={currency0}
+                color="blue"
+                subtext={`${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""}`}
+              />
+              <StatCard
+                label="Total Received"
+                value={metrics.totalReceiptAmount}
+                currency={currency0}
+                color="green"
+                subtext={`${metrics.receiptCount} receipt${metrics.receiptCount !== 1 ? "s" : ""} · ${pct(metrics.collectionRate)} collected`}
+                onClick={() => setShowReceiptBreakdown(true)}
+              />
+              <StatCard
+                label="Total Expenses"
+                value={metrics.totalExpenseAmount}
+                currency={currency0}
+                color="amber"
+                subtext={`${metrics.expenseCount} expense${metrics.expenseCount !== 1 ? "s" : ""}`}
+                onClick={() => setShowExpenseBreakdown(true)}
+              />
+              <StatCard
+                label="Outstanding Balance"
+                value={metrics.outstanding}
+                currency={currency0}
+                color={metrics.outstanding > 0 ? "red" : "green"}
+                subtext={
+                  metrics.outstanding > 0
+                    ? "Due from clients"
+                    : metrics.overpaid > 0
+                      ? `Overpaid by ${currency0} ${money(metrics.overpaid)}`
+                      : "All paid"
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Gross Margin</div>
+                <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
+                  {pct(metrics.grossMargin)}
+                </div>
+                <div className="mt-1 text-xs text-white/45">(Invoiced − Expenses) ÷ Invoiced</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Collection Rate</div>
+                <div className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80 ? "text-green-300" : metrics.collectionRate >= 50 ? "text-amber-300" : "text-red-300"}`}>
+                  {pct(metrics.collectionRate)}
+                </div>
+                <div className="mt-1 text-xs text-white/45">Received ÷ Invoiced</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Total Jobs</div>
+                <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
+                <div className="mt-1 text-xs text-white/45">{pendingJobCount} pending · {completedJobCount} complete</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Net Revenue</div>
+                <div className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"}`}>
+                  {currency0} {money(metrics.netRevenue)}
+                </div>
+                <div className="mt-1 text-xs text-white/45">Invoiced − Expenses</div>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </section>
+
+      <section id="report-trend" className="space-y-4 scroll-mt-24">
+        <SectionHeader
+          step="02. Trend"
+          title="Then read how money is moving over time"
+          description="This is the motion layer. First, inspect invoicing, cash collections, and spend volume. Then check whether the business is creating cash, building receivables pressure, or widening surplus."
+          verdict={trendVerdict.text}
+          verdictTone={trendVerdict.tone}
+          open={expandedSections.trend}
+          onToggle={() => toggleSection("trend")}
         />
-        <StatCard
-          label="Total Expenses"
-          value={metrics.totalExpenseAmount}
-          currency={currency0}
-          color="amber"
-          subtext={`${metrics.expenseCount} expense${metrics.expenseCount !== 1 ? "s" : ""}`}
-          onClick={() => setShowExpenseBreakdown(true)}
+        {expandedSections.trend ? (
+          <>
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+              <div>
+                <h3 className="font-semibold text-white">Financial Flow Trend</h3>
+                <p className="text-xs text-white/55 mt-1">Monthly time-series from first recorded financial activity to present.</p>
+              </div>
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <TrendLineCard title="Expenses" color="#f59e0b" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.expenses }))} />
+                <TrendLineCard title="Invoiced" color="#3b82f6" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.invoiced }))} />
+                <TrendLineCard title="Received" color="#22c55e" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.received }))} />
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+              <div>
+                <h3 className="font-semibold text-white">Cash Health Trend</h3>
+                <p className="text-xs text-white/55 mt-1">Monthly financial performance view showing cash generation, receivables buildup, and margin pressure.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <TrendLineCard title="Net Cash" color="#22c55e" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.netCash }))} />
+                <TrendLineCard title="Billing Gap" color="#f59e0b" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.billingGap }))} />
+                <TrendLineCard title="Gross Surplus" color="#3b82f6" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.grossSurplus }))} />
+              </div>
+            </div>
+          </>
+        ) : null}
+      </section>
+
+      <section id="report-risk" className="space-y-4 scroll-mt-24">
+        <SectionHeader
+          step="03. Risk"
+          title="Next isolate where risk is accumulating"
+          description="This layer helps the user answer two questions: where cash is getting stuck, and which cost bucket is taking the biggest share of spend."
+          verdict={riskVerdict.text}
+          verdictTone={riskVerdict.tone}
+          open={expandedSections.risk}
+          onToggle={() => toggleSection("risk")}
         />
-        <StatCard
-          label="Outstanding Balance"
-          value={metrics.outstanding}
-          currency={currency0}
-          color={metrics.outstanding > 0 ? "red" : "green"}
-          subtext={
-            metrics.outstanding > 0
-              ? "Due from clients"
-              : metrics.overpaid > 0
-                ? `Overpaid by ${currency0} ${money(metrics.overpaid)}`
-                : "All paid"
-          }
+        {expandedSections.risk ? (
+          <>
+            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+              <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-white">Accounts Receivable Aging</h3>
+                  <p className="text-xs text-white/55 mt-1">Outstanding amounts on issued or partially-paid invoices, grouped by age from issue date.</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-black/60">
+                      <tr className="border-b border-white/10">
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Age Bucket</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoices</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Amount Due</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">% of Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
+                        <tr key={label} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <td className="px-4 py-3 text-white/85">{label}</td>
+                          <td className="px-4 py-3 text-right text-white/80">{count}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-white">{arAging.currency} {money(amount)}</td>
+                          <td className="px-4 py-3 text-right text-white/70">{arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-white/20 bg-white/5">
+                        <td className="px-4 py-3 font-semibold text-white">Total Outstanding</td>
+                        <td className="px-4 py-3 text-right font-semibold text-white">{Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-red-300">{arAging.currency} {money(arAging.totalOutstanding)}</td>
+                        <td className="px-4 py-3 text-right text-white/70">100%</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-white">Expense Category Breakdown</h3>
+                  <p className="text-xs text-white/55 mt-1">Largest categories show where operating cost concentration sits.</p>
+                </div>
+                {expenseCategories.rows.length === 0 ? (
+                  <div className="text-sm text-white/60 py-4">No expense data yet.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-black/60">
+                        <tr className="border-b border-white/10">
+                          <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Share</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {expenseCategories.rows.map(({ category, count, amount, currency, share }) => (
+                          <tr key={category} className="border-b border-white/5 hover:bg-white/5 transition">
+                            <td className="px-4 py-3 font-semibold text-white">{category}</td>
+                            <td className="px-4 py-3 text-right text-white/80">{count}</td>
+                            <td className="px-4 py-3 text-right text-amber-200 font-semibold">{currency} {money(amount)}</td>
+                            <td className="px-4 py-3 text-right text-white/70">{pct(share)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+          </>
+        ) : null}
+      </section>
+
+      <section id="report-performance" className="space-y-4 scroll-mt-24">
+        <SectionHeader
+          step="04. Performance"
+          title="Finish with who and what is performing"
+          description="After position, trend, and risk are clear, the remaining question is where profit and collection quality are coming from at the job and client level."
+          verdict={performanceVerdict.text}
+          verdictTone={performanceVerdict.tone}
+          open={expandedSections.performance}
+          onToggle={() => toggleSection("performance")}
         />
-      </section>
+        {expandedSections.performance ? (
+          <>
+            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+              <div>
+                <h3 className="font-semibold text-white">Profitability by Job</h3>
+                <p className="text-xs text-white/55 mt-1">Jobs with financial activity, sorted by invoiced amount. Margin = (Invoiced − Expenses) ÷ Invoiced.</p>
+              </div>
+              {profitabilityRows.length === 0 ? (
+                <div className="text-sm text-white/60 py-4">No jobs with financial activity yet.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-black/60">
+                      <tr className="border-b border-white/10">
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Net</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Margin</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
+                        <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                          <td className="px-4 py-3 text-white/80">{clientName}</td>
+                          <td className="px-4 py-3 text-white/70">{job.zone}</td>
+                          <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
+                          <td className="px-4 py-3 text-right text-amber-200">{currency} {money(expenseTotal)}</td>
+                          <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>
+                            {currency} {money(net)}
+                          </td>
+                          <td
+                            className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
+                              }`}
+                          >
+                            {pct(margin)}
+                          </td>
+                          <td
+                            className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
+                              ? "text-green-300"
+                              : collectionRate > 0
+                                ? "text-amber-300"
+                                : "text-white/40"
+                              }`}
+                          >
+                            {pct(collectionRate)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
 
-      {/* Secondary KPI row */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-          <div className="text-xs text-white/60">Gross Margin</div>
-          <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
-            {pct(metrics.grossMargin)}
-          </div>
-          <div className="mt-1 text-xs text-white/45">(Invoiced − Expenses) ÷ Invoiced</div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-          <div className="text-xs text-white/60">Collection Rate</div>
-          <div
-            className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80
-              ? "text-green-300"
-              : metrics.collectionRate >= 50
-                ? "text-amber-300"
-                : "text-red-300"
-              }`}
-          >
-            {pct(metrics.collectionRate)}
-          </div>
-          <div className="mt-1 text-xs text-white/45">Received ÷ Invoiced</div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-          <div className="text-xs text-white/60">Total Jobs</div>
-          <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
-          <div className="mt-1 text-xs text-white/45">
-            {pendingJobCount} pending · {completedJobCount} complete
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-          <div className="text-xs text-white/60">Net Revenue</div>
-          <div
-            className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"
-              }`}
-          >
-            {currency0} {money(metrics.netRevenue)}
-          </div>
-          <div className="mt-1 text-xs text-white/45">Invoiced − Expenses</div>
-        </div>
-      </section>
-
-      {/* Financial Flow Trend */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Financial Flow Trend</h2>
-          <p className="text-xs text-white/55 mt-1">
-            Monthly time-series from first recorded financial activity to present.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <TrendLineCard
-            title="Expenses"
-            color="#f59e0b"
-            valuePrefix={currency0}
-            points={monthlyTrend.map((p) => ({ label: p.label, value: p.expenses }))}
-          />
-          <TrendLineCard
-            title="Invoiced"
-            color="#3b82f6"
-            valuePrefix={currency0}
-            points={monthlyTrend.map((p) => ({ label: p.label, value: p.invoiced }))}
-          />
-          <TrendLineCard
-            title="Received"
-            color="#22c55e"
-            valuePrefix={currency0}
-            points={monthlyTrend.map((p) => ({ label: p.label, value: p.received }))}
-          />
-        </div>
-      </section>
-
-      {/* Cash Health Trend */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Cash Health Trend</h2>
-          <p className="text-xs text-white/55 mt-1">
-            Monthly financial performance view showing cash generation, receivables buildup, and margin pressure.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <TrendLineCard
-            title="Net Cash"
-            color="#22c55e"
-            valuePrefix={currency0}
-            points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.netCash }))}
-          />
-          <TrendLineCard
-            title="Billing Gap"
-            color="#f59e0b"
-            valuePrefix={currency0}
-            points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.billingGap }))}
-          />
-          <TrendLineCard
-            title="Gross Surplus"
-            color="#3b82f6"
-            valuePrefix={currency0}
-            points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.grossSurplus }))}
-          />
-        </div>
-      </section>
-
-      {/* Profitability by Job */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Profitability by Job</h2>
-          <p className="text-xs text-white/55 mt-1">
-            Jobs with financial activity, sorted by invoiced amount. Margin = (Invoiced − Expenses) ÷ Invoiced.
-          </p>
-        </div>
-        {profitabilityRows.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No jobs with financial activity yet.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Net</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Margin</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
-                </tr>
-              </thead>
-              <tbody>
-                {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
-                  <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                    <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                    <td className="px-4 py-3 text-white/80">{clientName}</td>
-                    <td className="px-4 py-3 text-white/70">{job.zone}</td>
-                    <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
-                    <td className="px-4 py-3 text-right text-amber-200">{currency} {money(expenseTotal)}</td>
-                    <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>
-                      {currency} {money(net)}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
-                        }`}
-                    >
-                      {pct(margin)}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
-                        ? "text-green-300"
-                        : collectionRate > 0
-                          ? "text-amber-300"
-                          : "text-white/40"
-                        }`}
-                    >
-                      {pct(collectionRate)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Accounts Receivable Aging */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Accounts Receivable Aging</h2>
-          <p className="text-xs text-white/55 mt-1">
-            Outstanding amounts on issued or partially-paid invoices, grouped by age from issue date.
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-black/60">
-              <tr className="border-b border-white/10">
-                <th className="px-4 py-3 text-left font-semibold text-white/90">Age Bucket</th>
-                <th className="px-4 py-3 text-right font-semibold text-white/90">Invoices</th>
-                <th className="px-4 py-3 text-right font-semibold text-white/90">Amount Due</th>
-                <th className="px-4 py-3 text-right font-semibold text-white/90">% of Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
-                <tr key={label} className="border-b border-white/5 hover:bg-white/5 transition">
-                  <td className="px-4 py-3 text-white/85">{label}</td>
-                  <td className="px-4 py-3 text-right text-white/80">{count}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">
-                    {arAging.currency} {money(amount)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-white/70">
-                    {arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-white/20 bg-white/5">
-                <td className="px-4 py-3 font-semibold text-white">Total Outstanding</td>
-                <td className="px-4 py-3 text-right font-semibold text-white">
-                  {Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}
-                </td>
-                <td className="px-4 py-3 text-right font-bold text-red-300">
-                  {arAging.currency} {money(arAging.totalOutstanding)}
-                </td>
-                <td className="px-4 py-3 text-right text-white/70">100%</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </section>
-
-      {/* Top Clients by Revenue */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Top Clients by Revenue</h2>
-          <p className="text-xs text-white/55 mt-1">Up to 10 clients ranked by total invoiced amount.</p>
-        </div>
-        {topClients.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">#</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Jobs</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Collection</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
-                  const outstanding = Math.max(invoiced - received, 0)
-                  const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
-                  return (
-                    <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/40">{i + 1}</td>
-                      <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
-                      <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
-                      <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
-                      <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
-                      <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
-                      <td
-                        className={`px-4 py-3 text-right font-semibold ${collection >= 100
-                          ? "text-green-300"
-                          : collection >= 50
-                            ? "text-amber-300"
-                            : "text-red-300"
-                          }`}
-                      >
-                        {pct(collection)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Expense Category Breakdown */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
-        <div>
-          <h2 className="font-semibold text-white">Expense Category Breakdown</h2>
-          <p className="text-xs text-white/55 mt-1">All expenses grouped by category, sorted by total amount.</p>
-        </div>
-        {expenseCategories.rows.length === 0 ? (
-          <div className="text-sm text-white/60 py-4">No expense data yet.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Share</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90 w-44">Distribution</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenseCategories.rows.map(({ category, count, amount, currency, share }) => (
-                  <tr key={category} className="border-b border-white/5 hover:bg-white/5 transition">
-                    <td className="px-4 py-3 font-semibold text-white">{category}</td>
-                    <td className="px-4 py-3 text-right text-white/80">{count}</td>
-                    <td className="px-4 py-3 text-right text-amber-200 font-semibold">
-                      {currency} {money(amount)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-white/70">{pct(share)}</td>
-                    <td className="px-4 py-3">
-                      <div className="bg-white/10 rounded-full h-2 w-full">
-                        <div
-                          className="bg-amber-400 h-2 rounded-full"
-                          style={{ width: `${Math.min(share, 100)}%` }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-white/20 bg-white/5">
-                  <td className="px-4 py-3 font-semibold text-white">Total</td>
-                  <td className="px-4 py-3 text-right text-white/80">
-                    {expenseCategories.rows.reduce((s, r) => s + r.count, 0)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-amber-200">
-                    {expenseCategories.currency} {money(expenseCategories.total)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-white/70">100%</td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
+            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+              <div>
+                <h3 className="font-semibold text-white">Top Clients by Revenue</h3>
+                <p className="text-xs text-white/55 mt-1">Up to 10 clients ranked by total invoiced amount.</p>
+              </div>
+              {topClients.length === 0 ? (
+                <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-black/60">
+                      <tr className="border-b border-white/10">
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">#</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Jobs</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collection</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
+                        const outstanding = Math.max(invoiced - received, 0)
+                        const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
+                        return (
+                          <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
+                            <td className="px-4 py-3 text-white/40">{i + 1}</td>
+                            <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
+                            <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
+                            <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
+                            <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
+                            <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
+                            <td
+                              className={`px-4 py-3 text-right font-semibold ${collection >= 100
+                                ? "text-green-300"
+                                : collection >= 50
+                                  ? "text-amber-300"
+                                  : "text-red-300"
+                                }`}
+                            >
+                              {pct(collection)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          </>
+        ) : null}
       </section>
 
       {/* Expense Breakdown Modal */}
