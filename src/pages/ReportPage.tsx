@@ -95,14 +95,16 @@ function SectionHeader({
   description,
   verdict,
   verdictTone = "neutral",
+  compact = false,
   open = true,
   onToggle,
 }: {
   step: string
   title: string
-  description: string
+  description?: string
   verdict?: string
   verdictTone?: InsightTone
+  compact?: boolean
   open?: boolean
   onToggle?: () => void
 }) {
@@ -114,15 +116,15 @@ function SectionHeader({
   }
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div className="group flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div className="space-y-1">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">{step}</div>
         <h2 className="font-semibold text-white">{title}</h2>
-        <p className="text-xs text-white/55 max-w-3xl">{description}</p>
+        {description ? <p className="text-xs text-white/55 max-w-3xl">{description}</p> : null}
       </div>
       <div className="flex items-center gap-2 self-start">
         {verdict ? (
-          <div className={`rounded-lg border px-3 py-2 text-xs font-semibold ${toneClass[verdictTone]}`}>
+          <div className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-opacity ${toneClass[verdictTone]} ${compact ? "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" : "opacity-100"}`}>
             {verdict}
           </div>
         ) : null}
@@ -149,7 +151,7 @@ function InsightCard({
   title: string
   value: string
   tone?: InsightTone
-  note: string
+  note?: string
 }) {
   const toneClass = {
     neutral: "text-white",
@@ -162,7 +164,7 @@ function InsightCard({
     <div className="rounded-xl border border-white/10 bg-black/25 p-4">
       <div className="text-xs text-white/55">{title}</div>
       <div className={`mt-1 text-xl font-semibold ${toneClass[tone]}`}>{value}</div>
-      <div className="mt-2 text-xs text-white/45">{note}</div>
+      {note ? <div className="mt-2 text-xs text-white/45">{note}</div> : null}
     </div>
   )
 }
@@ -349,6 +351,7 @@ export default function ReportPage() {
   const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [showDetailText, setShowDetailText] = useState(false)
   const [activeSection, setActiveSection] = useState<WalkthroughSectionId>("operations")
   const [expandedSections, setExpandedSections] = useState<Record<WalkthroughSectionId, boolean>>({
     operations: true,
@@ -783,41 +786,41 @@ export default function ReportPage() {
     : 0
 
   const operationsVerdict: { text: string; tone: InsightTone } = pendingJobCount === 0 && unbilledJobCount === 0
-    ? { text: "Operations are fully cleared", tone: "good" }
+    ? { text: "Ops clear", tone: "good" }
     : pendingJobCount > completedJobCount
-      ? { text: "Open workload is dominating", tone: "warn" }
+      ? { text: "Open work high", tone: "warn" }
       : unbilledJobCount > 0
-        ? { text: "Some jobs still need billing", tone: "warn" }
-        : { text: "Job throughput is stable", tone: "good" }
+        ? { text: "Billing pending", tone: "warn" }
+        : { text: "Ops stable", tone: "good" }
 
   const positionVerdict: { text: string; tone: InsightTone } = metrics.outstanding <= 0
-    ? { text: "Position is settled", tone: "good" }
+    ? { text: "Position clear", tone: "good" }
     : metrics.collectionRate >= 80
-      ? { text: "Collections are healthy", tone: "good" }
+      ? { text: "Collections strong", tone: "good" }
       : metrics.collectionRate >= 50
-        ? { text: "Cash conversion is mixed", tone: "warn" }
-        : { text: "Collections need attention", tone: "risk" }
+        ? { text: "Conversion mixed", tone: "warn" }
+        : { text: "Collections weak", tone: "risk" }
 
   const collectionGap = latestCashHealth.revenueBilled - latestCashHealth.cashReceived
   const trendVerdict: { text: string; tone: InsightTone } = latestCashHealth.netCashFlow > 0 && collectionGap <= latestCashHealth.revenueBilled * 0.1
-    ? { text: "Cash flow is healthy", tone: "good" }
+    ? { text: "Cash flow healthy", tone: "good" }
     : latestCashHealth.netCashFlow > 0
-      ? { text: "Cash positive, collection gap remains", tone: "warn" }
+      ? { text: "Cash positive, gap remains", tone: "warn" }
       : collectionGap > 0
-        ? { text: "Revenue billed outrunning cash flow", tone: "risk" }
-        : { text: "Trend is stable", tone: "neutral" }
+        ? { text: "Billing outruns cash", tone: "risk" }
+        : { text: "Trend stable", tone: "neutral" }
 
   const riskVerdict: { text: string; tone: InsightTone } = dominantArBucket === "91+ days"
-    ? { text: "Old receivables are building", tone: "risk" }
+    ? { text: "Old receivables rising", tone: "risk" }
     : dominantExpenseShare >= 40
-      ? { text: "Cost concentration is high", tone: "warn" }
-      : { text: "Risk spread is manageable", tone: "good" }
+      ? { text: "Cost concentration high", tone: "warn" }
+      : { text: "Risk manageable", tone: "good" }
 
   const performanceVerdict: { text: string; tone: InsightTone } = metrics.netRevenue < 0
-    ? { text: "Performance needs intervention", tone: "risk" }
+    ? { text: "Performance weak", tone: "risk" }
     : averageJobCollectionRate >= 80
-      ? { text: "Performance is converting well", tone: "good" }
-      : { text: "Performance is profitable but uneven", tone: "warn" }
+      ? { text: "Performance strong", tone: "good" }
+      : { text: "Performance uneven", tone: "warn" }
 
   const walkthroughSteps: Array<{ id: WalkthroughSectionId; step: string; short: string }> = [
     { id: "operations", step: "01", short: "Jobs" },
@@ -947,10 +950,10 @@ export default function ReportPage() {
         <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">Walkthrough</div>
-            <h2 className="mt-1 font-semibold text-white">Read the business in four passes</h2>
-            <p className="mt-1 text-xs text-white/55 max-w-3xl">
-              Start with jobs and workload, then confirm financial position, inspect trend direction, isolate risk, and finish with job and client performance.
-            </p>
+            <h2 className="mt-1 font-semibold text-white">Read business fast</h2>
+            {showDetailText ? (
+              <p className="mt-1 text-xs text-white/55 max-w-3xl">Jobs, position, trend, risk, performance.</p>
+            ) : null}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs text-white/55 sm:grid-cols-5">
             <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">1. Jobs</div>
@@ -966,19 +969,19 @@ export default function ReportPage() {
             title="Total Jobs"
             value={String(metrics.jobCount)}
             tone={metrics.jobCount > 0 ? "neutral" : "warn"}
-            note={`${pendingJobCount} pending · ${completedJobCount} complete.`}
+            note={showDetailText ? `${pendingJobCount} pending · ${completedJobCount} complete` : undefined}
           />
           <InsightCard
             title="Pending Workload"
             value={String(pendingJobCount)}
             tone={pendingJobCount > completedJobCount ? "warn" : pendingJobCount > 0 ? "neutral" : "good"}
-            note={`${pct(completionRate)} completion rate across filtered jobs.`}
+            note={showDetailText ? `${pct(completionRate)} completion` : undefined}
           />
           <InsightCard
             title="Immediate Job Follow-up"
             value={String(Math.max(unbilledJobCount, collectionPendingJobCount))}
             tone={Math.max(unbilledJobCount, collectionPendingJobCount) > 0 ? "warn" : "good"}
-            note={`${unbilledJobCount} unbilled job${unbilledJobCount === 1 ? "" : "s"} · ${collectionPendingJobCount} job${collectionPendingJobCount === 1 ? "" : "s"} awaiting collections.`}
+            note={showDetailText ? `${unbilledJobCount} unbilled · ${collectionPendingJobCount} awaiting collection` : undefined}
           />
         </div>
       </section>
@@ -1001,6 +1004,13 @@ export default function ReportPage() {
               </button>
             )
           })}
+          <button
+            type="button"
+            onClick={() => setShowDetailText((prev) => !prev)}
+            className="ml-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/10"
+          >
+            {showDetailText ? "Hide details" : "Show details"}
+          </button>
         </div>
       </section>
 
@@ -1008,9 +1018,10 @@ export default function ReportPage() {
         <SectionHeader
           step="01. Jobs"
           title="Start with operational workload"
-          description="Begin with the pipeline: how many jobs exist, how many are still open, how many are complete, and where operational follow-up is still needed before cash can move."
+          description={showDetailText ? "Track open work, completions, and billing readiness." : undefined}
           verdict={operationsVerdict.text}
           verdictTone={operationsVerdict.tone}
+          compact={!showDetailText}
           open={expandedSections.operations}
           onToggle={() => toggleSection("operations")}
         />
@@ -1020,27 +1031,27 @@ export default function ReportPage() {
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Total Jobs</div>
                 <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
-                <div className="mt-1 text-xs text-white/45">All jobs in current filter.</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Current scope.</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Pending Jobs</div>
                 <div className="mt-1 text-lg font-semibold text-amber-300">{pendingJobCount}</div>
-                <div className="mt-1 text-xs text-white/45">Jobs still operationally open.</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Still open.</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Completed Jobs</div>
                 <div className="mt-1 text-lg font-semibold text-green-300">{completedJobCount}</div>
-                <div className="mt-1 text-xs text-white/45">Jobs fully completed in tracker.</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Tracker complete.</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Completion Rate</div>
                 <div className={`mt-1 text-lg font-semibold ${completionRate >= 75 ? "text-green-300" : completionRate >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(completionRate)}</div>
-                <div className="mt-1 text-xs text-white/45">Completed ÷ total jobs.</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Completed/total.</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Unbilled Jobs</div>
                 <div className={`mt-1 text-lg font-semibold ${unbilledJobCount > 0 ? "text-red-300" : "text-green-300"}`}>{unbilledJobCount}</div>
-                <div className="mt-1 text-xs text-white/45">Jobs without invoiced activity yet.</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">No invoice yet.</div> : null}
               </div>
             </div>
           </>
@@ -1051,9 +1062,10 @@ export default function ReportPage() {
         <SectionHeader
           step="02. Position"
           title="Start with current financial position"
-          description="These headline metrics answer the immediate questions first: how much has been billed, how much cash has landed, what has been spent, and how much is still tied up outside the bank."
+          description={showDetailText ? "Compare billed, received, spent, and outstanding." : undefined}
           verdict={positionVerdict.text}
           verdictTone={positionVerdict.tone}
+          compact={!showDetailText}
           open={expandedSections.position}
           onToggle={() => toggleSection("position")}
         />
@@ -1065,14 +1077,14 @@ export default function ReportPage() {
                 value={metrics.totalInvoiceAmount}
                 currency={currency0}
                 color="blue"
-                subtext={`${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""} · total billed`}
+                subtext={showDetailText ? `${metrics.invoiceCount} invoice${metrics.invoiceCount !== 1 ? "s" : ""} · total billed` : undefined}
               />
               <StatCard
                 label="Actual Revenue"
                 value={metrics.totalReceiptAmount}
                 currency={currency0}
                 color="green"
-                subtext={`${metrics.receiptCount} receipt${metrics.receiptCount !== 1 ? "s" : ""} · ${pct(metrics.collectionRate)} collected`}
+                subtext={showDetailText ? `${metrics.receiptCount} receipt${metrics.receiptCount !== 1 ? "s" : ""} · ${pct(metrics.collectionRate)} collected` : undefined}
                 onClick={() => setShowReceiptBreakdown(true)}
               />
               <StatCard
@@ -1080,7 +1092,7 @@ export default function ReportPage() {
                 value={metrics.totalExpenseAmount}
                 currency={currency0}
                 color="amber"
-                subtext={`${metrics.expenseCount} expense${metrics.expenseCount !== 1 ? "s" : ""}`}
+                subtext={showDetailText ? `${metrics.expenseCount} expense${metrics.expenseCount !== 1 ? "s" : ""}` : undefined}
                 onClick={() => setShowExpenseBreakdown(true)}
               />
               <StatCard
@@ -1088,13 +1100,13 @@ export default function ReportPage() {
                 value={metrics.outstanding}
                 currency={currency0}
                 color={metrics.outstanding > 0 ? "red" : "green"}
-                subtext={
-                  metrics.outstanding > 0
+                subtext={showDetailText
+                  ? (metrics.outstanding > 0
                     ? "Due from clients"
                     : metrics.overpaid > 0
                       ? `Overpaid by ${currency0} ${money(metrics.overpaid)}`
-                      : "All paid"
-                }
+                      : "All paid")
+                  : undefined}
               />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1103,26 +1115,26 @@ export default function ReportPage() {
                 <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
                   {pct(metrics.grossMargin)}
                 </div>
-                <div className="mt-1 text-xs text-white/45">(Expected − Expenses) ÷ Expected</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">(Expected − Expenses) ÷ Expected</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Collection Rate</div>
                 <div className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80 ? "text-green-300" : metrics.collectionRate >= 50 ? "text-amber-300" : "text-red-300"}`}>
                   {pct(metrics.collectionRate)}
                 </div>
-                <div className="mt-1 text-xs text-white/45">Actual ÷ Expected</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Actual ÷ Expected</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Total Jobs</div>
                 <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
-                <div className="mt-1 text-xs text-white/45">{pendingJobCount} pending · {completedJobCount} complete</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">{pendingJobCount} pending · {completedJobCount} complete</div> : null}
               </div>
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="text-xs text-white/60">Net Profit</div>
                 <div className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"}`}>
                   {currency0} {money(metrics.netRevenue)}
                 </div>
-                <div className="mt-1 text-xs text-white/45">Actual Revenue − Expenses</div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Actual Revenue − Expenses</div> : null}
               </div>
             </div>
           </>
@@ -1133,9 +1145,10 @@ export default function ReportPage() {
         <SectionHeader
           step="03. Trend"
           title="Then read how money is moving over time"
-          description="This is the motion layer. First, inspect invoicing, cash collections, and spend volume. Then check whether the business is creating cash, building receivables pressure, or widening surplus."
+          description={showDetailText ? "See monthly billing, collections, spend, and cash flow." : undefined}
           verdict={trendVerdict.text}
           verdictTone={trendVerdict.tone}
+          compact={!showDetailText}
           open={expandedSections.trend}
           onToggle={() => toggleSection("trend")}
         />
@@ -1144,7 +1157,7 @@ export default function ReportPage() {
             <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
               <div>
                 <h3 className="font-semibold text-white">Financial Flow Trend</h3>
-                <p className="text-xs text-white/55 mt-1">Monthly time-series from first recorded financial activity to present.</p>
+                {showDetailText ? <p className="text-xs text-white/55 mt-1">Monthly billed, received, and spent.</p> : null}
               </div>
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 <TrendLineCard title="Expenses" color="#f59e0b" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.expenses }))} />
@@ -1155,7 +1168,7 @@ export default function ReportPage() {
             <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
               <div>
                 <h3 className="font-semibold text-white">Cash Health Trend</h3>
-                <p className="text-xs text-white/55 mt-1">Monthly financial performance view showing cash generation, receivables buildup, and margin pressure.</p>
+                {showDetailText ? <p className="text-xs text-white/55 mt-1">Billed vs received, plus net cash flow.</p> : null}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <TrendLineCard title="Revenue Billed" color="#f59e0b" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.revenueBilled }))} />
@@ -1171,9 +1184,10 @@ export default function ReportPage() {
         <SectionHeader
           step="04. Risk"
           title="Next isolate where risk is accumulating"
-          description="This layer helps the user answer two questions: where cash is getting stuck, and which cost bucket is taking the biggest share of spend."
+          description={showDetailText ? "Check overdue receivables and cost concentration." : undefined}
           verdict={riskVerdict.text}
           verdictTone={riskVerdict.tone}
+          compact={!showDetailText}
           open={expandedSections.risk}
           onToggle={() => toggleSection("risk")}
         />
@@ -1183,7 +1197,7 @@ export default function ReportPage() {
               <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
                 <div>
                   <h3 className="font-semibold text-white">Accounts Receivable Aging</h3>
-                  <p className="text-xs text-white/55 mt-1">Outstanding amounts on issued or partially-paid invoices, grouped by age from issue date.</p>
+                  {showDetailText ? <p className="text-xs text-white/55 mt-1">Outstanding invoices grouped by age.</p> : null}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
@@ -1220,7 +1234,7 @@ export default function ReportPage() {
               <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
                 <div>
                   <h3 className="font-semibold text-white">Expense Category Breakdown</h3>
-                  <p className="text-xs text-white/55 mt-1">Largest categories show where operating cost concentration sits.</p>
+                  {showDetailText ? <p className="text-xs text-white/55 mt-1">Where spend is concentrated.</p> : null}
                 </div>
                 {expenseCategories.rows.length === 0 ? (
                   <div className="text-sm text-white/60 py-4">No expense data yet.</div>
@@ -1258,9 +1272,10 @@ export default function ReportPage() {
         <SectionHeader
           step="05. Performance"
           title="Finish with who and what is performing"
-          description="After position, trend, and risk are clear, the remaining question is where profit and collection quality are coming from at the job and client level."
+          description={showDetailText ? "Identify profitable jobs and strongest clients." : undefined}
           verdict={performanceVerdict.text}
           verdictTone={performanceVerdict.tone}
+          compact={!showDetailText}
           open={expandedSections.performance}
           onToggle={() => toggleSection("performance")}
         />
@@ -1269,7 +1284,7 @@ export default function ReportPage() {
             <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
               <div>
                 <h3 className="font-semibold text-white">Profitability by Job</h3>
-                <p className="text-xs text-white/55 mt-1">Jobs with financial activity, sorted by invoiced amount. Margin = (Invoiced − Expenses) ÷ Invoiced.</p>
+                {showDetailText ? <p className="text-xs text-white/55 mt-1">Jobs with activity, sorted by invoiced amount.</p> : null}
               </div>
               {profitabilityRows.length === 0 ? (
                 <div className="text-sm text-white/60 py-4">No jobs with financial activity yet.</div>
@@ -1326,7 +1341,7 @@ export default function ReportPage() {
             <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
               <div>
                 <h3 className="font-semibold text-white">Top Clients by Revenue</h3>
-                <p className="text-xs text-white/55 mt-1">Up to 10 clients ranked by total invoiced amount.</p>
+                {showDetailText ? <p className="text-xs text-white/55 mt-1">Top 10 by invoiced amount.</p> : null}
               </div>
               {topClients.length === 0 ? (
                 <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
