@@ -37,7 +37,7 @@ function pct(n: number): string {
 }
 
 type InsightTone = "neutral" | "good" | "warn" | "risk"
-type WalkthroughSectionId = "position" | "trend" | "risk" | "performance"
+type WalkthroughSectionId = "operations" | "position" | "trend" | "risk" | "performance"
 
 function StatCard({
   label,
@@ -349,8 +349,9 @@ export default function ReportPage() {
   const [showReceiptBreakdown, setShowReceiptBreakdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [activeSection, setActiveSection] = useState<WalkthroughSectionId>("position")
+  const [activeSection, setActiveSection] = useState<WalkthroughSectionId>("operations")
   const [expandedSections, setExpandedSections] = useState<Record<WalkthroughSectionId, boolean>>({
+    operations: true,
     position: true,
     trend: false,
     risk: false,
@@ -770,14 +771,24 @@ export default function ReportPage() {
   const currency0 = metrics.currencies[0] || "NGN"
   const pendingJobCount = filteredJobs.filter((j) => isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
   const completedJobCount = filteredJobs.filter((j) => !isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
-  const coverageGap = metrics.totalInvoiceAmount - metrics.totalReceiptAmount
+  const completionRate = metrics.jobCount > 0 ? (completedJobCount / metrics.jobCount) * 100 : 0
+  const invoicedJobCount = profitabilityRows.filter((row) => row.invoiced > 0).length
+  const unbilledJobCount = Math.max(metrics.jobCount - invoicedJobCount, 0)
+  const collectionPendingJobCount = profitabilityRows.filter((row) => row.invoiced > row.received).length
   const dominantArBucket = Object.entries(arAging.buckets).sort((a, b) => b[1].amount - a[1].amount)[0]?.[0] || "None"
-  const dominantExpenseCategory = expenseCategories.rows[0]?.category || "None"
   const dominantExpenseShare = expenseCategories.rows[0]?.share || 0
   const latestCashHealth = monthlyCashHealth[monthlyCashHealth.length - 1] || { netCash: 0, billingGap: 0, grossSurplus: 0 }
   const averageJobCollectionRate = profitabilityRows.length > 0
     ? profitabilityRows.reduce((sum, row) => sum + row.collectionRate, 0) / profitabilityRows.length
     : 0
+
+  const operationsVerdict: { text: string; tone: InsightTone } = pendingJobCount === 0 && unbilledJobCount === 0
+    ? { text: "Operations are fully cleared", tone: "good" }
+    : pendingJobCount > completedJobCount
+      ? { text: "Open workload is dominating", tone: "warn" }
+      : unbilledJobCount > 0
+        ? { text: "Some jobs still need billing", tone: "warn" }
+        : { text: "Job throughput is stable", tone: "good" }
 
   const positionVerdict: { text: string; tone: InsightTone } = metrics.outstanding <= 0
     ? { text: "Position is settled", tone: "good" }
@@ -808,10 +819,11 @@ export default function ReportPage() {
       : { text: "Performance is profitable but uneven", tone: "warn" }
 
   const walkthroughSteps: Array<{ id: WalkthroughSectionId; step: string; short: string }> = [
-    { id: "position", step: "01", short: "Position" },
-    { id: "trend", step: "02", short: "Trend" },
-    { id: "risk", step: "03", short: "Risk" },
-    { id: "performance", step: "04", short: "Performance" },
+    { id: "operations", step: "01", short: "Jobs" },
+    { id: "position", step: "02", short: "Position" },
+    { id: "trend", step: "03", short: "Trend" },
+    { id: "risk", step: "04", short: "Risk" },
+    { id: "performance", step: "05", short: "Performance" },
   ]
 
   function toggleSection(section: WalkthroughSectionId) {
@@ -827,10 +839,10 @@ export default function ReportPage() {
   }
 
   useEffect(() => {
-    const ids: WalkthroughSectionId[] = ["position", "trend", "risk", "performance"]
+    const ids: WalkthroughSectionId[] = ["operations", "position", "trend", "risk", "performance"]
 
     function updateActiveSection() {
-      let next: WalkthroughSectionId = "position"
+      let next: WalkthroughSectionId = "operations"
       let bestDistance = Number.POSITIVE_INFINITY
 
       ids.forEach((id) => {
@@ -936,35 +948,36 @@ export default function ReportPage() {
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">Walkthrough</div>
             <h2 className="mt-1 font-semibold text-white">Read the business in four passes</h2>
             <p className="mt-1 text-xs text-white/55 max-w-3xl">
-              Start with cash position, then inspect trend direction, move into collection risk, and finish with job and client performance.
+              Start with jobs and workload, then confirm financial position, inspect trend direction, isolate risk, and finish with job and client performance.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-white/55 sm:grid-cols-4">
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">1. Position</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">2. Trend</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">3. Risk</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">4. Performance</div>
+          <div className="grid grid-cols-2 gap-2 text-xs text-white/55 sm:grid-cols-5">
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">1. Jobs</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">2. Position</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">3. Trend</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">4. Risk</div>
+            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">5. Performance</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <InsightCard
-            title="Cash Position Now"
-            value={`${currency0} ${money(metrics.totalReceiptAmount)}`}
-            tone={metrics.collectionRate >= 80 ? "good" : metrics.collectionRate >= 50 ? "warn" : "risk"}
-            note={`${pct(metrics.collectionRate)} of invoiced value has been collected.`}
+            title="Total Jobs"
+            value={String(metrics.jobCount)}
+            tone={metrics.jobCount > 0 ? "neutral" : "warn"}
+            note={`${pendingJobCount} pending · ${completedJobCount} complete.`}
           />
           <InsightCard
-            title="Largest Current Pressure"
-            value={coverageGap > 0 ? `${currency0} ${money(coverageGap)}` : `${currency0} 0.00`}
-            tone={coverageGap > 0 ? "risk" : "good"}
-            note={coverageGap > 0 ? "Uncollected billings are the main drag on liquidity." : "Collections currently cover billings."}
+            title="Pending Workload"
+            value={String(pendingJobCount)}
+            tone={pendingJobCount > completedJobCount ? "warn" : pendingJobCount > 0 ? "neutral" : "good"}
+            note={`${pct(completionRate)} completion rate across filtered jobs.`}
           />
           <InsightCard
-            title="Where To Look First"
-            value={dominantArBucket}
-            tone={dominantArBucket === "91+ days" ? "risk" : dominantArBucket === "61–90 days" ? "warn" : "neutral"}
-            note={`Largest AR concentration bucket. Top expense driver: ${dominantExpenseCategory} (${pct(dominantExpenseShare)}).`}
+            title="Immediate Job Follow-up"
+            value={String(Math.max(unbilledJobCount, collectionPendingJobCount))}
+            tone={Math.max(unbilledJobCount, collectionPendingJobCount) > 0 ? "warn" : "good"}
+            note={`${unbilledJobCount} unbilled job${unbilledJobCount === 1 ? "" : "s"} · ${collectionPendingJobCount} job${collectionPendingJobCount === 1 ? "" : "s"} awaiting collections.`}
           />
         </div>
       </section>
@@ -990,9 +1003,52 @@ export default function ReportPage() {
         </div>
       </section>
 
+      <section id="report-operations" className="space-y-4 scroll-mt-24">
+        <SectionHeader
+          step="01. Jobs"
+          title="Start with operational workload"
+          description="Begin with the pipeline: how many jobs exist, how many are still open, how many are complete, and where operational follow-up is still needed before cash can move."
+          verdict={operationsVerdict.text}
+          verdictTone={operationsVerdict.tone}
+          open={expandedSections.operations}
+          onToggle={() => toggleSection("operations")}
+        />
+        {expandedSections.operations ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Total Jobs</div>
+                <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
+                <div className="mt-1 text-xs text-white/45">All jobs in current filter.</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Pending Jobs</div>
+                <div className="mt-1 text-lg font-semibold text-amber-300">{pendingJobCount}</div>
+                <div className="mt-1 text-xs text-white/45">Jobs still operationally open.</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Completed Jobs</div>
+                <div className="mt-1 text-lg font-semibold text-green-300">{completedJobCount}</div>
+                <div className="mt-1 text-xs text-white/45">Jobs fully completed in tracker.</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Completion Rate</div>
+                <div className={`mt-1 text-lg font-semibold ${completionRate >= 75 ? "text-green-300" : completionRate >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(completionRate)}</div>
+                <div className="mt-1 text-xs text-white/45">Completed ÷ total jobs.</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Unbilled Jobs</div>
+                <div className={`mt-1 text-lg font-semibold ${unbilledJobCount > 0 ? "text-red-300" : "text-green-300"}`}>{unbilledJobCount}</div>
+                <div className="mt-1 text-xs text-white/45">Jobs without invoiced activity yet.</div>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </section>
+
       <section id="report-position" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="01. Position"
+          step="02. Position"
           title="Start with current financial position"
           description="These headline metrics answer the immediate questions first: how much has been billed, how much cash has landed, what has been spent, and how much is still tied up outside the bank."
           verdict={positionVerdict.text}
@@ -1074,7 +1130,7 @@ export default function ReportPage() {
 
       <section id="report-trend" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="02. Trend"
+          step="03. Trend"
           title="Then read how money is moving over time"
           description="This is the motion layer. First, inspect invoicing, cash collections, and spend volume. Then check whether the business is creating cash, building receivables pressure, or widening surplus."
           verdict={trendVerdict.text}
@@ -1112,7 +1168,7 @@ export default function ReportPage() {
 
       <section id="report-risk" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="03. Risk"
+          step="04. Risk"
           title="Next isolate where risk is accumulating"
           description="This layer helps the user answer two questions: where cash is getting stuck, and which cost bucket is taking the biggest share of spend."
           verdict={riskVerdict.text}
@@ -1199,7 +1255,7 @@ export default function ReportPage() {
 
       <section id="report-performance" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="04. Performance"
+          step="05. Performance"
           title="Finish with who and what is performing"
           description="After position, trend, and risk are clear, the remaining question is where profit and collection quality are coming from at the job and client level."
           verdict={performanceVerdict.text}
