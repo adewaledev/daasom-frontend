@@ -599,9 +599,9 @@ export default function ReportPage() {
   const monthlyCashHealth = useMemo(() => {
     return monthlyTrend.map((p) => ({
       label: p.label,
-      netCash: Number(p.received || 0) - Number(p.expenses || 0),
-      billingGap: Number(p.invoiced || 0) - Number(p.received || 0),
-      grossSurplus: Number(p.invoiced || 0) - Number(p.expenses || 0),
+      revenueBilled: Number(p.invoiced || 0),
+      cashReceived: Number(p.received || 0),
+      netCashFlow: Number(p.received || 0) - Number(p.expenses || 0),
     }))
   }, [monthlyTrend])
 
@@ -777,7 +777,7 @@ export default function ReportPage() {
   const collectionPendingJobCount = profitabilityRows.filter((row) => row.invoiced > row.received).length
   const dominantArBucket = Object.entries(arAging.buckets).sort((a, b) => b[1].amount - a[1].amount)[0]?.[0] || "None"
   const dominantExpenseShare = expenseCategories.rows[0]?.share || 0
-  const latestCashHealth = monthlyCashHealth[monthlyCashHealth.length - 1] || { netCash: 0, billingGap: 0, grossSurplus: 0 }
+  const latestCashHealth = monthlyCashHealth[monthlyCashHealth.length - 1] || { revenueBilled: 0, cashReceived: 0, netCashFlow: 0 }
   const averageJobCollectionRate = profitabilityRows.length > 0
     ? profitabilityRows.reduce((sum, row) => sum + row.collectionRate, 0) / profitabilityRows.length
     : 0
@@ -798,12 +798,13 @@ export default function ReportPage() {
         ? { text: "Cash conversion is mixed", tone: "warn" }
         : { text: "Collections need attention", tone: "risk" }
 
-  const trendVerdict: { text: string; tone: InsightTone } = latestCashHealth.netCash > 0 && latestCashHealth.billingGap <= 0
-    ? { text: "Cash trend is improving", tone: "good" }
-    : latestCashHealth.netCash > 0
-      ? { text: "Cash positive, gap remains", tone: "warn" }
-      : latestCashHealth.billingGap > 0
-        ? { text: "Billings are outrunning cash", tone: "risk" }
+  const collectionGap = latestCashHealth.revenueBilled - latestCashHealth.cashReceived
+  const trendVerdict: { text: string; tone: InsightTone } = latestCashHealth.netCashFlow > 0 && collectionGap <= latestCashHealth.revenueBilled * 0.1
+    ? { text: "Cash flow is healthy", tone: "good" }
+    : latestCashHealth.netCashFlow > 0
+      ? { text: "Cash positive, collection gap remains", tone: "warn" }
+      : collectionGap > 0
+        ? { text: "Revenue billed outrunning cash flow", tone: "risk" }
         : { text: "Trend is stable", tone: "neutral" }
 
   const riskVerdict: { text: string; tone: InsightTone } = dominantArBucket === "91+ days"
@@ -1157,9 +1158,9 @@ export default function ReportPage() {
                 <p className="text-xs text-white/55 mt-1">Monthly financial performance view showing cash generation, receivables buildup, and margin pressure.</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <TrendLineCard title="Net Cash" color="#22c55e" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.netCash }))} />
-                <TrendLineCard title="Billing Gap" color="#f59e0b" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.billingGap }))} />
-                <TrendLineCard title="Gross Surplus" color="#3b82f6" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.grossSurplus }))} />
+                <TrendLineCard title="Revenue Billed" color="#f59e0b" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.revenueBilled }))} />
+                <TrendLineCard title="Cash Received" color="#22c55e" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.cashReceived }))} />
+                <TrendLineCard title="Net Cash Flow" color="#3b82f6" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.netCashFlow }))} />
               </div>
             </div>
           </>
