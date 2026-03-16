@@ -778,8 +778,11 @@ export default function ReportPage() {
   const invoicedJobCount = profitabilityRows.filter((row) => row.invoiced > 0).length
   const unbilledJobCount = Math.max(metrics.jobCount - invoicedJobCount, 0)
   const collectionPendingJobCount = profitabilityRows.filter((row) => row.invoiced > row.received).length
-  const dominantArBucket = Object.entries(arAging.buckets).sort((a, b) => b[1].amount - a[1].amount)[0]?.[0] || "None"
-  const dominantExpenseShare = expenseCategories.rows[0]?.share || 0
+  const overdue61Plus = (arAging.buckets["61–90 days"]?.amount || 0) + (arAging.buckets["91+ days"]?.amount || 0)
+  const overdue61PlusCount = (arAging.buckets["61–90 days"]?.count || 0) + (arAging.buckets["91+ days"]?.count || 0)
+  const topClientShare = topClients.length > 0 && metrics.totalInvoiceAmount > 0 ? (topClients[0].invoiced / metrics.totalInvoiceAmount) * 100 : 0
+  const jobsAtLoss = profitabilityRows.filter((r) => r.net < 0).length
+  const zeroCollectionJobs = profitabilityRows.filter((r) => r.invoiced > 0 && r.received === 0).length
   const latestCashHealth = monthlyCashHealth[monthlyCashHealth.length - 1] || { revenueBilled: 0, cashReceived: 0, netCashFlow: 0 }
   const averageJobCollectionRate = profitabilityRows.length > 0
     ? profitabilityRows.reduce((sum, row) => sum + row.collectionRate, 0) / profitabilityRows.length
@@ -810,10 +813,10 @@ export default function ReportPage() {
         ? { text: "Billing outruns cash", tone: "risk" }
         : { text: "Trend stable", tone: "neutral" }
 
-  const riskVerdict: { text: string; tone: InsightTone } = dominantArBucket === "91+ days"
-    ? { text: "Old receivables rising", tone: "risk" }
-    : dominantExpenseShare >= 40
-      ? { text: "Cost concentration high", tone: "warn" }
+  const riskVerdict: { text: string; tone: InsightTone } = overdue61Plus > 0 || jobsAtLoss > 0
+    ? { text: "Active risk flags", tone: "risk" }
+    : topClientShare > 50 || zeroCollectionJobs > 0
+      ? { text: "Concentration risk", tone: "warn" }
       : { text: "Risk manageable", tone: "good" }
 
   const performanceVerdict: { text: string; tone: InsightTone } = metrics.netRevenue < 0
@@ -822,12 +825,12 @@ export default function ReportPage() {
       ? { text: "Performance strong", tone: "good" }
       : { text: "Performance uneven", tone: "warn" }
 
-  const walkthroughSteps: Array<{ id: WalkthroughSectionId; step: string; short: string }> = [
-    { id: "operations", step: "01", short: "Jobs" },
-    { id: "position", step: "02", short: "Position" },
-    { id: "trend", step: "03", short: "Trend" },
-    { id: "risk", step: "04", short: "Risk" },
-    { id: "performance", step: "05", short: "Performance" },
+  const walkthroughSteps: Array<{ id: WalkthroughSectionId; short: string }> = [
+    { id: "operations", short: "Jobs" },
+    { id: "position", short: "Position" },
+    { id: "trend", short: "Trend" },
+    { id: "risk", short: "Risk" },
+    { id: "performance", short: "Performance" },
   ]
 
   function toggleSection(section: WalkthroughSectionId) {
@@ -1000,7 +1003,7 @@ export default function ReportPage() {
                   : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
                   }`}
               >
-                {item.step}. {item.short}
+                {item.short}
               </button>
             )
           })}
@@ -1016,7 +1019,7 @@ export default function ReportPage() {
 
       <section id="report-operations" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="01. Jobs"
+          step="Jobs"
           title="Start with operational workload"
           description={showDetailText ? "Track open work, completions, and billing readiness." : undefined}
           verdict={operationsVerdict.text}
@@ -1060,7 +1063,7 @@ export default function ReportPage() {
 
       <section id="report-position" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="02. Position"
+          step="Position"
           title="Start with current financial position"
           description={showDetailText ? "Compare billed, received, spent, and outstanding." : undefined}
           verdict={positionVerdict.text}
@@ -1143,7 +1146,7 @@ export default function ReportPage() {
 
       <section id="report-trend" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="03. Trend"
+          step="Trend"
           title="Then read how money is moving over time"
           description={showDetailText ? "See monthly billing, collections, spend, and cash flow." : undefined}
           verdict={trendVerdict.text}
@@ -1182,7 +1185,7 @@ export default function ReportPage() {
 
       <section id="report-risk" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="04. Risk"
+          step="Risk"
           title="Next isolate where risk is accumulating"
           description={showDetailText ? "Check overdue receivables and cost concentration." : undefined}
           verdict={riskVerdict.text}
@@ -1193,20 +1196,51 @@ export default function ReportPage() {
         />
         {expandedSections.risk ? (
           <>
-            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Overdue 61+ Days</div>
+                <div className={`mt-1 text-lg font-semibold ${overdue61Plus > 0 ? "text-red-300" : "text-green-300"}`}>
+                  {arAging.currency} {money(overdue61Plus)}
+                </div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">{overdue61PlusCount} invoice{overdue61PlusCount !== 1 ? "s" : ""} overdue</div> : null}
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Client Concentration</div>
+                <div className={`mt-1 text-lg font-semibold ${topClientShare > 50 ? "text-red-300" : topClientShare > 30 ? "text-amber-300" : "text-green-300"}`}>
+                  {pct(topClientShare)}
+                </div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Top client's revenue share</div> : null}
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Jobs at Loss</div>
+                <div className={`mt-1 text-lg font-semibold ${jobsAtLoss > 0 ? "text-red-300" : "text-green-300"}`}>
+                  {jobsAtLoss}
+                </div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Expenses exceed invoiced</div> : null}
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="text-xs text-white/60">Uncollected Jobs</div>
+                <div className={`mt-1 text-lg font-semibold ${zeroCollectionJobs > 0 ? "text-amber-300" : "text-green-300"}`}>
+                  {zeroCollectionJobs}
+                </div>
+                {showDetailText ? <div className="mt-1 text-xs text-white/45">Invoiced, nothing received</div> : null}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
                 <div>
-                  <h3 className="font-semibold text-white">Accounts Receivable Aging</h3>
+                  <h3 className="font-semibold text-white">Receivables Aging</h3>
                   {showDetailText ? <p className="text-xs text-white/55 mt-1">Outstanding invoices grouped by age.</p> : null}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="bg-black/60">
                       <tr className="border-b border-white/10">
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Age Bucket</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Age</th>
                         <th className="px-4 py-3 text-right font-semibold text-white/90">Invoices</th>
                         <th className="px-4 py-3 text-right font-semibold text-white/90">Amount Due</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">% of Total</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Share</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1221,7 +1255,7 @@ export default function ReportPage() {
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-white/20 bg-white/5">
-                        <td className="px-4 py-3 font-semibold text-white">Total Outstanding</td>
+                        <td className="px-4 py-3 font-semibold text-white">Total</td>
                         <td className="px-4 py-3 text-right font-semibold text-white">{Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}</td>
                         <td className="px-4 py-3 text-right font-bold text-red-300">{arAging.currency} {money(arAging.totalOutstanding)}</td>
                         <td className="px-4 py-3 text-right text-white/70">100%</td>
@@ -1233,31 +1267,39 @@ export default function ReportPage() {
 
               <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
                 <div>
-                  <h3 className="font-semibold text-white">Expense Category Breakdown</h3>
-                  {showDetailText ? <p className="text-xs text-white/55 mt-1">Where spend is concentrated.</p> : null}
+                  <h3 className="font-semibold text-white">Client Concentration</h3>
+                  {showDetailText ? <p className="text-xs text-white/55 mt-1">Revenue share per client — high concentration = dependency risk.</p> : null}
                 </div>
-                {expenseCategories.rows.length === 0 ? (
-                  <div className="text-sm text-white/60 py-4">No expense data yet.</div>
+                {topClients.length === 0 ? (
+                  <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="bg-black/60">
                         <tr className="border-b border-white/10">
-                          <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
-                          <th className="px-4 py-3 text-right font-semibold text-white/90">Count</th>
-                          <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
-                          <th className="px-4 py-3 text-right font-semibold text-white/90">Share</th>
+                          <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Revenue Share</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {expenseCategories.rows.map(({ category, count, amount, currency, share }) => (
-                          <tr key={category} className="border-b border-white/5 hover:bg-white/5 transition">
-                            <td className="px-4 py-3 font-semibold text-white">{category}</td>
-                            <td className="px-4 py-3 text-right text-white/80">{count}</td>
-                            <td className="px-4 py-3 text-right text-amber-200 font-semibold">{currency} {money(amount)}</td>
-                            <td className="px-4 py-3 text-right text-white/70">{pct(share)}</td>
-                          </tr>
-                        ))}
+                        {topClients.slice(0, 5).map(({ clientName, invoiced, received, currency }) => {
+                          const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
+                          const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
+                          return (
+                            <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
+                              <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
+                              <td className="px-4 py-3 text-right text-white/85">{currency} {money(invoiced)}</td>
+                              <td className={`px-4 py-3 text-right font-semibold ${collected >= 80 ? "text-green-300" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>
+                                {pct(collected)}
+                              </td>
+                              <td className={`px-4 py-3 text-right font-semibold ${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-white/70"}`}>
+                                {pct(share)}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1270,7 +1312,7 @@ export default function ReportPage() {
 
       <section id="report-performance" className="space-y-4 scroll-mt-24">
         <SectionHeader
-          step="05. Performance"
+          step="Performance"
           title="Finish with who and what is performing"
           description={showDetailText ? "Identify profitable jobs and strongest clients." : undefined}
           verdict={performanceVerdict.text}
