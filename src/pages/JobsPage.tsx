@@ -435,7 +435,7 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6 text-white">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
         <div>
           <h1 className="text-2xl font-semibold">
             <span className="text-blue-300">Jobs</span>
@@ -443,9 +443,9 @@ export default function JobsPage() {
           <p className="mt-1 text-sm text-white/60">Create jobs linked to clients. Zones: DUTY, FREE, EXPORT.</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
           <select
-            className="bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="w-full sm:w-auto bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600"
             value={viewZone}
             onChange={(e) => setViewZone(e.target.value as ViewZone)}
           >
@@ -475,7 +475,7 @@ export default function JobsPage() {
             <button
               type="button"
               onClick={() => setShowCreateForm(true)}
-              className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+              className="w-full sm:w-auto px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
             >
               Create Job
             </button>
@@ -923,12 +923,12 @@ export default function JobsPage() {
       {/* Job detail modal */}
       {viewingJob && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setViewingJob(null) }}
         >
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f1117] shadow-2xl text-white">
+          <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f1117] shadow-2xl text-white">
             {/* Header */}
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-[#0f1117] border-b border-white/10 px-6 py-4">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 bg-[#0f1117] border-b border-white/10 px-4 sm:px-6 py-4">
               <div>
                 <h2 className="font-semibold text-white text-lg">{viewingJob.file_number}</h2>
                 <p className="text-xs text-white/55 mt-0.5">
@@ -958,7 +958,7 @@ export default function JobsPage() {
             </div>
 
             {/* Body */}
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-6 space-y-5">
               {/* Status badges */}
               <div className="flex gap-2 flex-wrap">
                 <span className={zoneBadge(viewingJob.zone)}>{viewingJob.zone}</span>
@@ -971,7 +971,7 @@ export default function JobsPage() {
               </div>
 
               {/* Detail grid */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 {([
                   ["File Number", viewingJob.file_number],
                   ["Date", formatDate(getJobDate(viewingJob))],
