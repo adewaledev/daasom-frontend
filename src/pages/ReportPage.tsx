@@ -723,7 +723,6 @@ export default function ReportPage() {
   const completionRate = metrics.jobCount > 0 ? (completedJobCount / metrics.jobCount) * 100 : 0
   const invoicedJobCount = profitabilityRows.filter((row) => row.invoiced > 0).length
   const unbilledJobCount = Math.max(metrics.jobCount - invoicedJobCount, 0)
-  const collectionPendingJobCount = profitabilityRows.filter((row) => row.invoiced > row.received).length
   const overdue61Plus = (arAging.buckets["61–90 days"]?.amount || 0) + (arAging.buckets["91+ days"]?.amount || 0)
   const overdue61PlusCount = (arAging.buckets["61–90 days"]?.count || 0) + (arAging.buckets["91+ days"]?.count || 0)
   const topClientShare = topClients.length > 0 && metrics.totalInvoiceAmount > 0 ? (topClients[0].invoiced / metrics.totalInvoiceAmount) * 100 : 0
