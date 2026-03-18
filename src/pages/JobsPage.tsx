@@ -805,14 +805,16 @@ export default function JobsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={saving}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
-              >
-                {saving ? "Saving..." : editing ? "Update Job" : "Create Job"}
-              </button>
+            <div className="sticky bottom-0 -mx-5 px-5 py-3 border-t border-white/10 bg-[#0f1117]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1117]/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : editing ? "Update Job" : "Create Job"}
+                </button>
+              </div>
             </div>
           </form>
         </section>
@@ -834,58 +836,87 @@ export default function JobsPage() {
         ) : filteredJobs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No jobs for this view.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Transit</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJobs.map((j) => {
-                  const c = clientMap.get(String(j.client))
-                  const clientLabel = c
-                    ? `${(c as any).client_code} — ${(c as any).client_name}`
-                    : `Client ${String(j.client)}`
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {filteredJobs.map((j) => {
+                const c = clientMap.get(String(j.client))
+                const clientLabel = c
+                  ? `${(c as any).client_code} — ${(c as any).client_name}`
+                  : `Client ${String(j.client)}`
 
-                  return (
-                    <tr key={j.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 font-semibold text-white">{j.file_number}</td>
-                      <td className="px-4 py-3 text-white/80">{clientLabel}</td>
-                      <td className="px-4 py-3 text-white/70 text-xs">{formatDate(getJobDate(j))}</td>
-                      <td className="px-4 py-3">
-                        <span className={zoneBadge(j.zone)}>{j.zone}</span>
-                      </td>
-                      <td className="px-4 py-3 text-white/70">{formatTransitDays(getTransitDays(j.id))}</td>
-                      <td className="px-4 py-3 text-right flex gap-3 justify-end">
-                        <button
-                          type="button"
-                          onClick={() => setViewingJob(j)}
-                          className="text-white/60 hover:text-white font-semibold"
-                        >
-                          View
-                        </button>
-                        {canWriteJobs ? (
+                return (
+                  <div key={j.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold text-white">{j.file_number}</div>
+                        <div className="text-xs text-white/65 mt-0.5">{clientLabel}</div>
+                        <div className="text-xs text-white/55 mt-1">{formatDate(getJobDate(j))} • {formatTransitDays(getTransitDays(j.id))}</div>
+                      </div>
+                      <span className={zoneBadge(j.zone)}>{j.zone}</span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-end gap-3 text-sm font-semibold">
+                      <button type="button" onClick={() => setViewingJob(j)} className="text-white/70 hover:text-white">View</button>
+                      {canWriteJobs ? (
+                        <button type="button" onClick={() => startEdit(j)} className="text-blue-300 hover:text-blue-200">Edit</button>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Transit</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredJobs.map((j) => {
+                    const c = clientMap.get(String(j.client))
+                    const clientLabel = c
+                      ? `${(c as any).client_code} — ${(c as any).client_name}`
+                      : `Client ${String(j.client)}`
+
+                    return (
+                      <tr key={j.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3 font-semibold text-white">{j.file_number}</td>
+                        <td className="px-4 py-3 text-white/80">{clientLabel}</td>
+                        <td className="px-4 py-3 text-white/70 text-xs">{formatDate(getJobDate(j))}</td>
+                        <td className="px-4 py-3">
+                          <span className={zoneBadge(j.zone)}>{j.zone}</span>
+                        </td>
+                        <td className="px-4 py-3 text-white/70">{formatTransitDays(getTransitDays(j.id))}</td>
+                        <td className="px-4 py-3 text-right flex gap-3 justify-end">
                           <button
                             type="button"
-                            onClick={() => startEdit(j)}
-                            className="text-blue-300 hover:text-blue-200 font-semibold"
+                            onClick={() => setViewingJob(j)}
+                            className="text-white/60 hover:text-white font-semibold"
                           >
-                            Edit
+                            View
                           </button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                          {canWriteJobs ? (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(j)}
+                              className="text-blue-300 hover:text-blue-200 font-semibold"
+                            >
+                              Edit
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 

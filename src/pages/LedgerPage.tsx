@@ -256,46 +256,68 @@ export default function LedgerPage() {
         ) : entries.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No entries.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Type</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Direction</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Running P&amp;L</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {entriesWithRunning.map((e) => (
-                  <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                    <td className="px-4 py-3 text-white/80">{e.event_date}</td>
-                    <td className="px-4 py-3">
-                      <span className={typeBadge(e.entry_type)}>{e.entry_type}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={dirBadge(e.direction)}>{e.direction}</span>
-                    </td>
-                    <td className="px-4 py-3 text-white/90">{e.description || ""}</td>
-                    <td className="px-4 py-3 text-white/70">{e.invoice_id ? String(e.invoice_id) : ""}</td>
-                    <td className="px-4 py-3 text-right text-white/90 font-semibold">
-                      {e.currency} {money(parseAmt(e.amount))}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right font-semibold ${e._running >= 0 ? "text-green-300" : "text-red-300"
-                        }`}
-                    >
-                      {e._running < 0 ? "-" : ""}{e.currency} {money(Math.abs(e._running))}
-                    </td>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {entriesWithRunning.map((e) => (
+                <div key={e.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{e.event_date}</div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className={typeBadge(e.entry_type)}>{e.entry_type}</span>
+                        <span className={dirBadge(e.direction)}>{e.direction}</span>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-white">{e.currency} {money(parseAmt(e.amount))}</div>
+                  </div>
+                  {e.description ? <div className="mt-2 text-xs text-white/70">{e.description}</div> : null}
+                  <div className={`mt-2 text-xs font-semibold ${e._running >= 0 ? "text-green-300" : "text-red-300"}`}>
+                    Running P/L: {e._running < 0 ? "-" : ""}{e.currency} {money(Math.abs(e._running))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Type</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Direction</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Running P&amp;L</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+
+                <tbody>
+                  {entriesWithRunning.map((e) => (
+                    <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 text-white/80">{e.event_date}</td>
+                      <td className="px-4 py-3">
+                        <span className={typeBadge(e.entry_type)}>{e.entry_type}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={dirBadge(e.direction)}>{e.direction}</span>
+                      </td>
+                      <td className="px-4 py-3 text-white/90">{e.description || ""}</td>
+                      <td className="px-4 py-3 text-white/70">{e.invoice_id ? String(e.invoice_id) : ""}</td>
+                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                        {e.currency} {money(parseAmt(e.amount))}
+                      </td>
+                      <td
+                        className={`px-4 py-3 text-right font-semibold ${e._running >= 0 ? "text-green-300" : "text-red-300"
+                          }`}
+                      >
+                        {e._running < 0 ? "-" : ""}{e.currency} {money(Math.abs(e._running))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>

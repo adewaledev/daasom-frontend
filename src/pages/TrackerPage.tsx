@@ -541,56 +541,91 @@ export default function TrackerPage() {
         ) : filteredJobs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No jobs found.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client Code</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Client Name</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Entries</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJobs.map((job) => (
-                  <tr
-                    key={job.job_id}
-                    className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === job.job_id ? "bg-white/10" : ""}`}
-                  >
-                    <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                    <td className="px-4 py-3 text-white/80">{job.client_code}</td>
-                    <td className="px-4 py-3 text-white/80">{job.client_name}</td>
-                    <td className="px-4 py-3">
-                      <span className={zoneBadge(job.zone)}>{job.zone}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${job.tracker_completed
-                          ? "bg-green-500/10 text-green-200 border-green-500/20"
-                          : "bg-amber-500/10 text-amber-200 border-amber-500/20"
-                          }`}
-                      >
-                        {job.tracker_completed ? "COMPLETED" : "PENDING"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-white/70">{job.tracker_entries?.length || 0} entries</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => openJob(job.job_id)}
-                        className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
-                      >
-                        View
-                      </button>
-                    </td>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {filteredJobs.map((job) => (
+                <div key={job.job_id} className={`rounded-xl border p-3 ${selectedJobId === job.job_id ? "border-blue-500/30 bg-blue-600/10" : "border-white/10 bg-black/20"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{job.file_number}</div>
+                      <div className="text-xs text-white/65 mt-0.5">{job.client_code} • {job.client_name}</div>
+                    </div>
+                    <span className={zoneBadge(job.zone)}>{job.zone}</span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold border ${job.tracker_completed
+                        ? "bg-green-500/10 text-green-200 border-green-500/20"
+                        : "bg-amber-500/10 text-amber-200 border-amber-500/20"
+                        }`}
+                    >
+                      {job.tracker_completed ? "COMPLETED" : "PENDING"}
+                    </span>
+                    <span className="text-white/60">{job.tracker_entries?.length || 0} entries</span>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => openJob(job.job_id)}
+                      className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client Code</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client Name</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Entries</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredJobs.map((job) => (
+                    <tr
+                      key={job.job_id}
+                      className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === job.job_id ? "bg-white/10" : ""}`}
+                    >
+                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                      <td className="px-4 py-3 text-white/80">{job.client_code}</td>
+                      <td className="px-4 py-3 text-white/80">{job.client_name}</td>
+                      <td className="px-4 py-3">
+                        <span className={zoneBadge(job.zone)}>{job.zone}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${job.tracker_completed
+                            ? "bg-green-500/10 text-green-200 border-green-500/20"
+                            : "bg-amber-500/10 text-amber-200 border-amber-500/20"
+                            }`}
+                        >
+                          {job.tracker_completed ? "COMPLETED" : "PENDING"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-white/70">{job.tracker_entries?.length || 0} entries</td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => openJob(job.job_id)}
+                          className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
@@ -712,25 +747,27 @@ export default function TrackerPage() {
                       className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
                     />
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowNewEntryForm(false)
-                        setNewEntryForm(emptyForm)
-                      }}
-                      className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={addEntry}
-                      disabled={saving}
-                      className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
-                    >
-                      Save
-                    </button>
+                  <div className="sticky bottom-0 -mx-4 px-4 py-3 border-t border-white/10 bg-[#0f1117]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1117]/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNewEntryForm(false)
+                          setNewEntryForm(emptyForm)
+                        }}
+                        className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={addEntry}
+                        disabled={saving}
+                        className="px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -740,7 +777,7 @@ export default function TrackerPage() {
                   No entries yet. {!selectedJob.tracker_completed && canWriteTracker ? "Add one to get started." : ""}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
                   <table className="min-w-[1100px] w-full text-sm table-fixed">
                     <thead className="bg-black/60 text-white">
                       <tr className="border-b border-white/10">

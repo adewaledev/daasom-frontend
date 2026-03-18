@@ -13,3 +13,12 @@ html, body {
 body {
   margin: 0;
 }
+
+@media (max-width: 767px) {
+  button,
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}

@@ -545,64 +545,84 @@ export default function DocumentsPage() {
         ) : docs.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No documents.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Type</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Link</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">File</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Size</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Uploaded</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {docs.map((d) => (
-                  <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                    <td className="px-4 py-3">
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {docs.map((d) => (
+                <div key={d.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
                       <span className={typeBadge(d.doc_type)}>{d.doc_type}</span>
-                    </td>
-                    <td className="px-4 py-3 text-white/80">{linkPreview(d)}</td>
-                    <td className="px-4 py-3 text-white/90">
-                      <div className="font-semibold">{d.filename}</div>
-                      <div className="text-xs text-white/60">{d.content_type || ""}</div>
-                    </td>
-                    <td className="px-4 py-3 text-white/70">{formatBytes(d.size_bytes)}</td>
-                    <td className="px-4 py-3 text-white/70">{String(d.uploaded_at).slice(0, 19).replace("T", " ")}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => onPreview(d)}
-                          className="text-green-300 hover:text-green-200 font-semibold"
-                        >
-                          Preview
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDownload(d)}
-                          disabled={busy}
-                          className="text-blue-300 hover:text-blue-200 font-semibold disabled:opacity-60"
-                        >
-                          Download
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(d)}
-                          disabled={busy || !canWriteDocuments}
-                          className="text-white/60 hover:text-red-200 font-semibold disabled:opacity-60"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+                      <div className="mt-2 text-sm font-semibold text-white break-all">{d.filename}</div>
+                      <div className="text-xs text-white/60 mt-0.5">{formatBytes(d.size_bytes)} • {String(d.uploaded_at).slice(0, 19).replace("T", " ")}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-sm font-semibold">
+                    <button type="button" onClick={() => onPreview(d)} className="text-green-300 hover:text-green-200">Preview</button>
+                    <button type="button" onClick={() => onDownload(d)} disabled={busy} className="text-blue-300 hover:text-blue-200 disabled:opacity-60">Download</button>
+                    <button type="button" onClick={() => onDelete(d)} disabled={busy || !canWriteDocuments} className="text-white/60 hover:text-red-200 disabled:opacity-60">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Type</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Link</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">File</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Size</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Uploaded</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+
+                <tbody>
+                  {docs.map((d) => (
+                    <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3">
+                        <span className={typeBadge(d.doc_type)}>{d.doc_type}</span>
+                      </td>
+                      <td className="px-4 py-3 text-white/80">{linkPreview(d)}</td>
+                      <td className="px-4 py-3 text-white/90">
+                        <div className="font-semibold">{d.filename}</div>
+                        <div className="text-xs text-white/60">{d.content_type || ""}</div>
+                      </td>
+                      <td className="px-4 py-3 text-white/70">{formatBytes(d.size_bytes)}</td>
+                      <td className="px-4 py-3 text-white/70">{String(d.uploaded_at).slice(0, 19).replace("T", " ")}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => onPreview(d)}
+                            className="text-green-300 hover:text-green-200 font-semibold"
+                          >
+                            Preview
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDownload(d)}
+                            disabled={busy}
+                            className="text-blue-300 hover:text-blue-200 font-semibold disabled:opacity-60"
+                          >
+                            Download
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDelete(d)}
+                            disabled={busy || !canWriteDocuments}
+                            className="text-white/60 hover:text-red-200 font-semibold disabled:opacity-60"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>

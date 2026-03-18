@@ -625,62 +625,91 @@ export default function ExpensesPage() {
         ) : filteredExpenses.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No expenses match your search.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                </tr>
-              </thead>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {paginatedExpenses.map((x) => {
+                const j = jobMap.get(String(x.job))
+                const jobLabel = j ? `${j.file_number} • ${j.zone}` : `Job ${String(x.job)}`
+                return (
+                  <div key={x.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold text-white">{x.category}</div>
+                        <div className="text-xs text-white/65 mt-0.5">{jobLabel}</div>
+                        <div className="text-xs text-white/55 mt-1">{x.expense_date}</div>
+                      </div>
+                      <span className={statusBadge(x.status)}>{x.status}</span>
+                    </div>
+                    <div className="mt-2 text-sm font-semibold text-white">{x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}</div>
+                    <div className="mt-3 flex items-center justify-end gap-3 text-sm font-semibold">
+                      {canWriteExpenses ? (
+                        <>
+                          <button type="button" onClick={() => startEdit(x)} className="text-blue-300 hover:text-blue-200">Edit</button>
+                          <button type="button" onClick={() => onDelete(x)} className="text-white/60 hover:text-red-200">Delete</button>
+                        </>
+                      ) : <span className="text-white/40">View only</span>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {paginatedExpenses.map((x) => {
-                  const j = jobMap.get(String(x.job))
-                  const jobLabel = j ? `${j.file_number} • ${j.zone}` : `Job ${String(x.job)}`
+                <tbody>
+                  {paginatedExpenses.map((x) => {
+                    const j = jobMap.get(String(x.job))
+                    const jobLabel = j ? `${j.file_number} • ${j.zone}` : `Job ${String(x.job)}`
 
-                  return (
-                    <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/85">{jobLabel}</td>
-                      <td className="px-4 py-3 text-white/90">{x.category}</td>
-                      <td className="px-4 py-3 text-white/90">
-                        {x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}
-                      </td>
-                      <td className="px-4 py-3 text-white/80">{x.expense_date}</td>
-                      <td className="px-4 py-3">
-                        <span className={statusBadge(x.status)}>{x.status}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-3">
-                          {canWriteExpenses ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => startEdit(x)}
-                                className="text-blue-300 hover:text-blue-200 font-semibold"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onDelete(x)}
-                                className="text-white/60 hover:text-red-200 font-semibold"
-                              >
-                                Delete
-                              </button>
-                            </>
-                          ) : <span className="text-white/40">View only</span>}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3 text-white/85">{jobLabel}</td>
+                        <td className="px-4 py-3 text-white/90">{x.category}</td>
+                        <td className="px-4 py-3 text-white/90">
+                          {x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}
+                        </td>
+                        <td className="px-4 py-3 text-white/80">{x.expense_date}</td>
+                        <td className="px-4 py-3">
+                          <span className={statusBadge(x.status)}>{x.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex items-center gap-3">
+                            {canWriteExpenses ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => startEdit(x)}
+                                  className="text-blue-300 hover:text-blue-200 font-semibold"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onDelete(x)}
+                                  className="text-white/60 hover:text-red-200 font-semibold"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            ) : <span className="text-white/40">View only</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             {filteredExpenses.length > itemsPerPage ? (
               <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
@@ -707,7 +736,7 @@ export default function ExpensesPage() {
                 </div>
               </div>
             ) : null}
-          </div>
+          </>
         )}
       </section>
     </div>

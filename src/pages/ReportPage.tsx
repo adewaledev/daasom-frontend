@@ -882,8 +882,8 @@ export default function ReportPage() {
         ) : null}
       </section>
 
-      <section className="sticky top-3 z-20 rounded-2xl border border-white/10 bg-[#0b0f16]/85 p-3 backdrop-blur-xl">
-        <div className="flex flex-wrap items-center gap-2">
+      <section className="sticky top-2 z-20 rounded-2xl border border-white/10 bg-[#0b0f16]/85 p-2 sm:top-3 sm:p-3 backdrop-blur-xl">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {walkthroughSteps.map((item) => {
             const isActive = activeSection === item.id
             return (
@@ -891,7 +891,7 @@ export default function ReportPage() {
                 key={item.id}
                 type="button"
                 onClick={() => jumpToSection(item.id)}
-                className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${isActive
+                className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition sm:px-3 sm:py-2 sm:text-xs ${isActive
                   ? "border-blue-500/30 bg-blue-600 text-white"
                   : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
                   }`}
@@ -903,7 +903,7 @@ export default function ReportPage() {
           <button
             type="button"
             onClick={() => setShowDetailText((prev) => !prev)}
-            className="ml-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/10"
+            className="w-full sm:w-auto sm:ml-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/10"
           >
             {showDetailText ? "Hide details" : "Show details"}
           </button>
@@ -920,7 +920,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
             <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
               <div className="text-xs text-white/60">Total Jobs</div>
               <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
@@ -960,7 +960,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard
               label="Expected Revenue"
               value={metrics.totalInvoiceAmount}
@@ -998,7 +998,7 @@ export default function ReportPage() {
                 : undefined}
             />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
               <div className="text-xs text-white/60">Gross Margin</div>
               <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
@@ -1039,7 +1039,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
               <h3 className="font-semibold text-white">Financial Flow Trend</h3>
               {showDetailText ? <p className="text-xs text-white/55 mt-1">Monthly billed, received, and spent.</p> : null}
@@ -1050,7 +1050,7 @@ export default function ReportPage() {
               <TrendLineCard title="Received" color="#22c55e" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.received }))} />
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
               <h3 className="font-semibold text-white">Cash Health Trend</h3>
               {showDetailText ? <p className="text-xs text-white/55 mt-1">Billed vs received, plus net cash flow.</p> : null}
@@ -1074,7 +1074,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
               <div className="text-xs text-white/60">Overdue 61+ Days</div>
               <div className={`mt-1 text-lg font-semibold ${overdue61Plus > 0 ? "text-red-300" : "text-green-300"}`}>
@@ -1106,13 +1106,29 @@ export default function ReportPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
               <div>
                 <h3 className="font-semibold text-white">Receivables Aging</h3>
                 {showDetailText ? <p className="text-xs text-white/55 mt-1">Outstanding invoices grouped by age.</p> : null}
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
+              <div className="space-y-2 md:hidden">
+                {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
+                  <div key={label} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="text-xs text-white/55">{label}</div>
+                    <div className="mt-1 text-sm font-semibold text-white">{arAging.currency} {money(amount)}</div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-white/70">
+                      <span>{count} invoice{count !== 1 ? "s" : ""}</span>
+                      <span>{arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="rounded-xl border border-white/15 bg-white/5 p-3">
+                  <div className="text-xs text-white/60">Total Outstanding</div>
+                  <div className="mt-1 text-sm font-semibold text-red-300">{arAging.currency} {money(arAging.totalOutstanding)}</div>
+                </div>
+              </div>
+              <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="min-w-[680px] w-full text-xs sm:text-sm">
                   <thead className="bg-black/60">
                     <tr className="border-b border-white/10">
                       <th className="px-4 py-3 text-left font-semibold text-white/90">Age</th>
@@ -1143,7 +1159,7 @@ export default function ReportPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
               <div>
                 <h3 className="font-semibold text-white">Client Concentration</h3>
                 {showDetailText ? <p className="text-xs text-white/55 mt-1">Revenue share per client — high concentration = dependency risk.</p> : null}
@@ -1151,36 +1167,61 @@ export default function ReportPage() {
               {topClients.length === 0 ? (
                 <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-black/60">
-                      <tr className="border-b border-white/10">
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Revenue Share</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topClients.slice(0, 5).map(({ clientName, invoiced, received, currency }) => {
-                        const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
-                        const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
-                        return (
-                          <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
-                            <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
-                            <td className="px-4 py-3 text-right text-white/85">{currency} {money(invoiced)}</td>
-                            <td className={`px-4 py-3 text-right font-semibold ${collected >= 80 ? "text-green-300" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>
-                              {pct(collected)}
-                            </td>
-                            <td className={`px-4 py-3 text-right font-semibold ${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-white/70"}`}>
-                              {pct(share)}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div className="space-y-2 md:hidden">
+                    {topClients.slice(0, 5).map(({ clientName, invoiced, received, currency }) => {
+                      const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
+                      const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
+                      return (
+                        <div key={clientName} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                          <div className="text-sm font-semibold text-white">{clientName}</div>
+                          <div className="mt-2 flex items-center justify-between text-xs text-white/65">
+                            <span>Invoiced</span>
+                            <span className="text-white/85">{currency} {money(invoiced)}</span>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between text-xs text-white/65">
+                            <span>Collected</span>
+                            <span className={`${collected >= 80 ? "text-green-300" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(collected)}</span>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between text-xs text-white/65">
+                            <span>Revenue Share</span>
+                            <span className={`${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-white/75"}`}>{pct(share)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <table className="min-w-[680px] w-full text-xs sm:text-sm">
+                      <thead className="bg-black/60">
+                        <tr className="border-b border-white/10">
+                          <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
+                          <th className="px-4 py-3 text-right font-semibold text-white/90">Revenue Share</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topClients.slice(0, 5).map(({ clientName, invoiced, received, currency }) => {
+                          const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
+                          const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
+                          return (
+                            <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
+                              <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
+                              <td className="px-4 py-3 text-right text-white/85">{currency} {money(invoiced)}</td>
+                              <td className={`px-4 py-3 text-right font-semibold ${collected >= 80 ? "text-green-300" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>
+                                {pct(collected)}
+                              </td>
+                              <td className={`px-4 py-3 text-right font-semibold ${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-white/70"}`}>
+                                {pct(share)}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </section>
           </div>
@@ -1197,7 +1238,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+          <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
               <h3 className="font-semibold text-white">Profitability by Job</h3>
               {showDetailText ? <p className="text-xs text-white/55 mt-1">Jobs with activity, sorted by invoiced amount.</p> : null}
@@ -1205,56 +1246,89 @@ export default function ReportPage() {
             {profitabilityRows.length === 0 ? (
               <div className="text-sm text-white/60 py-4">No jobs with financial activity yet.</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-black/60">
-                    <tr className="border-b border-white/10">
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Net</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Margin</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
-                      <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                        <td className="px-4 py-3 text-white/80">{clientName}</td>
-                        <td className="px-4 py-3 text-white/70">{job.zone}</td>
-                        <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
-                        <td className="px-4 py-3 text-right text-amber-200">{currency} {money(expenseTotal)}</td>
-                        <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>
-                          {currency} {money(net)}
-                        </td>
-                        <td
-                          className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
-                            }`}
-                        >
-                          {pct(margin)}
-                        </td>
-                        <td
-                          className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
-                            ? "text-green-300"
-                            : collectionRate > 0
-                              ? "text-amber-300"
-                              : "text-white/40"
-                            }`}
-                        >
-                          {pct(collectionRate)}
-                        </td>
+              <>
+                <div className="space-y-2 md:hidden">
+                  {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
+                    <div key={job.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-semibold text-white">{job.file_number}</div>
+                          <div className="text-xs text-white/60">{clientName} · {job.zone}</div>
+                        </div>
+                        <div className={`text-sm font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>{currency} {money(net)}</div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                          <div className="text-white/55">Invoiced</div>
+                          <div className="mt-0.5 text-white/90">{currency} {money(invoiced)}</div>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                          <div className="text-white/55">Expenses</div>
+                          <div className="mt-0.5 text-amber-200">{currency} {money(expenseTotal)}</div>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                          <div className="text-white/55">Margin</div>
+                          <div className={`mt-0.5 ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"}`}>{pct(margin)}</div>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                          <div className="text-white/55">Collected</div>
+                          <div className={`mt-0.5 ${collectionRate >= 100 ? "text-green-300" : collectionRate > 0 ? "text-amber-300" : "text-white/40"}`}>{pct(collectionRate)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                  <table className="min-w-[760px] w-full text-xs sm:text-sm">
+                    <thead className="bg-black/60">
+                      <tr className="border-b border-white/10">
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Net</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Margin</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
+                        <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
+                          <td className="px-4 py-3 text-white/80">{clientName}</td>
+                          <td className="px-4 py-3 text-white/70">{job.zone}</td>
+                          <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
+                          <td className="px-4 py-3 text-right text-amber-200">{currency} {money(expenseTotal)}</td>
+                          <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>
+                            {currency} {money(net)}
+                          </td>
+                          <td
+                            className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
+                              }`}
+                          >
+                            {pct(margin)}
+                          </td>
+                          <td
+                            className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
+                              ? "text-green-300"
+                              : collectionRate > 0
+                                ? "text-amber-300"
+                                : "text-white/40"
+                              }`}
+                          >
+                            {pct(collectionRate)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+          <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
               <h3 className="font-semibold text-white">Top Clients by Revenue</h3>
               {showDetailText ? <p className="text-xs text-white/55 mt-1">Top 10 by invoiced amount.</p> : null}
@@ -1262,47 +1336,81 @@ export default function ReportPage() {
             {topClients.length === 0 ? (
               <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-black/60">
-                    <tr className="border-b border-white/10">
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">#</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Jobs</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Collection</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
-                      const outstanding = Math.max(invoiced - received, 0)
-                      const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
-                      return (
-                        <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
-                          <td className="px-4 py-3 text-white/40">{i + 1}</td>
-                          <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
-                          <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
-                          <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
-                          <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
-                          <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
-                          <td
-                            className={`px-4 py-3 text-right font-semibold ${collection >= 100
-                              ? "text-green-300"
-                              : collection >= 50
-                                ? "text-amber-300"
-                                : "text-red-300"
-                              }`}
-                          >
-                            {pct(collection)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="space-y-2 md:hidden">
+                  {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
+                    const outstanding = Math.max(invoiced - received, 0)
+                    const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
+                    return (
+                      <div key={clientName} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-sm font-semibold text-white">{i + 1}. {clientName}</div>
+                          <div className="text-xs text-white/60">{jobCount} jobs</div>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                            <div className="text-white/55">Invoiced</div>
+                            <div className="mt-0.5 text-white/90">{currency} {money(invoiced)}</div>
+                          </div>
+                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                            <div className="text-white/55">Received</div>
+                            <div className="mt-0.5 text-green-200">{currency} {money(received)}</div>
+                          </div>
+                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                            <div className="text-white/55">Outstanding</div>
+                            <div className="mt-0.5 text-red-200">{currency} {money(outstanding)}</div>
+                          </div>
+                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
+                            <div className="text-white/55">Collection</div>
+                            <div className={`mt-0.5 ${collection >= 100 ? "text-green-300" : collection >= 50 ? "text-amber-300" : "text-red-300"}`}>{pct(collection)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                  <table className="min-w-[760px] w-full text-xs sm:text-sm">
+                    <thead className="bg-black/60">
+                      <tr className="border-b border-white/10">
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">#</th>
+                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Jobs</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
+                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collection</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
+                        const outstanding = Math.max(invoiced - received, 0)
+                        const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
+                        return (
+                          <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
+                            <td className="px-4 py-3 text-white/40">{i + 1}</td>
+                            <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
+                            <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
+                            <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
+                            <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
+                            <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
+                            <td
+                              className={`px-4 py-3 text-right font-semibold ${collection >= 100
+                                ? "text-green-300"
+                                : collection >= 50
+                                  ? "text-amber-300"
+                                  : "text-red-300"
+                                }`}
+                            >
+                              {pct(collection)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </section>
         </>
@@ -1310,9 +1418,9 @@ export default function ReportPage() {
 
       {/* Expense Breakdown Modal */}
       {showExpenseBreakdown && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-6xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
+            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-white/10 flex items-start gap-3 justify-between">
               <div>
                 <h2 className="font-semibold text-white">Expenses Breakdown</h2>
                 <p className="text-xs text-white/60 mt-1">
@@ -1330,8 +1438,8 @@ export default function ReportPage() {
             {expenseBreakdownRows.length === 0 ? (
               <div className="p-5 text-sm text-white/60">No expenses to display.</div>
             ) : (
-              <div className="overflow-auto max-h-[70vh]">
-                <table className="min-w-full text-sm">
+              <div className="overflow-auto max-h-[74vh]">
+                <table className="min-w-[900px] w-full text-xs sm:text-sm">
                   <thead className="bg-black/80 text-white sticky top-0">
                     <tr className="border-b border-white/10">
                       <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
@@ -1367,9 +1475,9 @@ export default function ReportPage() {
 
       {/* Receipt Breakdown Modal */}
       {showReceiptBreakdown && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-6xl max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
+            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-white/10 flex items-start gap-3 justify-between">
               <div>
                 <h2 className="font-semibold text-white">Receipts Breakdown</h2>
                 <p className="text-xs text-white/60 mt-1">
@@ -1387,8 +1495,8 @@ export default function ReportPage() {
             {receiptBreakdownRows.length === 0 ? (
               <div className="p-5 text-sm text-white/60">No receipts to display.</div>
             ) : (
-              <div className="overflow-auto max-h-[70vh]">
-                <table className="min-w-full text-sm">
+              <div className="overflow-auto max-h-[74vh]">
+                <table className="min-w-[900px] w-full text-xs sm:text-sm">
                   <thead className="bg-black/80 text-white sticky top-0">
                     <tr className="border-b border-white/10">
                       <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>

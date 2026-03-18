@@ -300,51 +300,84 @@ export default function ClientsPage() {
         ) : clients.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No clients yet.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Code</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Prefix</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Name</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.map((c) => (
-                  <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                    <td className="px-4 py-3 text-white/90">{c.client_code}</td>
-                    <td className="px-4 py-3 text-white/90">{c.client_prefix}</td>
-                    <td className="px-4 py-3 text-white/90">{c.client_name}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={[
-                          "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
-                          c.is_active
-                            ? "bg-blue-600/15 text-blue-200 border-blue-500/20"
-                            : "bg-white/5 text-white/70 border-white/10",
-                        ].join(" ")}
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {clients.map((c) => (
+                <div key={c.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-semibold text-white">{c.client_name}</div>
+                    <span
+                      className={[
+                        "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
+                        c.is_active
+                          ? "bg-blue-600/15 text-blue-200 border-blue-500/20"
+                          : "bg-white/5 text-white/70 border-white/10",
+                      ].join(" ")}
+                    >
+                      {c.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs text-white/65">{c.client_code} • {c.client_prefix}</div>
+                  <div className="mt-3 flex justify-end">
+                    {canWriteClients ? (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(c)}
+                        className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
                       >
-                        {c.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {canWriteClients ? (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(c)}
-                          className="text-blue-300 hover:text-blue-200 font-semibold"
-                        >
-                          Edit
-                        </button>
-                      ) : <span className="text-white/40">View only</span>}
-                    </td>
+                        Edit
+                      </button>
+                    ) : <span className="text-white/40 text-sm">View only</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Code</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Prefix</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Name</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {clients.map((c) => (
+                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                      <td className="px-4 py-3 text-white/90">{c.client_code}</td>
+                      <td className="px-4 py-3 text-white/90">{c.client_prefix}</td>
+                      <td className="px-4 py-3 text-white/90">{c.client_name}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={[
+                            "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
+                            c.is_active
+                              ? "bg-blue-600/15 text-blue-200 border-blue-500/20"
+                              : "bg-white/5 text-white/70 border-white/10",
+                          ].join(" ")}
+                        >
+                          {c.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {canWriteClients ? (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(c)}
+                            className="text-blue-300 hover:text-blue-200 font-semibold"
+                          >
+                            Edit
+                          </button>
+                        ) : <span className="text-white/40">View only</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>

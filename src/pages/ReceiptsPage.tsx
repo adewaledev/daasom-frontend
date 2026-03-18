@@ -651,54 +651,77 @@ export default function ReceiptsPage() {
         ) : filteredReceipts.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No receipts match your search.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Method</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Balance</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Reference</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                </tr>
-              </thead>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {paginatedReceipts.map((r) => {
+                const inv = invoiceMap.get(String(r.invoice))
+                return (
+                  <div key={r.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="text-sm font-semibold text-white">{inv ? inv.invoice_number : String(r.invoice)}</div>
+                    <div className="mt-1 text-xs text-white/65">{r.payment_date} • {r.method || "No method"}</div>
+                    <div className="mt-2 text-sm font-semibold text-white">{r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}</div>
+                    {r.reference ? <div className="mt-1 text-xs text-white/60">Ref: {r.reference}</div> : null}
+                    <div className="mt-3 flex items-center justify-end gap-3 text-sm font-semibold">
+                      {canWriteReceipts ? (
+                        <>
+                          <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200">Edit</button>
+                          <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200">Delete</button>
+                        </>
+                      ) : <span className="text-white/40">View only</span>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Method</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Balance</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Reference</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {paginatedReceipts.map((r) => {
-                  const inv = invoiceMap.get(String(r.invoice))
-                  return (
-                    <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/85">{inv ? inv.invoice_number : String(r.invoice)}</td>
-                      <td className="px-4 py-3 text-white/90">
-                        {r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}
-                      </td>
-                      <td className="px-4 py-3 text-white/80">{r.payment_date}</td>
-                      <td className="px-4 py-3 text-white/80">{r.method || ""}</td>
-                      <td className="px-4 py-3 text-white/80">
-                        {inv ? `${inv.currency} ${formatAmountWithCommas(String(getInvoiceBalance(inv)))}` : ""}
-                      </td>
-                      <td className="px-4 py-3 text-white/80">{r.reference || ""}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-3">
-                          {canWriteReceipts ? (
-                            <>
-                              <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200 font-semibold">
-                                Edit
-                              </button>
-                              <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200 font-semibold">
-                                Delete
-                              </button>
-                            </>
-                          ) : <span className="text-white/40">View only</span>}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                <tbody>
+                  {paginatedReceipts.map((r) => {
+                    const inv = invoiceMap.get(String(r.invoice))
+                    return (
+                      <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3 text-white/85">{inv ? inv.invoice_number : String(r.invoice)}</td>
+                        <td className="px-4 py-3 text-white/90">
+                          {r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}
+                        </td>
+                        <td className="px-4 py-3 text-white/80">{r.payment_date}</td>
+                        <td className="px-4 py-3 text-white/80">{r.method || ""}</td>
+                        <td className="px-4 py-3 text-white/80">
+                          {inv ? `${inv.currency} ${formatAmountWithCommas(String(getInvoiceBalance(inv)))}` : ""}
+                        </td>
+                        <td className="px-4 py-3 text-white/80">{r.reference || ""}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex items-center gap-3">
+                            {canWriteReceipts ? (
+                              <>
+                                <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200 font-semibold">
+                                  Edit
+                                </button>
+                                <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200 font-semibold">
+                                  Delete
+                                </button>
+                              </>
+                            ) : <span className="text-white/40">View only</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             {filteredReceipts.length > itemsPerPage ? (
               <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
@@ -725,7 +748,7 @@ export default function ReceiptsPage() {
                 </div>
               </div>
             ) : null}
-          </div>
+          </>
         )}
       </section>
     </div>

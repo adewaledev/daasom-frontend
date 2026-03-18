@@ -712,115 +712,143 @@ export default function InvoicesPage() {
         ) : filteredInvoices.length === 0 ? (
           <div className="p-5 text-sm text-white/60">No invoices match your search.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-black/60 text-white">
-                <tr className="border-b border-white/10">
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                  <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
-                </tr>
-              </thead>
+          <>
+            <div className="space-y-2 p-3 sm:hidden">
+              {paginatedInvoices.map((x) => {
+                const isBusy = busyActionId === x.id
+                return (
+                  <div key={x.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-semibold text-white">{x.invoice_number}</div>
+                        <div className="text-xs text-white/65 mt-0.5">{jobLabel(String(x.job))}</div>
+                        <div className="text-xs text-white/55 mt-1">{x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}</div>
+                      </div>
+                      <span className={statusBadge(x.status)}>{x.status}</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm font-semibold">
+                      {canWriteInvoices ? (
+                        <>
+                          <button type="button" onClick={() => startEdit(x)} className="text-blue-300 hover:text-blue-200">Edit</button>
+                          <button type="button" onClick={() => onDelete(x)} className="text-white/60 hover:text-red-200">Delete</button>
+                        </>
+                      ) : <span className="text-white/40">View only</span>}
+                      {isBusy ? <span className="text-xs text-white/50">Working…</span> : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+              <table className="min-w-[720px] w-full text-xs sm:text-sm">
+                <thead className="bg-black/60 text-white">
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
+                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {paginatedInvoices.map((x) => {
-                  const isBusy = busyActionId === x.id
+                <tbody>
+                  {paginatedInvoices.map((x) => {
+                    const isBusy = busyActionId === x.id
 
-                  return (
-                    <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/90 font-semibold">{x.invoice_number}</td>
-                      <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
-                      <td className="px-4 py-3 text-white/80">
-                        <div className="text-sm font-semibold text-white/90">
-                          {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
-                        </div>
-                        <div className="text-xs text-white/50 mt-0.5">
-                          Total Expenses: {formatAmountWithCommas(getExpenseTotalForInvoice(x))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={statusBadge(x.status)}>{x.status}</span>
-                      </td>
+                    return (
+                      <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3 text-white/90 font-semibold">{x.invoice_number}</td>
+                        <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
+                        <td className="px-4 py-3 text-white/80">
+                          <div className="text-sm font-semibold text-white/90">
+                            {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
+                          </div>
+                          <div className="text-xs text-white/50 mt-0.5">
+                            Total Expenses: {formatAmountWithCommas(getExpenseTotalForInvoice(x))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={statusBadge(x.status)}>{x.status}</span>
+                        </td>
 
-                      <td className="px-4 py-3 text-right">
-                        <div className="inline-flex items-center gap-3">
-                          {canWriteInvoices ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => startEdit(x)}
-                                className="text-blue-300 hover:text-blue-200 font-semibold"
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => onDelete(x)}
-                                className="text-white/60 hover:text-red-200 font-semibold"
-                              >
-                                Delete
-                              </button>
-
-                              <div className="hidden md:inline-flex items-center gap-2 ml-2">
+                        <td className="px-4 py-3 text-right">
+                          <div className="inline-flex items-center gap-3">
+                            {canWriteInvoices ? (
+                              <>
                                 <button
                                   type="button"
-                                  disabled={isBusy}
-                                  onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
-                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  onClick={() => startEdit(x)}
+                                  className="text-blue-300 hover:text-blue-200 font-semibold"
                                 >
-                                  Refresh
+                                  Edit
                                 </button>
 
                                 <button
                                   type="button"
-                                  disabled={isBusy}
-                                  onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
-                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  onClick={() => onDelete(x)}
+                                  className="text-white/60 hover:text-red-200 font-semibold"
                                 >
-                                  Issue
+                                  Delete
                                 </button>
 
-                                <button
-                                  type="button"
-                                  disabled={isBusy}
-                                  onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
-                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                                >
-                                  Partial
-                                </button>
+                                <div className="hidden md:inline-flex items-center gap-2 ml-2">
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  >
+                                    Refresh
+                                  </button>
 
-                                <button
-                                  type="button"
-                                  disabled={isBusy}
-                                  onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
-                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                                >
-                                  Paid
-                                </button>
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  >
+                                    Issue
+                                  </button>
 
-                                <button
-                                  type="button"
-                                  disabled={isBusy}
-                                  onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
-                                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
-                                >
-                                  Void
-                                </button>
-                              </div>
-                            </>
-                          ) : <span className="text-white/40">View only</span>}
-                        </div>
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  >
+                                    Partial
+                                  </button>
 
-                        {isBusy ? <div className="text-xs text-white/50 mt-2">Working…</div> : null}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  >
+                                    Paid
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                  >
+                                    Void
+                                  </button>
+                                </div>
+                              </>
+                            ) : <span className="text-white/40">View only</span>}
+                          </div>
+
+                          {isBusy ? <div className="text-xs text-white/50 mt-2">Working…</div> : null}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             {filteredInvoices.length > itemsPerPage ? (
               <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
@@ -847,7 +875,7 @@ export default function InvoicesPage() {
                 </div>
               </div>
             ) : null}
-          </div>
+          </>
         )}
       </section>
     </div>
