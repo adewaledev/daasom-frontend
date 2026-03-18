@@ -329,9 +329,9 @@ export default function ReportPage() {
   const [expandedSections, setExpandedSections] = useState<Record<WalkthroughSectionId, boolean>>({
     operations: true,
     position: true,
-    trend: false,
-    risk: false,
-    performance: false,
+    trend: true,
+    risk: true,
+    performance: true,
   })
 
   const jobDateOverrides = useMemo<Record<string, string>>(() => {
