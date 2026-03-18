@@ -52,9 +52,16 @@ export default function ClientsPage() {
   const [error, setError] = useState("")
   const [editing, setEditing] = useState<Client | null>(null)
   const [form, setForm] = useState<ClientForm>(emptyForm)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const title = useMemo(() => (editing ? "Edit Client" : "Create Client"), [editing])
   const canWriteClients = can("clients.write")
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(clients.length / itemsPerPage)), [clients.length])
+  const paginatedClients = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return clients.slice(start, start + itemsPerPage)
+  }, [clients, currentPage])
 
   async function refresh() {
     setError("")
@@ -72,6 +79,10 @@ export default function ClientsPage() {
   useEffect(() => {
     refresh()
   }, [])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   function startEdit(c: Client) {
     setEditing(c)
@@ -302,7 +313,7 @@ export default function ClientsPage() {
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
-              {clients.map((c) => (
+              {paginatedClients.map((c) => (
                 <div key={c.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-white">{c.client_name}</div>
@@ -344,7 +355,7 @@ export default function ClientsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {clients.map((c) => (
+                  {paginatedClients.map((c) => (
                     <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition">
                       <td className="px-4 py-3 text-white/90">{c.client_code}</td>
                       <td className="px-4 py-3 text-white/90">{c.client_prefix}</td>
@@ -377,6 +388,32 @@ export default function ClientsPage() {
                 </tbody>
               </table>
             </div>
+
+            {clients.length > itemsPerPage ? (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </section>

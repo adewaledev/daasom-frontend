@@ -50,6 +50,8 @@ export default function LedgerPage() {
   const [entries, setEntries] = useState<LedgerEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingEntries, setLoadingEntries] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
@@ -99,6 +101,12 @@ export default function LedgerPage() {
     })
   }, [entries])
 
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(entriesWithRunning.length / itemsPerPage)), [entriesWithRunning.length])
+  const paginatedEntries = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return entriesWithRunning.slice(start, start + itemsPerPage)
+  }, [entriesWithRunning, currentPage])
+
   async function refreshJobs() {
     setError("")
     setInfo("")
@@ -143,6 +151,14 @@ export default function LedgerPage() {
     else setEntries([])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedJobId])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedJobId])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   return (
     <div className="space-y-6 text-white">
@@ -258,7 +274,7 @@ export default function LedgerPage() {
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
-              {entriesWithRunning.map((e) => (
+              {paginatedEntries.map((e) => (
                 <div key={e.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -292,7 +308,7 @@ export default function LedgerPage() {
                 </thead>
 
                 <tbody>
-                  {entriesWithRunning.map((e) => (
+                  {paginatedEntries.map((e) => (
                     <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition">
                       <td className="px-4 py-3 text-white/80">{e.event_date}</td>
                       <td className="px-4 py-3">
@@ -317,6 +333,32 @@ export default function LedgerPage() {
                 </tbody>
               </table>
             </div>
+
+            {entriesWithRunning.length > itemsPerPage ? (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </section>

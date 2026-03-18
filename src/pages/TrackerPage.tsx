@@ -100,6 +100,9 @@ export default function TrackerPage() {
 
   const [trackerStatusFilter, setTrackerStatusFilter] = useState<"all" | "pending" | "completed">("all")
   const [showJobsList, setShowJobsList] = useState(false)
+  const [jobsCurrentPage, setJobsCurrentPage] = useState(1)
+  const [entriesCurrentPage, setEntriesCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const canWriteTracker = can("tracker.write")
 
@@ -192,6 +195,12 @@ export default function TrackerPage() {
     return result
   }, [jobs, trackerStatusFilter, searchTerm])
 
+  const jobsTotalPages = useMemo(() => Math.max(1, Math.ceil(filteredJobs.length / itemsPerPage)), [filteredJobs.length])
+  const paginatedJobs = useMemo(() => {
+    const start = (jobsCurrentPage - 1) * itemsPerPage
+    return filteredJobs.slice(start, start + itemsPerPage)
+  }, [filteredJobs, jobsCurrentPage])
+
   const searchSuggestions = useMemo(() => {
     if (!searchTerm.trim()) return []
 
@@ -231,16 +240,35 @@ export default function TrackerPage() {
     })
   }, [entries])
 
+  const entriesTotalPages = useMemo(() => Math.max(1, Math.ceil(sortedEntries.length / itemsPerPage)), [sortedEntries.length])
+  const paginatedEntries = useMemo(() => {
+    const start = (entriesCurrentPage - 1) * itemsPerPage
+    return sortedEntries.slice(start, start + itemsPerPage)
+  }, [sortedEntries, entriesCurrentPage])
+
   useEffect(() => {
     if (selectedJobId) {
       setShowNewEntryForm(false)
       setNewEntryForm(emptyForm)
       setEditingEntryId(null)
+      setEntriesCurrentPage(1)
       refreshEntries(selectedJobId)
     } else {
       setEntries([])
     }
   }, [selectedJobId])
+
+  useEffect(() => {
+    setJobsCurrentPage(1)
+  }, [trackerStatusFilter, searchTerm])
+
+  useEffect(() => {
+    if (jobsCurrentPage > jobsTotalPages) setJobsCurrentPage(jobsTotalPages)
+  }, [jobsCurrentPage, jobsTotalPages])
+
+  useEffect(() => {
+    if (entriesCurrentPage > entriesTotalPages) setEntriesCurrentPage(entriesTotalPages)
+  }, [entriesCurrentPage, entriesTotalPages])
 
   function openJob(jobId: string) {
     setSelectedJobId(jobId)
@@ -543,7 +571,7 @@ export default function TrackerPage() {
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
-              {filteredJobs.map((job) => (
+              {paginatedJobs.map((job) => (
                 <div key={job.job_id} className={`rounded-xl border p-3 ${selectedJobId === job.job_id ? "border-blue-500/30 bg-blue-600/10" : "border-white/10 bg-black/20"}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -589,7 +617,7 @@ export default function TrackerPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredJobs.map((job) => (
+                  {paginatedJobs.map((job) => (
                     <tr
                       key={job.job_id}
                       className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === job.job_id ? "bg-white/10" : ""}`}
@@ -625,6 +653,32 @@ export default function TrackerPage() {
                 </tbody>
               </table>
             </div>
+
+            {filteredJobs.length > itemsPerPage ? (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {jobsCurrentPage} of {jobsTotalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setJobsCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={jobsCurrentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setJobsCurrentPage((page) => Math.min(jobsTotalPages, page + 1))}
+                    disabled={jobsCurrentPage === jobsTotalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </section>
@@ -777,112 +831,140 @@ export default function TrackerPage() {
                   No entries yet. {!selectedJob.tracker_completed && canWriteTracker ? "Add one to get started." : ""}
                 </div>
               ) : (
-                <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-                  <table className="min-w-[1100px] w-full text-sm table-fixed">
-                    <thead className="bg-black/60 text-white">
-                      <tr className="border-b border-white/10">
-                        <th className="w-40 px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                        <th className="w-80 px-4 py-3 text-left font-semibold text-white/90">Progress Made</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Notes</th>
-                        {canWriteTracker && <th className="w-32 px-4 py-3 text-right font-semibold text-white/90">Action</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedEntries.map((entry) => (
-                        <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                          {editingEntryId === entry.id ? (
-                            <>
-                              <td className="px-4 py-3 align-top">
-                                <input
-                                  type="date"
-                                  value={editingForm.entry_date}
-                                  onChange={(e) => setEditingForm((f) => ({ ...f, entry_date: e.target.value }))}
-                                  className="bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                />
-                              </td>
-                              <td className="px-4 py-3 align-top">
-                                <select
-                                  value={editingForm.progress_report}
-                                  onChange={(e) => setEditingForm((f) => ({ ...f, progress_report: e.target.value }))}
-                                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                >
-                                  <option value="">Select progress made…</option>
-                                  {mergeOptions(progressOptions, editingForm.progress_report).map((option) => (
-                                    <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td className="px-4 py-3 align-top">
-                                <textarea
-                                  value={editingForm.notes}
-                                  onChange={(e) => setEditingForm((f) => ({ ...f, notes: e.target.value }))}
-                                  rows={4}
-                                  placeholder="Optional notes..."
-                                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                                />
-                              </td>
-                              <td className="px-4 py-3 align-top">
-                                <div className="flex gap-1 justify-end whitespace-nowrap">
-                                  <button
-                                    type="button"
-                                    onClick={() => updateEntry(entry.id)}
-                                    disabled={saving}
-                                    className="text-green-300 hover:text-green-200 font-semibold text-xs"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingEntryId(null)
-                                      setEditingForm(emptyForm)
-                                    }}
-                                    className="text-white/60 hover:text-white/80 font-semibold text-xs"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td className="px-4 py-3 align-top text-white/80 whitespace-nowrap">{entry.entry_date}</td>
-                              <td className="px-4 py-3 align-top text-white/70 whitespace-normal break-words">{entry.progress_report ? formatTrackerOptionLabel(entry.progress_report) : "—"}</td>
-                              <td className="px-4 py-3 align-top text-white/70 whitespace-pre-wrap break-words">{entry.next_step || "—"}</td>
-                              {canWriteTracker && (
+                <>
+                  <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+                    <table className="min-w-[1100px] w-full text-sm table-fixed">
+                      <thead className="bg-black/60 text-white">
+                        <tr className="border-b border-white/10">
+                          <th className="w-40 px-4 py-3 text-left font-semibold text-white/90">Date</th>
+                          <th className="w-80 px-4 py-3 text-left font-semibold text-white/90">Progress Made</th>
+                          <th className="px-4 py-3 text-left font-semibold text-white/90">Notes</th>
+                          {canWriteTracker && <th className="w-32 px-4 py-3 text-right font-semibold text-white/90">Action</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedEntries.map((entry) => (
+                          <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                            {editingEntryId === entry.id ? (
+                              <>
                                 <td className="px-4 py-3 align-top">
-                                  <div className="flex gap-2 justify-end whitespace-nowrap">
+                                  <input
+                                    type="date"
+                                    value={editingForm.entry_date}
+                                    onChange={(e) => setEditingForm((f) => ({ ...f, entry_date: e.target.value }))}
+                                    className="bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 align-top">
+                                  <select
+                                    value={editingForm.progress_report}
+                                    onChange={(e) => setEditingForm((f) => ({ ...f, progress_report: e.target.value }))}
+                                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                  >
+                                    <option value="">Select progress made…</option>
+                                    {mergeOptions(progressOptions, editingForm.progress_report).map((option) => (
+                                      <option key={option} value={option}>{formatTrackerOptionLabel(option)}</option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3 align-top">
+                                  <textarea
+                                    value={editingForm.notes}
+                                    onChange={(e) => setEditingForm((f) => ({ ...f, notes: e.target.value }))}
+                                    rows={4}
+                                    placeholder="Optional notes..."
+                                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 align-top">
+                                  <div className="flex gap-1 justify-end whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateEntry(entry.id)}
+                                      disabled={saving}
+                                      className="text-green-300 hover:text-green-200 font-semibold text-xs"
+                                    >
+                                      Save
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        setEditingEntryId(entry.id)
-                                        setEditingForm({
-                                          entry_date: entry.entry_date,
-                                          progress_report: entry.progress_report,
-                                          notes: entry.next_step,
-                                        })
+                                        setEditingEntryId(null)
+                                        setEditingForm(emptyForm)
                                       }}
-                                      className="text-blue-300 hover:text-blue-200 font-semibold text-xs"
+                                      className="text-white/60 hover:text-white/80 font-semibold text-xs"
                                     >
-                                      Edit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => deleteEntry(entry.id)}
-                                      className="text-red-300 hover:text-red-200 font-semibold text-xs"
-                                    >
-                                      Delete
+                                      Cancel
                                     </button>
                                   </div>
                                 </td>
-                              )}
-                            </>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-3 align-top text-white/80 whitespace-nowrap">{entry.entry_date}</td>
+                                <td className="px-4 py-3 align-top text-white/70 whitespace-normal break-words">{entry.progress_report ? formatTrackerOptionLabel(entry.progress_report) : "—"}</td>
+                                <td className="px-4 py-3 align-top text-white/70 whitespace-pre-wrap break-words">{entry.next_step || "—"}</td>
+                                {canWriteTracker && (
+                                  <td className="px-4 py-3 align-top">
+                                    <div className="flex gap-2 justify-end whitespace-nowrap">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingEntryId(entry.id)
+                                          setEditingForm({
+                                            entry_date: entry.entry_date,
+                                            progress_report: entry.progress_report,
+                                            notes: entry.next_step,
+                                          })
+                                        }}
+                                        className="text-blue-300 hover:text-blue-200 font-semibold text-xs"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => deleteEntry(entry.id)}
+                                        className="text-red-300 hover:text-red-200 font-semibold text-xs"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
+                              </>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {sortedEntries.length > itemsPerPage ? (
+                    <div className="flex items-center justify-between px-1 pt-3">
+                      <span className="text-sm text-white/60">
+                        Page {entriesCurrentPage} of {entriesTotalPages}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEntriesCurrentPage((page) => Math.max(1, page - 1))}
+                          disabled={entriesCurrentPage === 1}
+                          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEntriesCurrentPage((page) => Math.min(entriesTotalPages, page + 1))}
+                          disabled={entriesCurrentPage === entriesTotalPages}
+                          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
           </div>

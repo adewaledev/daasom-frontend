@@ -118,6 +118,7 @@ export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showJobsList, setShowJobsList] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [viewingJob, setViewingJob] = useState<Job | null>(null)
   const [jobDateOverrides, setJobDateOverrides] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {}
@@ -133,6 +134,7 @@ export default function JobsPage() {
 
   const title = useMemo(() => (editing ? "Edit Job" : "Create Job"), [editing])
   const canWriteJobs = can("jobs.write")
+  const itemsPerPage = 10
 
   const transitDaysByJobId = useMemo(() => {
     const entriesByJob = new Map<string, TrackerEntry[]>()
@@ -204,9 +206,14 @@ export default function JobsPage() {
       return dateB - dateA
     })
 
-    // Limit to top 20 most recent
-    return result.slice(0, 20)
+    return result
   }, [jobs, viewZone, searchTerm, clientMap])
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredJobs.length / itemsPerPage)), [filteredJobs.length])
+  const paginatedJobs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredJobs.slice(start, start + itemsPerPage)
+  }, [filteredJobs, currentPage])
 
   // Generate search suggestions based on file numbers and client names
   const searchSuggestions = useMemo(() => {
@@ -320,6 +327,14 @@ export default function JobsPage() {
     if (typeof window === "undefined") return
     window.localStorage.setItem(JOB_DATE_OVERRIDES_KEY, JSON.stringify(jobDateOverrides))
   }, [jobDateOverrides])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [viewZone, searchTerm])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
 
   function startEdit(job: Job) {
     setEditing(job)
@@ -556,7 +571,7 @@ export default function JobsPage() {
         </div>
         {searchTerm && (
           <p className="mt-2 text-xs text-white/50">
-            Showing top 20 results matching "{searchTerm}"
+            Showing matches for "{searchTerm}"
           </p>
         )}
       </section>
@@ -824,9 +839,7 @@ export default function JobsPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="font-semibold text-white">Jobs List</h2>
-          <span className="text-sm text-white/60">
-            {filteredJobs.length} shown {jobs.length > 20 && !searchTerm ? "(top 20 most recent)" : ""}
-          </span>
+          <span className="text-sm text-white/60">{filteredJobs.length} total</span>
         </div>
 
         {!showJobsList && !searchTerm.trim() ? (
@@ -838,7 +851,7 @@ export default function JobsPage() {
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
-              {filteredJobs.map((j) => {
+              {paginatedJobs.map((j) => {
                 const c = clientMap.get(String(j.client))
                 const clientLabel = c
                   ? `${(c as any).client_code} — ${(c as any).client_name}`
@@ -877,7 +890,7 @@ export default function JobsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredJobs.map((j) => {
+                  {paginatedJobs.map((j) => {
                     const c = clientMap.get(String(j.client))
                     const clientLabel = c
                       ? `${(c as any).client_code} — ${(c as any).client_name}`
@@ -916,6 +929,32 @@ export default function JobsPage() {
                 </tbody>
               </table>
             </div>
+
+            {filteredJobs.length > itemsPerPage ? (
+              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
+                <span className="text-sm text-white/60">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </section>
