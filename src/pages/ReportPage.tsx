@@ -142,33 +142,6 @@ function SectionHeader({
   )
 }
 
-function InsightCard({
-  title,
-  value,
-  tone = "neutral",
-  note,
-}: {
-  title: string
-  value: string
-  tone?: InsightTone
-  note?: string
-}) {
-  const toneClass = {
-    neutral: "text-white",
-    good: "text-green-300",
-    warn: "text-amber-300",
-    risk: "text-red-300",
-  }
-
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/25 p-4">
-      <div className="text-xs text-white/55">{title}</div>
-      <div className={`mt-1 text-xl font-semibold ${toneClass[tone]}`}>{value}</div>
-      {note ? <div className="mt-2 text-xs text-white/45">{note}</div> : null}
-    </div>
-  )
-}
-
 type SeriesPoint = {
   label: string
   value: number
@@ -920,46 +893,6 @@ export default function ReportPage() {
             Showing {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} matching "{searchTerm.trim()}".
           </p>
         ) : null}
-      </section>
-
-      <section className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-600/10 via-slate-900/60 to-emerald-600/5 p-5 space-y-4">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">Walkthrough</div>
-            <h2 className="mt-1 font-semibold text-white">Read business fast</h2>
-            {showDetailText ? (
-              <p className="mt-1 text-xs text-white/55 max-w-3xl">Jobs, position, trend, risk, performance.</p>
-            ) : null}
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-white/55 sm:grid-cols-5">
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">1. Jobs</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">2. Position</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">3. Trend</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">4. Risk</div>
-            <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">5. Performance</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <InsightCard
-            title="Total Jobs"
-            value={String(metrics.jobCount)}
-            tone={metrics.jobCount > 0 ? "neutral" : "warn"}
-            note={showDetailText ? `${pendingJobCount} pending · ${completedJobCount} complete` : undefined}
-          />
-          <InsightCard
-            title="Pending Workload"
-            value={String(pendingJobCount)}
-            tone={pendingJobCount > completedJobCount ? "warn" : pendingJobCount > 0 ? "neutral" : "good"}
-            note={showDetailText ? `${pct(completionRate)} completion` : undefined}
-          />
-          <InsightCard
-            title="Immediate Job Follow-up"
-            value={String(Math.max(unbilledJobCount, collectionPendingJobCount))}
-            tone={Math.max(unbilledJobCount, collectionPendingJobCount) > 0 ? "warn" : "good"}
-            note={showDetailText ? `${unbilledJobCount} unbilled · ${collectionPendingJobCount} awaiting collection` : undefined}
-          />
-        </div>
       </section>
 
       <section className="sticky top-3 z-20 rounded-2xl border border-white/10 bg-[#0b0f16]/85 p-3 backdrop-blur-xl">
