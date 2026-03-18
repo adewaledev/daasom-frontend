@@ -11,6 +11,7 @@ import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
 import type { TrackerJobRow } from "../api/tracker"
 import { listTrackerJobs } from "../api/tracker"
+import PaginationControls from "../components/PaginationControls"
 
 function extractErrorMessage(err: any): string {
   if (!err?.response?.status) return "Network error. Backend may be unavailable."
@@ -326,6 +327,12 @@ export default function ReportPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showDetailText, setShowDetailText] = useState(false)
   const [activeSection, setActiveSection] = useState<WalkthroughSectionId>("operations")
+  const [concentrationPage, setConcentrationPage] = useState(1)
+  const [profitabilityPage, setProfitabilityPage] = useState(1)
+  const [topClientsPage, setTopClientsPage] = useState(1)
+  const [expenseBreakdownPage, setExpenseBreakdownPage] = useState(1)
+  const [receiptBreakdownPage, setReceiptBreakdownPage] = useState(1)
+  const itemsPerPage = 10
 
   const jobDateOverrides = useMemo<Record<string, string>>(() => {
     try {
@@ -639,7 +646,7 @@ export default function ReportPage() {
     return { buckets, currency, totalOutstanding }
   }, [filteredInvoices, receiptsByInvoice])
 
-  // Top Clients by Revenue (up to 10)
+  // Top Clients by Revenue
   const topClients = useMemo(() => {
     const data = new Map<string, {
       clientName: string; jobCount: number; invoiced: number; received: number; currency: string
@@ -667,7 +674,6 @@ export default function ReportPage() {
     return [...data.values()]
       .filter((c) => c.invoiced > 0)
       .sort((a, b) => b.invoiced - a.invoiced)
-      .slice(0, 10)
   }, [filteredJobs, clientMap, invoicesByJob, receiptsByInvoice])
 
   // Expense Category Breakdown
@@ -709,6 +715,73 @@ export default function ReportPage() {
         }
       })
   }, [filteredReceipts, invoiceMap, jobMap])
+
+  const concentrationTotalPages = useMemo(() => Math.max(1, Math.ceil(topClients.length / itemsPerPage)), [topClients.length])
+  const profitabilityTotalPages = useMemo(() => Math.max(1, Math.ceil(profitabilityRows.length / itemsPerPage)), [profitabilityRows.length])
+  const topClientsTotalPages = useMemo(() => Math.max(1, Math.ceil(topClients.length / itemsPerPage)), [topClients.length])
+  const expenseBreakdownTotalPages = useMemo(() => Math.max(1, Math.ceil(expenseBreakdownRows.length / itemsPerPage)), [expenseBreakdownRows.length])
+  const receiptBreakdownTotalPages = useMemo(() => Math.max(1, Math.ceil(receiptBreakdownRows.length / itemsPerPage)), [receiptBreakdownRows.length])
+
+  const paginatedConcentrationClients = useMemo(() => {
+    const start = (concentrationPage - 1) * itemsPerPage
+    return topClients.slice(start, start + itemsPerPage)
+  }, [topClients, concentrationPage])
+
+  const paginatedProfitabilityRows = useMemo(() => {
+    const start = (profitabilityPage - 1) * itemsPerPage
+    return profitabilityRows.slice(start, start + itemsPerPage)
+  }, [profitabilityRows, profitabilityPage])
+
+  const paginatedTopClients = useMemo(() => {
+    const start = (topClientsPage - 1) * itemsPerPage
+    return topClients.slice(start, start + itemsPerPage)
+  }, [topClients, topClientsPage])
+
+  const paginatedExpenseBreakdownRows = useMemo(() => {
+    const start = (expenseBreakdownPage - 1) * itemsPerPage
+    return expenseBreakdownRows.slice(start, start + itemsPerPage)
+  }, [expenseBreakdownRows, expenseBreakdownPage])
+
+  const paginatedReceiptBreakdownRows = useMemo(() => {
+    const start = (receiptBreakdownPage - 1) * itemsPerPage
+    return receiptBreakdownRows.slice(start, start + itemsPerPage)
+  }, [receiptBreakdownRows, receiptBreakdownPage])
+
+  useEffect(() => {
+    setConcentrationPage(1)
+    setProfitabilityPage(1)
+    setTopClientsPage(1)
+    setExpenseBreakdownPage(1)
+    setReceiptBreakdownPage(1)
+  }, [searchTerm])
+
+  useEffect(() => {
+    if (concentrationPage > concentrationTotalPages) setConcentrationPage(concentrationTotalPages)
+  }, [concentrationPage, concentrationTotalPages])
+
+  useEffect(() => {
+    if (profitabilityPage > profitabilityTotalPages) setProfitabilityPage(profitabilityTotalPages)
+  }, [profitabilityPage, profitabilityTotalPages])
+
+  useEffect(() => {
+    if (topClientsPage > topClientsTotalPages) setTopClientsPage(topClientsTotalPages)
+  }, [topClientsPage, topClientsTotalPages])
+
+  useEffect(() => {
+    if (expenseBreakdownPage > expenseBreakdownTotalPages) setExpenseBreakdownPage(expenseBreakdownTotalPages)
+  }, [expenseBreakdownPage, expenseBreakdownTotalPages])
+
+  useEffect(() => {
+    if (receiptBreakdownPage > receiptBreakdownTotalPages) setReceiptBreakdownPage(receiptBreakdownTotalPages)
+  }, [receiptBreakdownPage, receiptBreakdownTotalPages])
+
+  useEffect(() => {
+    if (showExpenseBreakdown) setExpenseBreakdownPage(1)
+  }, [showExpenseBreakdown])
+
+  useEffect(() => {
+    if (showReceiptBreakdown) setReceiptBreakdownPage(1)
+  }, [showReceiptBreakdown])
 
   const currency0 = metrics.currencies[0] || "NGN"
   const pendingJobCount = filteredJobs.filter((j) => isJobPending(j, trackerCompletionByJobId.get(String(j.id)))).length
@@ -1169,7 +1242,7 @@ export default function ReportPage() {
               ) : (
                 <>
                   <div className="space-y-2 md:hidden">
-                    {topClients.slice(0, 5).map(({ clientName, invoiced, received, currency }) => {
+                    {paginatedConcentrationClients.map(({ clientName, invoiced, received, currency }) => {
                       const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
                       const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
                       return (
@@ -1202,7 +1275,7 @@ export default function ReportPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {topClients.slice(0, 5).map(({ clientName, invoiced, received, currency }) => {
+                        {paginatedConcentrationClients.map(({ clientName, invoiced, received, currency }) => {
                           const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
                           const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
                           return (
@@ -1221,6 +1294,15 @@ export default function ReportPage() {
                       </tbody>
                     </table>
                   </div>
+                  <PaginationControls
+                    currentPage={concentrationPage}
+                    totalPages={concentrationTotalPages}
+                    totalItems={topClients.length}
+                    itemsPerPage={itemsPerPage}
+                    onPrevious={() => setConcentrationPage((page) => Math.max(1, page - 1))}
+                    onNext={() => setConcentrationPage((page) => Math.min(concentrationTotalPages, page + 1))}
+                    className="px-0 pb-0"
+                  />
                 </>
               )}
             </section>
@@ -1248,7 +1330,7 @@ export default function ReportPage() {
             ) : (
               <>
                 <div className="space-y-2 md:hidden">
-                  {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
+                  {paginatedProfitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
                     <div key={job.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
                       <div className="flex items-center justify-between gap-2">
                         <div>
@@ -1293,7 +1375,7 @@ export default function ReportPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {profitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
+                      {paginatedProfitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
                         <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
                           <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
                           <td className="px-4 py-3 text-white/80">{clientName}</td>
@@ -1324,6 +1406,15 @@ export default function ReportPage() {
                     </tbody>
                   </table>
                 </div>
+                <PaginationControls
+                  currentPage={profitabilityPage}
+                  totalPages={profitabilityTotalPages}
+                  totalItems={profitabilityRows.length}
+                  itemsPerPage={itemsPerPage}
+                  onPrevious={() => setProfitabilityPage((page) => Math.max(1, page - 1))}
+                  onNext={() => setProfitabilityPage((page) => Math.min(profitabilityTotalPages, page + 1))}
+                  className="px-0 pb-0"
+                />
               </>
             )}
           </section>
@@ -1331,20 +1422,21 @@ export default function ReportPage() {
           <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
               <h3 className="font-semibold text-white">Top Clients by Revenue</h3>
-              {showDetailText ? <p className="text-xs text-white/55 mt-1">Top 10 by invoiced amount.</p> : null}
+              {showDetailText ? <p className="text-xs text-white/55 mt-1">Clients ranked by invoiced amount.</p> : null}
             </div>
             {topClients.length === 0 ? (
               <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
             ) : (
               <>
                 <div className="space-y-2 md:hidden">
-                  {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
+                  {paginatedTopClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
                     const outstanding = Math.max(invoiced - received, 0)
                     const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
+                    const rank = (topClientsPage - 1) * itemsPerPage + i + 1
                     return (
                       <div key={clientName} className="rounded-xl border border-white/10 bg-black/20 p-3">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm font-semibold text-white">{i + 1}. {clientName}</div>
+                          <div className="text-sm font-semibold text-white">{rank}. {clientName}</div>
                           <div className="text-xs text-white/60">{jobCount} jobs</div>
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
@@ -1383,12 +1475,13 @@ export default function ReportPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {topClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
+                      {paginatedTopClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
                         const outstanding = Math.max(invoiced - received, 0)
                         const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
+                        const rank = (topClientsPage - 1) * itemsPerPage + i + 1
                         return (
                           <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
-                            <td className="px-4 py-3 text-white/40">{i + 1}</td>
+                            <td className="px-4 py-3 text-white/40">{rank}</td>
                             <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
                             <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
                             <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
@@ -1410,6 +1503,15 @@ export default function ReportPage() {
                     </tbody>
                   </table>
                 </div>
+                <PaginationControls
+                  currentPage={topClientsPage}
+                  totalPages={topClientsTotalPages}
+                  totalItems={topClients.length}
+                  itemsPerPage={itemsPerPage}
+                  onPrevious={() => setTopClientsPage((page) => Math.max(1, page - 1))}
+                  onNext={() => setTopClientsPage((page) => Math.min(topClientsTotalPages, page + 1))}
+                  className="px-0 pb-0"
+                />
               </>
             )}
           </section>
@@ -1438,7 +1540,7 @@ export default function ReportPage() {
             {expenseBreakdownRows.length === 0 ? (
               <div className="p-5 text-sm text-white/60">No expenses to display.</div>
             ) : (
-              <div className="overflow-auto max-h-[74vh]">
+              <div className="overflow-auto max-h-[74vh] p-4 space-y-4">
                 <table className="min-w-[900px] w-full text-xs sm:text-sm">
                   <thead className="bg-black/80 text-white sticky top-0">
                     <tr className="border-b border-white/10">
@@ -1452,7 +1554,7 @@ export default function ReportPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {expenseBreakdownRows.map((row) => (
+                    {paginatedExpenseBreakdownRows.map((row) => (
                       <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition">
                         <td className="px-4 py-3 text-white/80">{row.expense_date}</td>
                         <td className="px-4 py-3 text-white font-semibold">{row.fileNumber}</td>
@@ -1467,6 +1569,15 @@ export default function ReportPage() {
                     ))}
                   </tbody>
                 </table>
+                <PaginationControls
+                  currentPage={expenseBreakdownPage}
+                  totalPages={expenseBreakdownTotalPages}
+                  totalItems={expenseBreakdownRows.length}
+                  itemsPerPage={itemsPerPage}
+                  onPrevious={() => setExpenseBreakdownPage((page) => Math.max(1, page - 1))}
+                  onNext={() => setExpenseBreakdownPage((page) => Math.min(expenseBreakdownTotalPages, page + 1))}
+                  className="px-0 py-0"
+                />
               </div>
             )}
           </div>
@@ -1495,7 +1606,7 @@ export default function ReportPage() {
             {receiptBreakdownRows.length === 0 ? (
               <div className="p-5 text-sm text-white/60">No receipts to display.</div>
             ) : (
-              <div className="overflow-auto max-h-[74vh]">
+              <div className="overflow-auto max-h-[74vh] p-4 space-y-4">
                 <table className="min-w-[900px] w-full text-xs sm:text-sm">
                   <thead className="bg-black/80 text-white sticky top-0">
                     <tr className="border-b border-white/10">
@@ -1509,7 +1620,7 @@ export default function ReportPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {receiptBreakdownRows.map((row) => (
+                    {paginatedReceiptBreakdownRows.map((row) => (
                       <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition">
                         <td className="px-4 py-3 text-white/80">{row.payment_date}</td>
                         <td className="px-4 py-3 text-white font-semibold">{row.fileNumber}</td>
@@ -1524,6 +1635,15 @@ export default function ReportPage() {
                     ))}
                   </tbody>
                 </table>
+                <PaginationControls
+                  currentPage={receiptBreakdownPage}
+                  totalPages={receiptBreakdownTotalPages}
+                  totalItems={receiptBreakdownRows.length}
+                  itemsPerPage={itemsPerPage}
+                  onPrevious={() => setReceiptBreakdownPage((page) => Math.max(1, page - 1))}
+                  onNext={() => setReceiptBreakdownPage((page) => Math.min(receiptBreakdownTotalPages, page + 1))}
+                  className="px-0 py-0"
+                />
               </div>
             )}
           </div>

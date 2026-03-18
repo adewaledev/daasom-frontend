@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Client } from "../api/clients"
 import { createClient, listClients, updateClient } from "../api/clients"
+import PaginationControls from "../components/PaginationControls"
 import { useAuth } from "../state/auth"
 
 type ClientForm = {
@@ -389,31 +390,14 @@ export default function ClientsPage() {
               </table>
             </div>
 
-            {clients.length > itemsPerPage ? (
-              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-sm text-white/60">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            ) : null}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={clients.length}
+              itemsPerPage={itemsPerPage}
+              onPrevious={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              onNext={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            />
           </>
         )}
       </section>

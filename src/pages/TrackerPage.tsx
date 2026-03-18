@@ -10,6 +10,7 @@ import {
   markTrackerCompleted,
   reopenTracker,
 } from "../api/tracker"
+import PaginationControls from "../components/PaginationControls"
 import { useAuth } from "../state/auth"
 
 function extractErrorMessage(err: any): string {
@@ -654,31 +655,14 @@ export default function TrackerPage() {
               </table>
             </div>
 
-            {filteredJobs.length > itemsPerPage ? (
-              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-sm text-white/60">
-                  Page {jobsCurrentPage} of {jobsTotalPages}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setJobsCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={jobsCurrentPage === 1}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setJobsCurrentPage((page) => Math.min(jobsTotalPages, page + 1))}
-                    disabled={jobsCurrentPage === jobsTotalPages}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            ) : null}
+            <PaginationControls
+              currentPage={jobsCurrentPage}
+              totalPages={jobsTotalPages}
+              totalItems={filteredJobs.length}
+              itemsPerPage={itemsPerPage}
+              onPrevious={() => setJobsCurrentPage((page) => Math.max(1, page - 1))}
+              onNext={() => setJobsCurrentPage((page) => Math.min(jobsTotalPages, page + 1))}
+            />
           </>
         )}
       </section>
@@ -939,31 +923,15 @@ export default function TrackerPage() {
                     </table>
                   </div>
 
-                  {sortedEntries.length > itemsPerPage ? (
-                    <div className="flex items-center justify-between px-1 pt-3">
-                      <span className="text-sm text-white/60">
-                        Page {entriesCurrentPage} of {entriesTotalPages}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setEntriesCurrentPage((page) => Math.max(1, page - 1))}
-                          disabled={entriesCurrentPage === 1}
-                          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEntriesCurrentPage((page) => Math.min(entriesTotalPages, page + 1))}
-                          disabled={entriesCurrentPage === entriesTotalPages}
-                          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
+                  <PaginationControls
+                    currentPage={entriesCurrentPage}
+                    totalPages={entriesTotalPages}
+                    totalItems={sortedEntries.length}
+                    itemsPerPage={itemsPerPage}
+                    onPrevious={() => setEntriesCurrentPage((page) => Math.max(1, page - 1))}
+                    onNext={() => setEntriesCurrentPage((page) => Math.min(entriesTotalPages, page + 1))}
+                    className="px-0 pb-0"
+                  />
                 </>
               )}
             </div>

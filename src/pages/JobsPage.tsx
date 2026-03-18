@@ -3,6 +3,7 @@ import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
 import type { Job, JobZone } from "../api/jobs"
 import { createJob, listJobs, updateJob } from "../api/jobs"
+import PaginationControls from "../components/PaginationControls"
 import { listTrackerJobs } from "../api/tracker"
 import type { TrackerEntry, TrackerJobRow } from "../api/tracker"
 import { useAuth } from "../state/auth"
@@ -930,31 +931,14 @@ export default function JobsPage() {
               </table>
             </div>
 
-            {filteredJobs.length > itemsPerPage ? (
-              <div className="px-5 py-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-sm text-white/60">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            ) : null}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredJobs.length}
+              itemsPerPage={itemsPerPage}
+              onPrevious={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              onNext={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            />
           </>
         )}
       </section>
