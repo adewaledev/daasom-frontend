@@ -1,4 +1,5 @@
 import axios from "axios"
+import { ACCESS_KEY, clearSessionAndRedirectToLogin } from "../auth/session"
 
 const rawBaseURL = import.meta.env.VITE_API_BASE_URL as string | undefined
 
@@ -7,19 +8,6 @@ if (!rawBaseURL) {
 }
 
 const baseURL = rawBaseURL.replace(/\/+$/, "")
-
-const ACCESS_KEY = "daasom_access_token"
-const REFRESH_KEY = "daasom_refresh_token"
-
-function clearAuthAndRedirect() {
-  localStorage.removeItem(ACCESS_KEY)
-  localStorage.removeItem(REFRESH_KEY)
-
-  // Hard redirect is safest (works outside React router hooks)
-  if (window.location.pathname !== "/login") {
-    window.location.replace("/login")
-  }
-}
 
 const http = axios.create({
   baseURL,
@@ -54,7 +42,7 @@ http.interceptors.response.use(
       detail.toLowerCase().includes("not valid for any token type")
 
     if (status === 401 && looksLikeInvalidToken) {
-      clearAuthAndRedirect()
+      clearSessionAndRedirectToLogin()
     }
 
     return Promise.reject(error)

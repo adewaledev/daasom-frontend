@@ -1,3 +1,5 @@
+import { getPageBounds } from "../utils/pagination"
+
 type PaginationControlsProps = {
   currentPage: number
   totalPages: number
@@ -19,8 +21,7 @@ export default function PaginationControls({
 }: PaginationControlsProps) {
   if (totalItems <= itemsPerPage || totalPages <= 1) return null
 
-  const startItem = (currentPage - 1) * itemsPerPage + 1
-  const endItem = Math.min(totalItems, currentPage * itemsPerPage)
+  const { startItem, endItem } = getPageBounds(currentPage, totalItems, itemsPerPage)
 
   return (
     <div className={`flex flex-col gap-3 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${className}`.trim()}>

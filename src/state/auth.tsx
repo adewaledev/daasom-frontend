@@ -2,6 +2,13 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useCallba
 import { login as apiLogin } from "../auth/authApi"
 import type { LoginResponse } from "../auth/authApi"
 import { canRole, getRoleLabel, isUserRole, type Permission, type UserRole } from "../auth/roles"
+import {
+  ACCESS_KEY,
+  AUTH_EXPIRED_EVENT,
+  REFRESH_KEY,
+  ROLE_KEY,
+  clearStoredSession,
+} from "../auth/session"
 
 type AuthState = {
   isAuthed: boolean
@@ -14,10 +21,6 @@ type AuthState = {
 }
 
 const AuthContext = createContext<AuthState | null>(null)
-
-const ACCESS_KEY = "daasom_access_token"
-const REFRESH_KEY = "daasom_refresh_token"
-const ROLE_KEY = "daasom_user_role"
 const IDLE_TIMEOUT = 60 * 60 * 1000 // 1 hour in milliseconds
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -94,9 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set new logout timer for 1 hour of inactivity
     idleTimerRef.current = setTimeout(() => {
       console.log("Session expired due to inactivity")
-      localStorage.removeItem(ACCESS_KEY)
-      localStorage.removeItem(REFRESH_KEY)
-      localStorage.removeItem(ROLE_KEY)
+      clearStoredSession()
       setAccessToken(null)
       setRole(null)
     }, IDLE_TIMEOUT)
@@ -123,9 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (idleTimerRef.current) {
           clearTimeout(idleTimerRef.current)
         }
-        localStorage.removeItem(ACCESS_KEY)
-        localStorage.removeItem(REFRESH_KEY)
-        localStorage.removeItem(ROLE_KEY)
+        clearStoredSession()
         setAccessToken(null)
         setRole(null)
       },
@@ -169,6 +168,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [isAuthed, resetIdleTimer])
+
+  useEffect(() => {
+    function handleAuthExpired() {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+      }
+      setAccessToken(null)
+      setRole(null)
+    }
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired)
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired)
+  }, [])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
