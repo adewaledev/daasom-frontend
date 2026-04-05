@@ -92,6 +92,7 @@ function zoneBadge(zone: JobZone) {
 type ViewZone = "ALL" | JobZone
 
 const JOB_DATE_OVERRIDES_KEY = "jobs_date_overrides_v1"
+const PORT_OPTIONS = ["LEKKI", "APAPA", "TINCAN", "PTML", "MMIA", "MMCA"] as const
 
 function toInputDate(rawDate: string): string {
   const d = new Date(rawDate)
@@ -759,11 +760,19 @@ export default function JobsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Port</label>
-                <input
+                <select
                   className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.port}
                   onChange={(e) => setForm((f) => ({ ...f, port: e.target.value }))}
-                />
+                >
+                  <option value="">Select port…</option>
+                  {PORT_OPTIONS.map((port) => (
+                    <option key={port} value={port}>{port}</option>
+                  ))}
+                  {form.port && !PORT_OPTIONS.includes(form.port as typeof PORT_OPTIONS[number]) ? (
+                    <option value={form.port}>{form.port}</option>
+                  ) : null}
+                </select>
               </div>
 
               <div>
