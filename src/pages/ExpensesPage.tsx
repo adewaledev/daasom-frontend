@@ -337,7 +337,7 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="expenses-page space-y-6 text-slate-800">
       <div>
         <h1 className="text-2xl font-semibold">
           <span className="text-blue-700">Expenses</span>
@@ -374,7 +374,7 @@ export default function ExpensesPage() {
           ) : null}
 
           {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="expenses-suggestions absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
               {searchSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}

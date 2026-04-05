@@ -26,6 +26,45 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Light-mode contrast balancing for readable text and clearer row states. */
+html:not(.dark) .text-slate-600 {
+  color: #475569;
+}
+
+html:not(.dark) .text-slate-500 {
+  color: #64748b;
+}
+
+html:not(.dark) .border-slate-100 {
+  border-color: #e2e8f0;
+}
+
+html:not(.dark) .hover\:bg-white:hover {
+  background-color: #f8fafc !important;
+}
+
+html:not(.dark) .inline-flex.items-center.px-2.py-0\.5.rounded-md.text-xs.font-semibold.border.bg-white.text-slate-700.border-slate-200,
+html:not(.dark) .inline-flex.items-center.px-2.py-0\.5.rounded-md.text-xs.font-semibold.border.bg-white.text-slate-600.border-slate-200 {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+html:not(.dark) .rounded-lg.text-xs.font-semibold.bg-white.border.border-slate-200 {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) table.w-full.text-xs tbody td {
+  padding-top: 0.86rem !important;
+  padding-bottom: 0.86rem !important;
+  line-height: 1.45;
+}
+
+html:not(.dark) table.w-full.text-xs thead th {
+  line-height: 1.35;
+}
+
 html.dark body {
   background: #0b1220;
   color: #e5e7eb;
@@ -241,6 +280,85 @@ html.dark .home-tracker-count {
   font-weight: 700 !important;
   min-width: 1.6rem;
   text-align: center;
+}
+
+html.dark .tracker-page {
+  color: #e2e8f0;
+}
+
+html.dark .tracker-suggestions {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.58) !important;
+}
+
+html.dark .tracker-suggestions button {
+  border-color: #1f2a3d !important;
+}
+
+html.dark .tracker-suggestions button:hover {
+  background-color: #1e293b !important;
+}
+
+html.dark .tracker-modal-overlay {
+  background-color: rgba(2, 6, 23, 0.78) !important;
+}
+
+html.dark .tracker-modal-shell {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 28px 62px rgba(2, 6, 23, 0.7) !important;
+}
+
+html.dark .tracker-modal-header {
+  background-color: rgba(15, 23, 42, 0.96) !important;
+  border-color: #334155 !important;
+}
+
+html.dark .tracker-pending-pill {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+html.dark .jobs-page thead,
+html.dark .expenses-page thead,
+html.dark .invoices-page thead {
+  background-color: #1e293b !important;
+  color: #dbeafe !important;
+}
+
+html.dark .jobs-page tbody tr,
+html.dark .expenses-page tbody tr,
+html.dark .invoices-page tbody tr {
+  border-color: #243247 !important;
+}
+
+html.dark .jobs-page tbody tr:hover,
+html.dark .expenses-page tbody tr:hover,
+html.dark .invoices-page tbody tr:hover {
+  background-color: #1e293b !important;
+}
+
+html.dark .jobs-suggestions,
+html.dark .expenses-suggestions,
+html.dark .invoices-suggestions {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.58) !important;
+}
+
+html.dark .jobs-suggestions button,
+html.dark .expenses-suggestions button,
+html.dark .invoices-suggestions button {
+  color: #e2e8f0 !important;
+  border-color: #1f2a3d !important;
+}
+
+html.dark .jobs-suggestions button:hover,
+html.dark .expenses-suggestions button:hover,
+html.dark .invoices-suggestions button:hover {
+  background-color: #1e293b !important;
 }
 
 @media (max-width: 767px) {

@@ -451,7 +451,7 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="jobs-page space-y-6 text-slate-800">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
         <div>
           <h1 className="text-2xl font-semibold">
@@ -548,7 +548,7 @@ export default function JobsPage() {
 
           {/* Autocomplete Suggestions */}
           {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="absolute z-30 w-full mt-1 bg-white/95 border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+            <div className="jobs-suggestions absolute z-30 w-full mt-1 bg-white/95 border border-slate-200 rounded-lg shadow-lg overflow-hidden">
               {searchSuggestions.map((suggestion, idx) => (
                 <button
                   key={idx}

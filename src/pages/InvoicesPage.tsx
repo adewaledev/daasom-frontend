@@ -451,7 +451,7 @@ export default function InvoicesPage() {
   }
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="invoices-page space-y-6 text-slate-800">
       <div>
         <h1 className="text-2xl font-semibold">
           <span className="text-blue-700">Invoices</span>
@@ -490,7 +490,7 @@ export default function InvoicesPage() {
           ) : null}
 
           {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="invoices-suggestions absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
               {searchSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}

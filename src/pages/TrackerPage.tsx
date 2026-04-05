@@ -424,10 +424,12 @@ export default function TrackerPage() {
   }
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="tracker-page space-y-6 text-slate-800">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Tracker</h1>
+          <h1 className="text-2xl font-semibold">
+            <span className="text-blue-700">Tracker</span>
+          </h1>
           <p className="mt-1 text-sm text-slate-600">Track job progress with daily entries and completion status.</p>
         </div>
 
@@ -472,7 +474,7 @@ export default function TrackerPage() {
           />
 
           {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+            <div className="tracker-suggestions absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
               {searchSuggestions.map((suggestion, idx) => (
                 <button
                   key={idx}
@@ -528,7 +530,7 @@ export default function TrackerPage() {
           >
             Pending
             {pendingJobsCount > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-white/20 text-xs font-semibold">
+              <span className="tracker-pending-pill inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-white/20 text-xs font-semibold">
                 {pendingJobsCount}
               </span>
             )}
@@ -669,7 +671,7 @@ export default function TrackerPage() {
 
       {selectedJob && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm"
+          className="tracker-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setSelectedJobId("")
@@ -678,9 +680,9 @@ export default function TrackerPage() {
             }
           }}
         >
-          <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl text-slate-800">
+          <div className="tracker-modal-shell relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl text-slate-800">
             {/* Modal header */}
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-white border-b border-slate-200 px-6 py-4">
+            <div className="tracker-modal-header sticky top-0 z-10 flex items-start justify-between gap-4 bg-white border-b border-slate-200 px-6 py-4">
               <div>
                 <h2 className="font-semibold text-slate-900 text-lg">
                   {selectedJob.file_number} — {selectedJob.client_name}
