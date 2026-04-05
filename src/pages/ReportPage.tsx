@@ -55,12 +55,13 @@ function StatCard({
   color?: "blue" | "green" | "amber" | "purple" | "red"
   onClick?: () => void
 }) {
-  const colorMap = {
-    blue: "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 text-blue-800 shadow-sm",
-    green: "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200 text-emerald-800 shadow-sm",
-    amber: "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 text-amber-800 shadow-sm",
-    purple: "bg-gradient-to-br from-violet-50 to-fuchsia-50 border-violet-200 text-violet-800 shadow-sm",
-    red: "bg-gradient-to-br from-rose-50 to-red-50 border-rose-200 text-rose-800 shadow-sm",
+  const cardClass = "bg-white border-slate-200"
+  const valueColorMap = {
+    blue: "text-blue-700",
+    green: "text-emerald-700",
+    amber: "text-amber-700",
+    purple: "text-violet-700",
+    red: "text-rose-700",
   }
 
   if (onClick) {
@@ -68,10 +69,10 @@ function StatCard({
       <button
         type="button"
         onClick={onClick}
-        className={`w-full text-left rounded-xl border border-slate-200 ${colorMap[color]} px-4 py-3 hover:shadow-md hover:-translate-y-0.5 transition`}
+        className={`w-full text-left rounded-xl border ${cardClass} px-4 py-3 hover:bg-slate-50 transition`}
       >
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">{label}</div>
-        <div className="mt-1 text-xl font-bold text-slate-900">
+        <div className="text-xs font-medium text-slate-600">{label}</div>
+        <div className={`mt-1 text-lg font-semibold ${valueColorMap[color]}`}>
           {currency} {money(value)}
         </div>
         {subtext && <div className="mt-1 text-xs text-slate-500">{subtext}</div>}
@@ -80,9 +81,9 @@ function StatCard({
   }
 
   return (
-    <div className={`rounded-xl border border-slate-200 ${colorMap[color]} px-4 py-3`}>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">{label}</div>
-      <div className="mt-1 text-xl font-bold text-slate-900">
+    <div className={`rounded-xl border ${cardClass} px-4 py-3`}>
+      <div className="text-xs font-medium text-slate-600">{label}</div>
+      <div className={`mt-1 text-lg font-semibold ${valueColorMap[color]}`}>
         {currency} {money(value)}
       </div>
       {subtext && <div className="mt-1 text-xs text-slate-500">{subtext}</div>}
@@ -262,13 +263,13 @@ function TrendLineCard({
     valueType === "count" ? String(Math.round(latest)) : `${valuePrefix} ${money(latest)}`
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
+    <article className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-xs text-slate-600">{title}</div>
-          <div className="mt-1 text-xl font-bold text-slate-900">{latestValueText}</div>
+          <div className="mt-1 text-lg font-semibold text-slate-900">{latestValueText}</div>
         </div>
-        <div className={`text-xs font-bold ${pctTone}`}>{pctText} vs prev month</div>
+        <div className={`text-xs font-semibold ${pctTone}`}>{pctText} vs prev month</div>
       </div>
 
       {points.length === 0 ? (
@@ -983,7 +984,7 @@ export default function ReportPage() {
         </div>
       </section>
 
-      <section id="report-operations" className="space-y-4 scroll-mt-24">
+      <section id="report-operations" className="space-y-5 scroll-mt-24">
         <SectionHeader
           step="Operations"
           title="Operational Throughput"
@@ -999,31 +1000,31 @@ export default function ReportPage() {
               <div className="mt-1 text-lg font-semibold text-slate-900">{metrics.jobCount}</div>
               {showDetailText ? <div className="mt-1 text-xs text-slate-500">Current operational scope.</div> : null}
             </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Open Work Orders</div>
-              <div className="mt-1 text-xl font-bold text-amber-800">{pendingJobCount}</div>
+              <div className="mt-1 text-lg font-semibold text-amber-700">{pendingJobCount}</div>
               {showDetailText ? <div className="mt-1 text-xs text-slate-500">Awaiting completion.</div> : null}
             </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Completed Work Orders</div>
-              <div className="mt-1 text-xl font-bold text-emerald-800">{completedJobCount}</div>
+              <div className="mt-1 text-lg font-semibold text-emerald-700">{completedJobCount}</div>
               {showDetailText ? <div className="mt-1 text-xs text-slate-500">Closed in tracker workflow.</div> : null}
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Completion Rate</div>
-              <div className={`mt-1 text-xl font-bold ${completionRate >= 75 ? "text-emerald-700" : completionRate >= 40 ? "text-amber-700" : "text-rose-700"}`}>{pct(completionRate)}</div>
+              <div className={`mt-1 text-lg font-semibold ${completionRate >= 75 ? "text-emerald-700" : completionRate >= 40 ? "text-amber-700" : "text-rose-700"}`}>{pct(completionRate)}</div>
               {showDetailText ? <div className="mt-1 text-xs text-slate-500">Completed/total.</div> : null}
             </div>
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Unbilled Jobs</div>
-              <div className={`mt-1 text-xl font-bold ${unbilledJobCount > 0 ? "text-rose-700" : "text-emerald-700"}`}>{unbilledJobCount}</div>
+              <div className={`mt-1 text-lg font-semibold ${unbilledJobCount > 0 ? "text-rose-700" : "text-emerald-700"}`}>{unbilledJobCount}</div>
               {showDetailText ? <div className="mt-1 text-xs text-slate-500">No invoice yet.</div> : null}
             </div>
           </div>
         </>
       </section>
 
-      <section id="report-position" className="space-y-4 scroll-mt-24">
+      <section id="report-position" className="space-y-5 scroll-mt-24">
         <SectionHeader
           step="Position"
           title="Current Financial Position"
@@ -1102,7 +1103,7 @@ export default function ReportPage() {
         </>
       </section>
 
-      <section id="report-trend" className="space-y-4 scroll-mt-24">
+      <section id="report-trend" className="space-y-5 scroll-mt-24">
         <SectionHeader
           step="Trend"
           title="Financial Movement Over Time"
@@ -1112,7 +1113,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-5">
             <div>
               <h3 className="font-semibold text-slate-900">Financial Flow Trend</h3>
               {showDetailText ? <p className="text-xs text-slate-600 mt-1">Monthly billings, collections, and operating cost profile.</p> : null}
@@ -1123,7 +1124,7 @@ export default function ReportPage() {
               <TrendLineCard title="Cash Collected" color="#22c55e" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.received }))} />
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-5">
             <div>
               <h3 className="font-semibold text-slate-900">Cash Health Trend</h3>
               {showDetailText ? <p className="text-xs text-slate-600 mt-1">Billed vs received, plus net cash flow.</p> : null}
@@ -1137,7 +1138,7 @@ export default function ReportPage() {
         </>
       </section>
 
-      <section id="report-risk" className="space-y-4 scroll-mt-24">
+      <section id="report-risk" className="space-y-5 scroll-mt-24">
         <SectionHeader
           step="Risk"
           title="Risk Exposure"
@@ -1179,12 +1180,12 @@ export default function ReportPage() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
+            <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-5">
               <div>
                 <h3 className="font-semibold text-slate-900">Receivables Aging</h3>
                 {showDetailText ? <p className="text-xs text-slate-600 mt-1">Outstanding invoices grouped by age.</p> : null}
               </div>
-              <div className="space-y-2 md:hidden">
+              <div className="space-y-3 md:hidden">
                 {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
                   <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <div className="text-xs text-slate-600">{label}</div>
@@ -1224,7 +1225,7 @@ export default function ReportPage() {
                     <tr className="border-t border-white/20 bg-white">
                       <td className="px-4 py-3 font-semibold text-slate-900">Total</td>
                       <td className="px-4 py-3 text-right font-semibold text-slate-900">{Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}</td>
-                      <td className="px-4 py-3 text-right font-bold text-red-700">{arAging.currency} {money(arAging.totalOutstanding)}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-red-700">{arAging.currency} {money(arAging.totalOutstanding)}</td>
                       <td className="px-4 py-3 text-right text-slate-700">100%</td>
                     </tr>
                   </tfoot>
@@ -1232,7 +1233,7 @@ export default function ReportPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
+            <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-5">
               <div>
                 <h3 className="font-semibold text-slate-900">Client Concentration</h3>
                 {showDetailText ? <p className="text-xs text-slate-600 mt-1">Revenue share per client — high concentration = dependency risk.</p> : null}
@@ -1241,7 +1242,7 @@ export default function ReportPage() {
                 <div className="text-sm text-slate-600 py-4">No client revenue data yet.</div>
               ) : (
                 <>
-                  <div className="space-y-2 md:hidden">
+                  <div className="space-y-3 md:hidden">
                     {paginatedConcentrationClients.map(({ clientName, invoiced, received, currency }) => {
                       const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
                       const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
@@ -1310,7 +1311,7 @@ export default function ReportPage() {
         </>
       </section>
 
-      <section id="report-performance" className="space-y-4 scroll-mt-24">
+      <section id="report-performance" className="space-y-5 scroll-mt-24">
         <SectionHeader
           step="Performance"
           title="Performance Attribution"
@@ -1320,7 +1321,7 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
+          <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-5">
             <div>
               <h3 className="font-semibold text-slate-900">Profitability by Job</h3>
               {showDetailText ? <p className="text-xs text-slate-600 mt-1">Jobs with activity, sorted by invoiced amount.</p> : null}
@@ -1329,7 +1330,7 @@ export default function ReportPage() {
               <div className="text-sm text-slate-600 py-4">No jobs with financial activity yet.</div>
             ) : (
               <>
-                <div className="space-y-2 md:hidden">
+                <div className="space-y-3 md:hidden">
                   {paginatedProfitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
                     <div key={job.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                       <div className="flex items-center justify-between gap-2">
@@ -1419,7 +1420,7 @@ export default function ReportPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
+          <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-5">
             <div>
               <h3 className="font-semibold text-slate-900">Top Clients by Revenue</h3>
               {showDetailText ? <p className="text-xs text-slate-600 mt-1">Clients ranked by invoiced amount.</p> : null}
@@ -1428,7 +1429,7 @@ export default function ReportPage() {
               <div className="text-sm text-slate-600 py-4">No client revenue data yet.</div>
             ) : (
               <>
-                <div className="space-y-2 md:hidden">
+                <div className="space-y-3 md:hidden">
                   {paginatedTopClients.map(({ clientName, jobCount, invoiced, received, currency }, i) => {
                     const outstanding = Math.max(invoiced - received, 0)
                     const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
@@ -1540,7 +1541,7 @@ export default function ReportPage() {
             {expenseBreakdownRows.length === 0 ? (
               <div className="p-5 text-sm text-slate-600">No expenses to display.</div>
             ) : (
-              <div className="overflow-auto max-h-[74vh] p-4 space-y-4">
+              <div className="overflow-auto max-h-[74vh] p-5 space-y-5">
                 <table className="min-w-[900px] w-full text-xs sm:text-sm">
                   <thead className="bg-white text-slate-900 sticky top-0">
                     <tr className="border-b border-slate-200">
@@ -1606,7 +1607,7 @@ export default function ReportPage() {
             {receiptBreakdownRows.length === 0 ? (
               <div className="p-5 text-sm text-slate-600">No receipts to display.</div>
             ) : (
-              <div className="overflow-auto max-h-[74vh] p-4 space-y-4">
+              <div className="overflow-auto max-h-[74vh] p-5 space-y-5">
                 <table className="min-w-[900px] w-full text-xs sm:text-sm">
                   <thead className="bg-white text-slate-900 sticky top-0">
                     <tr className="border-b border-slate-200">
