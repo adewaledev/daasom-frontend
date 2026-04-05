@@ -165,7 +165,9 @@ export default function LedgerPage() {
     <div className="space-y-6 text-slate-800">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-blue-700">Ledger</h1>
+          <h1 className="text-2xl font-semibold">
+            <span className="text-blue-700">Ledger</span>
+          </h1>
           <p className="mt-1 text-sm text-slate-600">Debits (expenses) and credits (receipts) per job.</p>
         </div>
 

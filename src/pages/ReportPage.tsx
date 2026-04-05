@@ -882,7 +882,9 @@ export default function ReportPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reports & Analytics</h1>
+          <h1 className="text-2xl font-semibold">
+            <span className="text-blue-700">Reports & Analytics</span>
+          </h1>
           <p className="mt-1 text-sm text-slate-600">
             Executive view of operating throughput, cash position, profitability, and receivables risk.
           </p>

@@ -411,7 +411,9 @@ export default function ReceiptsPage() {
   return (
     <div className="space-y-6 text-slate-800">
       <div>
-        <h1 className="text-2xl font-semibold text-blue-700">Receipts</h1>
+        <h1 className="text-2xl font-semibold">
+          <span className="text-blue-700">Receipts</span>
+        </h1>
         <p className="mt-1 text-sm text-slate-600">Record payments against invoices.</p>
       </div>
 

@@ -345,7 +345,9 @@ export default function DocumentsPage() {
     <div className="space-y-6 text-slate-800">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-blue-700">Documents</h1>
+          <h1 className="text-2xl font-semibold">
+            <span className="text-blue-700">Documents</span>
+          </h1>
           <p className="mt-1 text-sm text-slate-600">Upload files linked to jobs, invoices, or receipts.</p>
         </div>
 
