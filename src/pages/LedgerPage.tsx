@@ -249,7 +249,7 @@ export default function LedgerPage() {
             >
               {totals.balance < 0 ? "-" : ""}{totals.currency} {money(Math.abs(totals.balance))}
             </div>
-            <div className="mt-0.5 text-xs text-slate-500">
+            <div className="mt-0.5 text-xs text-slate-600">
               {totals.balance > 0
                 ? "Profit"
                 : totals.balance < 0

@@ -75,7 +75,7 @@ function StatCard({
         <div className={`mt-1 text-lg font-semibold ${valueColorMap[color]}`}>
           {currency} {money(value)}
         </div>
-        {subtext && <div className="mt-1 text-xs text-slate-500">{subtext}</div>}
+        {subtext && <div className="mt-1 text-xs text-slate-600">{subtext}</div>}
       </button>
     )
   }
@@ -86,7 +86,7 @@ function StatCard({
       <div className={`mt-1 text-lg font-semibold ${valueColorMap[color]}`}>
         {currency} {money(value)}
       </div>
-      {subtext && <div className="mt-1 text-xs text-slate-500">{subtext}</div>}
+      {subtext && <div className="mt-1 text-xs text-slate-600">{subtext}</div>}
     </div>
   )
 }
@@ -915,7 +915,7 @@ export default function ReportPage() {
             }}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
-            className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-4 pr-10 py-3 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-4 pr-10 py-3 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {searchTerm ? (
             <button
@@ -924,7 +924,7 @@ export default function ReportPage() {
                 setSearchTerm("")
                 setShowSuggestions(false)
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition text-lg leading-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-700 transition text-lg leading-none"
               aria-label="Clear search"
             >
               ×
@@ -998,27 +998,27 @@ export default function ReportPage() {
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Total Work Orders</div>
               <div className="mt-1 text-lg font-semibold text-slate-900">{metrics.jobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Current operational scope.</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Current operational scope.</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Open Work Orders</div>
               <div className="mt-1 text-lg font-semibold text-amber-700">{pendingJobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Awaiting completion.</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Awaiting completion.</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Completed Work Orders</div>
               <div className="mt-1 text-lg font-semibold text-emerald-700">{completedJobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Closed in tracker workflow.</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Closed in tracker workflow.</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Completion Rate</div>
               <div className={`mt-1 text-lg font-semibold ${completionRate >= 75 ? "text-emerald-700" : completionRate >= 40 ? "text-amber-700" : "text-rose-700"}`}>{pct(completionRate)}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Completed/total.</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Completed/total.</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Unbilled Jobs</div>
               <div className={`mt-1 text-lg font-semibold ${unbilledJobCount > 0 ? "text-rose-700" : "text-emerald-700"}`}>{unbilledJobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">No invoice yet.</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">No invoice yet.</div> : null}
             </div>
           </div>
         </>
@@ -1078,26 +1078,26 @@ export default function ReportPage() {
               <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-700" : "text-red-700"}`}>
                 {pct(metrics.grossMargin)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">(Expected − Expenses) ÷ Expected</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">(Expected − Expenses) ÷ Expected</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Collection Rate</div>
               <div className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80 ? "text-green-700" : metrics.collectionRate >= 50 ? "text-amber-700" : "text-red-700"}`}>
                 {pct(metrics.collectionRate)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Actual ÷ Expected</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Actual ÷ Expected</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Total Jobs</div>
               <div className="mt-1 text-lg font-semibold text-slate-900">{metrics.jobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">{pendingJobCount} pending · {completedJobCount} complete</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">{pendingJobCount} pending · {completedJobCount} complete</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Net Profit</div>
               <div className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-700" : "text-red-700"}`}>
                 {currency0} {money(metrics.netRevenue)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Actual Revenue − Expenses</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Actual Revenue − Expenses</div> : null}
             </div>
           </div>
         </>
@@ -1154,28 +1154,28 @@ export default function ReportPage() {
               <div className={`mt-1 text-lg font-semibold ${overdue61Plus > 0 ? "text-red-700" : "text-green-700"}`}>
                 {arAging.currency} {money(overdue61Plus)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">{overdue61PlusCount} invoice{overdue61PlusCount !== 1 ? "s" : ""} overdue</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">{overdue61PlusCount} invoice{overdue61PlusCount !== 1 ? "s" : ""} overdue</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Client Concentration</div>
               <div className={`mt-1 text-lg font-semibold ${topClientShare > 50 ? "text-red-700" : topClientShare > 30 ? "text-amber-700" : "text-green-700"}`}>
                 {pct(topClientShare)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Top client's revenue share</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Top client's revenue share</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Jobs at Loss</div>
               <div className={`mt-1 text-lg font-semibold ${jobsAtLoss > 0 ? "text-red-700" : "text-green-700"}`}>
                 {jobsAtLoss}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Expenses exceed invoiced</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Expenses exceed invoiced</div> : null}
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
               <div className="text-xs text-slate-600">Uncollected Jobs</div>
               <div className={`mt-1 text-lg font-semibold ${zeroCollectionJobs > 0 ? "text-amber-700" : "text-green-700"}`}>
                 {zeroCollectionJobs}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Invoiced, nothing received</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-600">Invoiced, nothing received</div> : null}
             </div>
           </div>
 
@@ -1355,7 +1355,7 @@ export default function ReportPage() {
                         </div>
                         <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
                           <div className="text-slate-600">Collected</div>
-                          <div className={`mt-0.5 ${collectionRate >= 100 ? "text-green-700" : collectionRate > 0 ? "text-amber-700" : "text-slate-500"}`}>{pct(collectionRate)}</div>
+                          <div className={`mt-0.5 ${collectionRate >= 100 ? "text-green-700" : collectionRate > 0 ? "text-amber-700" : "text-slate-600"}`}>{pct(collectionRate)}</div>
                         </div>
                       </div>
                     </div>
@@ -1397,7 +1397,7 @@ export default function ReportPage() {
                               ? "text-green-700"
                               : collectionRate > 0
                                 ? "text-amber-700"
-                                : "text-slate-500"
+                                : "text-slate-600"
                               }`}
                           >
                             {pct(collectionRate)}
@@ -1482,7 +1482,7 @@ export default function ReportPage() {
                         const rank = (topClientsPage - 1) * itemsPerPage + i + 1
                         return (
                           <tr key={clientName} className="border-b border-slate-100 hover:bg-white transition">
-                            <td className="px-4 py-3 text-slate-500">{rank}</td>
+                            <td className="px-4 py-3 text-slate-600">{rank}</td>
                             <td className="px-4 py-3 font-semibold text-slate-900">{clientName}</td>
                             <td className="px-4 py-3 text-right text-slate-700">{jobCount}</td>
                             <td className="px-4 py-3 text-right text-slate-900">{currency} {money(invoiced)}</td>

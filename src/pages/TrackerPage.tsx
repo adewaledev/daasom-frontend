@@ -468,7 +468,7 @@ export default function TrackerPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            className="flex-1 bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           {showSuggestions && searchSuggestions.length > 0 && (
@@ -493,7 +493,7 @@ export default function TrackerPage() {
                       {suggestion.type === "file" ? "FILE" : suggestion.type === "client_code" ? "CODE" : "NAME"}
                     </span>
                     <span className="text-slate-800">{suggestion.value}</span>
-                    <span className="text-slate-500 text-xs ml-auto">{suggestion.job.file_number}</span>
+                    <span className="text-slate-600 text-xs ml-auto">{suggestion.job.file_number}</span>
                   </div>
                 </button>
               ))}
@@ -556,7 +556,7 @@ export default function TrackerPage() {
             <button
               type="button"
               onClick={() => setShowJobsList(false)}
-              className="text-slate-500 hover:text-slate-700 transition text-sm font-semibold"
+              className="text-slate-600 hover:text-slate-700 transition text-sm font-semibold"
             >
               Close
             </button>
@@ -590,7 +590,7 @@ export default function TrackerPage() {
                     >
                       {job.tracker_completed ? "COMPLETED" : "PENDING"}
                     </span>
-                    <span className="text-slate-500">{job.tracker_entries?.length || 0} entries</span>
+                    <span className="text-slate-600">{job.tracker_entries?.length || 0} entries</span>
                   </div>
                   <div className="mt-3 flex justify-end">
                     <button
@@ -722,7 +722,7 @@ export default function TrackerPage() {
                     setShowNewEntryForm(false)
                     setEditingEntryId(null)
                   }}
-                  className="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition text-lg leading-none"
+                  className="p-2 rounded-lg text-slate-600 hover:text-slate-700 hover:bg-slate-100 transition text-lg leading-none"
                   aria-label="Close"
                 >
                   ✕
@@ -782,7 +782,7 @@ export default function TrackerPage() {
                       onChange={(e) => setNewEntryForm((f) => ({ ...f, notes: e.target.value }))}
                       rows={4}
                       placeholder="Add any context, blockers, follow-up details, or handover notes..."
-                      className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div className="sticky bottom-0 -mx-4 px-4 py-3 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
@@ -857,7 +857,7 @@ export default function TrackerPage() {
                                     onChange={(e) => setEditingForm((f) => ({ ...f, notes: e.target.value }))}
                                     rows={4}
                                     placeholder="Optional notes..."
-                                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-2 py-1 text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-2 py-1 text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </td>
                                 <td className="px-4 py-3 align-top">
@@ -876,7 +876,7 @@ export default function TrackerPage() {
                                         setEditingEntryId(null)
                                         setEditingForm(emptyForm)
                                       }}
-                                      className="text-slate-500 hover:text-slate-700 font-semibold text-xs"
+                                      className="text-slate-600 hover:text-slate-700 font-semibold text-xs"
                                     >
                                       Cancel
                                     </button>

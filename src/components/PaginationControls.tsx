@@ -29,7 +29,7 @@ export default function PaginationControls({
         <div className="text-sm text-slate-600">
           Page {currentPage} of {totalPages}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-600">
           Showing {startItem}-{endItem} of {totalItems}
         </div>
       </div>

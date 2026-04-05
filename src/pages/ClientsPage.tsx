@@ -339,7 +339,7 @@ export default function ClientsPage() {
                       >
                         Edit
                       </button>
-                    ) : <span className="text-slate-500 text-sm">View only</span>}
+                    ) : <span className="text-slate-600 text-sm">View only</span>}
                   </div>
                 </div>
               ))}
@@ -382,7 +382,7 @@ export default function ClientsPage() {
                           >
                             Edit
                           </button>
-                        ) : <span className="text-slate-500">View only</span>}
+                        ) : <span className="text-slate-600">View only</span>}
                       </td>
                     </tr>
                   ))}

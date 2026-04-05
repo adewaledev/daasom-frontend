@@ -523,7 +523,7 @@ export default function JobsPage() {
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600"
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -537,7 +537,7 @@ export default function JobsPage() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-700 transition"
               >
                 <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
                   <path d="M6 18L18 6M6 6l12 12"></path>
@@ -572,7 +572,7 @@ export default function JobsPage() {
           )}
         </div>
         {searchTerm && (
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-600">
             Showing matches for "{searchTerm}"
           </p>
         )}
@@ -753,7 +753,7 @@ export default function JobsPage() {
                   value={formatTransitDays(editing ? getTransitDays(editing.id) : null)}
                   placeholder="Calculated from tracker dates"
                 />
-                <p className="mt-1 text-xs text-slate-500">Calculated automatically from the oldest and newest tracker entry dates for this file.</p>
+                <p className="mt-1 text-xs text-slate-600">Calculated automatically from the oldest and newest tracker entry dates for this file.</p>
               </div>
             </div>
 
@@ -1027,7 +1027,7 @@ export default function JobsPage() {
                   ["Refund Amount", viewingJob.refund_amount ?? "—"],
                 ] as [string, unknown][]).map(([label, value]) => (
                   <div key={label}>
-                    <p className="text-slate-500 text-xs mb-0.5">{label}</p>
+                    <p className="text-slate-600 text-xs mb-0.5">{label}</p>
                     <p className="text-slate-900 font-medium">{String(value)}</p>
                   </div>
                 ))}

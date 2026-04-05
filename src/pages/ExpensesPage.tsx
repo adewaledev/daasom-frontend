@@ -366,7 +366,7 @@ export default function ExpensesPage() {
                 setSearch("")
                 setShowSuggestions(false)
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-700 transition"
               aria-label="Clear expense search"
             >
               ×
@@ -648,7 +648,7 @@ export default function ExpensesPage() {
                           <button type="button" onClick={() => startEdit(x)} className="text-blue-700 hover:text-blue-800">Edit</button>
                           <button type="button" onClick={() => onDelete(x)} className="text-slate-600 hover:text-red-700">Delete</button>
                         </>
-                      ) : <span className="text-slate-500">View only</span>}
+                      ) : <span className="text-slate-600">View only</span>}
                     </div>
                   </div>
                 )
@@ -702,7 +702,7 @@ export default function ExpensesPage() {
                                   Delete
                                 </button>
                               </>
-                            ) : <span className="text-slate-500">View only</span>}
+                            ) : <span className="text-slate-600">View only</span>}
                           </div>
                         </td>
                       </tr>
