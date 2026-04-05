@@ -320,10 +320,10 @@ export default function ClientsPage() {
                     <div className="text-sm font-semibold text-slate-900">{c.client_name}</div>
                     <span
                       className={[
-                        "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
+                        "client-status-chip inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
                         c.is_active
-                          ? "bg-blue-100 text-blue-700 border-blue-200"
-                          : "bg-white text-slate-700 border-slate-200",
+                          ? "client-status-active bg-blue-100 text-blue-700 border-blue-200"
+                          : "client-status-inactive bg-white text-slate-700 border-slate-200",
                       ].join(" ")}
                     >
                       {c.is_active ? "Active" : "Inactive"}
@@ -364,10 +364,10 @@ export default function ClientsPage() {
                       <td className="px-4 py-3">
                         <span
                           className={[
-                            "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
+                            "client-status-chip inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
                             c.is_active
-                              ? "bg-blue-100 text-blue-700 border-blue-200"
-                              : "bg-white text-slate-700 border-slate-200",
+                              ? "client-status-active bg-blue-100 text-blue-700 border-blue-200"
+                              : "client-status-inactive bg-white text-slate-700 border-slate-200",
                           ].join(" ")}
                         >
                           {c.is_active ? "Active" : "Inactive"}

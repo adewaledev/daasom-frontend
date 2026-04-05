@@ -361,6 +361,38 @@ html.dark .invoices-suggestions button:hover {
   background-color: #1e293b !important;
 }
 
+html.dark .client-status-chip {
+  font-weight: 700;
+}
+
+html.dark .client-status-active {
+  background-color: rgba(37, 99, 235, 0.3) !important;
+  border-color: rgba(96, 165, 250, 0.6) !important;
+  color: #dbeafe !important;
+}
+
+html.dark .client-status-inactive {
+  background-color: rgba(51, 65, 85, 0.6) !important;
+  border-color: #64748b !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .tracker-status-chip {
+  font-weight: 700;
+}
+
+html.dark .tracker-status-completed {
+  background-color: rgba(22, 163, 74, 0.3) !important;
+  border-color: rgba(74, 222, 128, 0.6) !important;
+  color: #dcfce7 !important;
+}
+
+html.dark .tracker-status-pending {
+  background-color: rgba(180, 83, 9, 0.35) !important;
+  border-color: rgba(251, 191, 36, 0.65) !important;
+  color: #fef3c7 !important;
+}
+
 @media (max-width: 767px) {
   html {
     font-size: 16px;

@@ -585,9 +585,9 @@ export default function TrackerPage() {
                   </div>
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold border ${job.tracker_completed
-                        ? "bg-green-100 text-green-700 border-green-200"
-                        : "bg-amber-100 text-amber-700 border-amber-200"
+                      className={`tracker-status-chip inline-flex items-center px-2 py-0.5 rounded-md font-semibold border ${job.tracker_completed
+                        ? "tracker-status-completed bg-green-100 text-green-700 border-green-200"
+                        : "tracker-status-pending bg-amber-100 text-amber-700 border-amber-200"
                         }`}
                     >
                       {job.tracker_completed ? "COMPLETED" : "PENDING"}
@@ -633,9 +633,9 @@ export default function TrackerPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${job.tracker_completed
-                            ? "bg-green-100 text-green-700 border-green-200"
-                            : "bg-amber-100 text-amber-700 border-amber-200"
+                          className={`tracker-status-chip inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${job.tracker_completed
+                            ? "tracker-status-completed bg-green-100 text-green-700 border-green-200"
+                            : "tracker-status-pending bg-amber-100 text-amber-700 border-amber-200"
                             }`}
                         >
                           {job.tracker_completed ? "COMPLETED" : "PENDING"}
