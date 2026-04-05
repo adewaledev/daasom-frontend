@@ -64,7 +64,7 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-blue-50 p-6">
+      <section className="home-hero rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-blue-50 p-6">
         <div className="flex items-center gap-3">
           <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
           <h1 className="text-2xl font-semibold text-slate-900 tracking-normal">DAASOM</h1>

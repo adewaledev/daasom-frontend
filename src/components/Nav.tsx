@@ -17,7 +17,7 @@ function navClass({ isActive }: { isActive: boolean }) {
   return [
     "px-3 py-2 rounded-lg text-sm font-semibold transition",
     isActive
-      ? "bg-blue-100 text-blue-700 border border-blue-200"
+      ? "nav-active-chip bg-blue-100 text-blue-700 border border-blue-200"
       : "text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent",
   ].join(" ")
 }
@@ -26,7 +26,7 @@ function mobileNavClass({ isActive }: { isActive: boolean }) {
   return [
     "w-full px-3 py-2.5 rounded-lg text-sm font-semibold transition text-left",
     isActive
-      ? "bg-blue-100 text-blue-700 border border-blue-200"
+      ? "nav-active-chip bg-blue-100 text-blue-700 border border-blue-200"
       : "text-slate-800 hover:text-slate-900 hover:bg-slate-100 border border-slate-200",
   ].join(" ")
 }
