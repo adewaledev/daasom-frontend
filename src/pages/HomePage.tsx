@@ -68,6 +68,7 @@ function KpiCard({ label, value, note, accent }: KpiCardProps) {
 
 export default function HomePage() {
   const [pendingJobCount, setPendingJobCount] = useState<number>(0)
+  const [totalTrackerJobs, setTotalTrackerJobs] = useState<number>(0)
 
   useEffect(() => {
     let alive = true
@@ -76,9 +77,15 @@ export default function HomePage() {
       try {
         const jobs = (await listTrackerJobs()) as TrackerJobRow[]
         const pendingCount = jobs.filter((job) => !job.tracker_completed).length
-        if (alive) setPendingJobCount(pendingCount)
+        if (alive) {
+          setPendingJobCount(pendingCount)
+          setTotalTrackerJobs(jobs.length)
+        }
       } catch {
-        if (alive) setPendingJobCount(0)
+        if (alive) {
+          setPendingJobCount(0)
+          setTotalTrackerJobs(0)
+        }
       }
     }
 
@@ -90,6 +97,10 @@ export default function HomePage() {
 
   const trackerBadge = useMemo(() => (pendingJobCount > 0 ? String(pendingJobCount) : undefined), [pendingJobCount])
   const trackerTone: BadgeTone = pendingJobCount > 0 ? "amber" : "blue"
+  const completedTrackerJobs = Math.max(0, totalTrackerJobs - pendingJobCount)
+  const completionRateText = totalTrackerJobs > 0
+    ? `${Math.round((completedTrackerJobs / totalTrackerJobs) * 100)}%`
+    : "0%"
   const snapshotTime = useMemo(
     () =>
       new Date().toLocaleString(undefined, {
@@ -148,8 +159,18 @@ export default function HomePage() {
           accent={pendingJobCount > 0 ? "amber" : "green"}
         />
         <KpiCard label="Tracker Status" value={trackerState} note={trackerStateNote} accent={pendingJobCount > 0 ? "amber" : "green"} />
-        <KpiCard label="Priority Modules" value="3" note="Tracker, Invoices, and Receipts are operational first." accent="blue" />
-        <KpiCard label="Total Modules" value="9" note="Clients, Jobs, Tracker, Finance, Docs, and Reporting." accent="blue" />
+        <KpiCard
+          label="Completed Tracker Jobs"
+          value={String(completedTrackerJobs)}
+          note={totalTrackerJobs > 0 ? `${completedTrackerJobs} out of ${totalTrackerJobs} tracker jobs are closed.` : "No tracker jobs recorded yet."}
+          accent={completedTrackerJobs > 0 ? "green" : "blue"}
+        />
+        <KpiCard
+          label="Completion Rate"
+          value={completionRateText}
+          note={totalTrackerJobs > 0 ? "Share of tracker jobs currently marked as completed." : "Rate becomes available once jobs are tracked."}
+          accent={pendingJobCount > 0 ? "amber" : "green"}
+        />
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
