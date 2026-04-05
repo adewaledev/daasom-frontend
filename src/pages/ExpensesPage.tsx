@@ -532,6 +532,13 @@ export default function ExpensesPage() {
                   <option>MST</option>
                   <option>Manifest Unlock</option>
                   <option>Abandoned Manifest</option>
+                  <option>Customs & Nepza</option>
+                  <option>Crane</option>
+                  <option>Forklift</option>
+                  <option>Lowbend</option>
+                  <option>NPA Lock/Charges</option>
+                  <option>Seal</option>
+                  <option>PAAR/SONCAP</option>
                   <option>Miscellaneous</option>
                 </select>
               </div>
