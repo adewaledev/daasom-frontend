@@ -33,7 +33,6 @@ function Tile({ title, description, to, badge, badgeTone = "blue", disabled }: T
         {badge ? <span className={badgeClass(badgeTone)}>{badge}</span> : null}
       </div>
       <p className="mt-2 text-sm text-slate-700 leading-relaxed">{description}</p>
-      <div className="mt-4 text-sm font-semibold text-blue-700">Open</div>
     </Link>
   )
 }
@@ -68,7 +67,7 @@ export default function HomePage() {
       <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-blue-50 p-6">
         <div className="flex items-center gap-3">
           <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-wide">DAASOM</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-normal">DAASOM</h1>
         </div>
         <p className="mt-2 text-sm text-slate-700 max-w-2xl leading-relaxed">
           Operations dashboard — select a module to continue.

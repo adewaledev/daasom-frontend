@@ -40,7 +40,7 @@ export default function Nav() {
       <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
         <Link to="/" className="flex items-center gap-2 min-w-0">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-600" />
-          <span className="font-semibold tracking-wide truncate">DAASOM</span>
+          <span className="font-semibold tracking-normal truncate">DAASOM</span>
         </Link>
 
         <div className="md:hidden flex items-center gap-2 shrink-0">

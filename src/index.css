@@ -12,6 +12,10 @@ html, body {
 
 body {
   margin: 0;
+  font-family: "Aptos", "Segoe UI", "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 @media (max-width: 767px) {
