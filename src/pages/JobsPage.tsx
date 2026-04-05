@@ -3,7 +3,14 @@ import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
 import type { Job, JobZone } from "../api/jobs"
 import { createJob, listJobs, updateJob } from "../api/jobs"
+import ActionBar from "../components/ActionBar"
+import AlertBanner from "../components/AlertBanner"
+import EmptyState from "../components/EmptyState"
+import ListHeader from "../components/ListHeader"
+import PageHeader from "../components/PageHeader"
 import PaginationControls from "../components/PaginationControls"
+import SearchPanel from "../components/SearchPanel"
+import SurfaceCard from "../components/SurfaceCard"
 import { listTrackerJobs } from "../api/tracker"
 import type { TrackerEntry, TrackerJobRow } from "../api/tracker"
 import { useAuth } from "../state/auth"
@@ -452,62 +459,62 @@ export default function JobsPage() {
 
   return (
     <div className="jobs-page space-y-6 text-slate-800">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            <span className="text-blue-700">Jobs</span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">Create jobs linked to clients. Zones: DUTY, FREE, EXPORT.</p>
-        </div>
+      <PageHeader
+        title="Jobs"
+        description="Create jobs linked to clients. Zones: DUTY, FREE, EXPORT."
+        actions={(
+          <ActionBar className="w-full md:w-auto md:justify-end">
+            <select
+              className="w-full sm:w-auto bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={viewZone}
+              onChange={(e) => setViewZone(e.target.value as ViewZone)}
+            >
+              <option value="ALL">View: All Zones</option>
+              <option value="DUTY">View: DUTY</option>
+              <option value="FREE">View: FREE</option>
+              <option value="EXPORT">View: EXPORT</option>
+            </select>
 
-        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
-          <select
-            className="w-full sm:w-auto bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={viewZone}
-            onChange={(e) => setViewZone(e.target.value as ViewZone)}
-          >
-            <option value="ALL">View: All Zones</option>
-            <option value="DUTY">View: DUTY</option>
-            <option value="FREE">View: FREE</option>
-            <option value="EXPORT">View: EXPORT</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={refreshAll}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
-          >
-            Refresh
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowJobsList((prev) => !prev)}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
-          >
-            {showJobsList ? "Hide Jobs" : "View Jobs"}
-          </button>
-
-          {canWriteJobs && !showCreateForm && !editing ? (
             <button
               type="button"
-              onClick={() => setShowCreateForm(true)}
-              className="w-full sm:w-auto px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+              onClick={refreshAll}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
             >
-              Create Job
+              Refresh
             </button>
-          ) : null}
-        </div>
-      </div>
+
+            <button
+              type="button"
+              onClick={() => setShowJobsList((prev) => !prev)}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
+            >
+              {showJobsList ? "Hide Jobs" : "View Jobs"}
+            </button>
+
+            {canWriteJobs && !showCreateForm && !editing ? (
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(true)}
+                className="w-full sm:w-auto px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
+              >
+                Create Job
+              </button>
+            ) : null}
+          </ActionBar>
+        )}
+        className="flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4"
+      />
 
       {!canWriteJobs ? (
-        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
-          Signed in as {roleLabel}. Jobs are view-only for this role.
-        </div>
+        <AlertBanner
+          tone="neutral"
+          message={`Signed in as ${roleLabel}. Jobs are view-only for this role.`}
+          className="rounded-lg bg-white"
+        />
       ) : null}
 
       {/* Search Section */}
-      <section className="relative z-20 rounded-2xl border border-slate-200 bg-white backdrop-blur p-4">
+      <SearchPanel className="relative z-20">
         <div className="relative z-20">
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Search Jobs
@@ -515,6 +522,7 @@ export default function JobsPage() {
           <div className="relative">
             <input
               type="text"
+              aria-label="Search jobs by file number or client name"
               className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Search by file number or client name..."
               value={searchTerm}
@@ -576,14 +584,14 @@ export default function JobsPage() {
             Showing matches for "{searchTerm}"
           </p>
         )}
-      </section>
+      </SearchPanel>
 
       {/* Form */}
       {canWriteJobs && (showCreateForm || editing) ? (
-        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">{title}</h2>
-            {editing || showCreateForm ? (
+        <SurfaceCard>
+          <ListHeader
+            title={title}
+            action={editing || showCreateForm ? (
               <button
                 type="button"
                 onClick={cancelEdit}
@@ -592,7 +600,7 @@ export default function JobsPage() {
                 Cancel
               </button>
             ) : null}
-          </div>
+          />
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {error ? (
@@ -842,22 +850,19 @@ export default function JobsPage() {
               </div>
             </div>
           </form>
-        </section>
+        </SurfaceCard>
       ) : null}
 
       {/* Table */}
-      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Jobs List</h2>
-          <span className="text-sm text-slate-600">{filteredJobs.length} total</span>
-        </div>
+      <SurfaceCard className="overflow-hidden">
+        <ListHeader title="Jobs List" meta={`${filteredJobs.length} total`} />
 
         {!showJobsList && !searchTerm.trim() ? (
-          <div className="p-5 text-sm text-slate-600">Click View Jobs to open the jobs list.</div>
+          <EmptyState message="Click View Jobs to open the jobs list." />
         ) : loading ? (
-          <div className="p-5 text-sm text-slate-600">Loading jobs...</div>
+          <EmptyState message="Loading jobs..." />
         ) : filteredJobs.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No jobs for this view.</div>
+          <EmptyState message="No jobs for this view." />
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -950,7 +955,7 @@ export default function JobsPage() {
             />
           </>
         )}
-      </section>
+      </SurfaceCard>
 
       {/* Job detail modal */}
       {viewingJob && (

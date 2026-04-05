@@ -15,7 +15,14 @@ import {
   updateInvoice,
   voidInvoice,
 } from "../api/invoices"
+import ActionBar from "../components/ActionBar"
+import AlertBanner from "../components/AlertBanner"
+import EmptyState from "../components/EmptyState"
+import ListHeader from "../components/ListHeader"
+import PageHeader from "../components/PageHeader"
 import PaginationControls from "../components/PaginationControls"
+import SearchPanel from "../components/SearchPanel"
+import SurfaceCard from "../components/SurfaceCard"
 import { useAuth } from "../state/auth"
 
 type InvoiceForm = {
@@ -452,18 +459,15 @@ export default function InvoicesPage() {
 
   return (
     <div className="invoices-page space-y-6 text-slate-800">
-      <div>
-        <h1 className="text-2xl font-semibold">
-          <span className="text-blue-700">Invoices</span>
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">
-          One invoice per job. Use actions to issue, mark paid/partial, refresh totals, or void.
-        </p>
-      </div>
+      <PageHeader
+        title="Invoices"
+        description="One invoice per job. Use actions to issue, mark paid/partial, refresh totals, or void."
+      />
 
-      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 space-y-3">
+      <SearchPanel>
         <div className="relative w-full md:max-w-xl">
           <input
+            aria-label="Search invoices"
             className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onChange={(e) => {
@@ -508,7 +512,7 @@ export default function InvoicesPage() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <ActionBar>
           {canWriteInvoices ? (
             <button
               type="button"
@@ -534,34 +538,32 @@ export default function InvoicesPage() {
           >
             Refresh
           </button>
-        </div>
-      </section>
+        </ActionBar>
+      </SearchPanel>
 
       {/* Alerts */}
       {error ? (
-        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
-          {error}
-        </div>
+        <AlertBanner tone="error" message={error} className="rounded-lg" />
       ) : null}
 
       {info ? (
-        <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">
-          {info}
-        </div>
+        <AlertBanner tone="info" message={info} className="rounded-lg" />
       ) : null}
 
       {!canWriteInvoices ? (
-        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
-          Signed in as {roleLabel}. Invoices are view-only for this role.
-        </div>
+        <AlertBanner
+          tone="neutral"
+          message={`Signed in as ${roleLabel}. Invoices are view-only for this role.`}
+          className="rounded-lg bg-white"
+        />
       ) : null}
 
       {/* Form */}
       {showForm && canWriteInvoices ? (
-        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">{title}</h2>
-            {editing ? (
+        <SurfaceCard>
+          <ListHeader
+            title={title}
+            action={editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
@@ -570,7 +572,7 @@ export default function InvoicesPage() {
                 Cancel
               </button>
             ) : null}
-          </div>
+          />
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {editing && !canEditInvoiceFields(editing.status) ? (
@@ -692,26 +694,24 @@ export default function InvoicesPage() {
               ) : null}
             </div>
           </form>
-        </section>
+        </SurfaceCard>
       ) : null}
 
       {/* List */}
-      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Invoices List</h2>
-          <span className="text-sm text-slate-600">
-            {showInvoiceList ? `${filteredInvoices.length} of ${invoices.length}` : `Hidden • ${invoices.length} total`}
-          </span>
-        </div>
+      <SurfaceCard className="overflow-hidden">
+        <ListHeader
+          title="Invoices List"
+          meta={showInvoiceList ? `${filteredInvoices.length} of ${invoices.length}` : `Hidden • ${invoices.length} total`}
+        />
 
         {!showInvoiceList ? (
-          <div className="p-5 text-sm text-slate-600">Invoice list is hidden. Click "Show Invoice List" to view entries.</div>
+          <EmptyState message={'Invoice list is hidden. Click "Show Invoice List" to view entries.'} />
         ) : loading ? (
-          <div className="p-5 text-sm text-slate-600">Loading invoices...</div>
+          <EmptyState message="Loading invoices..." />
         ) : invoices.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No invoices yet.</div>
+          <EmptyState message="No invoices yet." />
         ) : filteredInvoices.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No invoices match your search.</div>
+          <EmptyState message="No invoices match your search." />
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -861,7 +861,7 @@ export default function InvoicesPage() {
             />
           </>
         )}
-      </section>
+      </SurfaceCard>
     </div>
   )
 }

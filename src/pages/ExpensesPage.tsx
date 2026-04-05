@@ -4,7 +4,14 @@ import { listJobs } from "../api/jobs"
 import type { Expense, ExpenseStatus } from "../api/expenses"
 import { createExpense, deleteExpense, listExpenses, updateExpense } from "../api/expenses"
 import { listInvoices, refreshInvoiceTotals } from "../api/invoices"
+import ActionBar from "../components/ActionBar"
+import AlertBanner from "../components/AlertBanner"
+import EmptyState from "../components/EmptyState"
+import ListHeader from "../components/ListHeader"
+import PageHeader from "../components/PageHeader"
 import PaginationControls from "../components/PaginationControls"
+import SearchPanel from "../components/SearchPanel"
+import SurfaceCard from "../components/SurfaceCard"
 import { useAuth } from "../state/auth"
 
 type ExpenseForm = {
@@ -338,16 +345,15 @@ export default function ExpensesPage() {
 
   return (
     <div className="expenses-page space-y-6 text-slate-800">
-      <div>
-        <h1 className="text-2xl font-semibold">
-          <span className="text-blue-700">Expenses</span>
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">Create and track expenses per job. Status: Draft → Submitted → Approved.</p>
-      </div>
+      <PageHeader
+        title="Expenses"
+        description="Create and track expenses per job. Status: Draft → Submitted → Approved."
+      />
 
-      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 space-y-3">
+      <SearchPanel>
         <div className="relative w-full md:max-w-xl">
           <input
+            aria-label="Search expenses"
             className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onChange={(e) => {
@@ -392,7 +398,7 @@ export default function ExpensesPage() {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <ActionBar>
           {canWriteExpenses ? (
             <button
               type="button"
@@ -418,21 +424,23 @@ export default function ExpensesPage() {
           >
             Refresh
           </button>
-        </div>
-      </section>
+        </ActionBar>
+      </SearchPanel>
 
       {!canWriteExpenses ? (
-        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
-          Signed in as {roleLabel}. Expenses are view-only for this role.
-        </div>
+        <AlertBanner
+          tone="neutral"
+          message={`Signed in as ${roleLabel}. Expenses are view-only for this role.`}
+          className="rounded-lg bg-white"
+        />
       ) : null}
 
       {/* Form */}
       {showForm && canWriteExpenses ? (
-        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">{title}</h2>
-            {editing ? (
+        <SurfaceCard>
+          <ListHeader
+            title={title}
+            action={editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
@@ -441,19 +449,15 @@ export default function ExpensesPage() {
                 Cancel
               </button>
             ) : null}
-          </div>
+          />
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {error ? (
-              <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
-                {error}
-              </div>
+              <AlertBanner tone="error" message={error} className="rounded-lg" />
             ) : null}
 
             {info ? (
-              <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">
-                {info}
-              </div>
+              <AlertBanner tone="info" message={info} className="rounded-lg" />
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -612,26 +616,24 @@ export default function ExpensesPage() {
               ) : null}
             </div>
           </form>
-        </section>
+        </SurfaceCard>
       ) : null}
 
       {/* List */}
-      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Expenses List</h2>
-          <span className="text-sm text-slate-600">
-            {showExpenseList ? `${filteredExpenses.length} of ${expenses.length}` : `Hidden • ${expenses.length} total`}
-          </span>
-        </div>
+      <SurfaceCard className="overflow-hidden">
+        <ListHeader
+          title="Expenses List"
+          meta={showExpenseList ? `${filteredExpenses.length} of ${expenses.length}` : `Hidden • ${expenses.length} total`}
+        />
 
         {!showExpenseList ? (
-          <div className="p-5 text-sm text-slate-600">Expense list is hidden. Click "Show Expense List" to view entries.</div>
+          <EmptyState message={'Expense list is hidden. Click "Show Expense List" to view entries.'} />
         ) : loading ? (
-          <div className="p-5 text-sm text-slate-600">Loading expenses...</div>
+          <EmptyState message="Loading expenses..." />
         ) : expenses.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No expenses yet.</div>
+          <EmptyState message="No expenses yet." />
         ) : filteredExpenses.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No expenses match your search.</div>
+          <EmptyState message="No expenses match your search." />
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -729,7 +731,7 @@ export default function ExpensesPage() {
             />
           </>
         )}
-      </section>
+      </SurfaceCard>
     </div>
   )
 }

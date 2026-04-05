@@ -202,7 +202,7 @@ describe("ReportPage interaction", () => {
 
     await waitFor(() => expect(listReceiptsMock).toHaveBeenCalled())
 
-    fireEvent.click((await screen.findAllByRole("button", { name: /Actual Revenue/i }))[0])
+    fireEvent.click((await screen.findAllByRole("button", { name: /Collected Revenue/i }))[0])
 
     const receiptsModalTitle = await screen.findByRole("heading", { name: "Receipts Breakdown" })
     const receiptsModalNode = receiptsModalTitle.closest("div.w-full.max-w-6xl")

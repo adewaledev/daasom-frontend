@@ -10,7 +10,11 @@ import {
   markTrackerCompleted,
   reopenTracker,
 } from "../api/tracker"
+import AlertBanner from "../components/AlertBanner"
+import EmptyState from "../components/EmptyState"
+import ListHeader from "../components/ListHeader"
 import PaginationControls from "../components/PaginationControls"
+import StatusBadge from "../components/StatusBadge"
 import { useAuth } from "../state/auth"
 
 function extractErrorMessage(err: any): string {
@@ -444,21 +448,19 @@ export default function TrackerPage() {
       </div>
 
       {!canWriteTracker ? (
-        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-sm text-slate-700">Signed in as {roleLabel}. Tracker updates are view-only for this role.</div>
-        </section>
+        <AlertBanner
+          tone="neutral"
+          message={`Signed in as ${roleLabel}. Tracker updates are view-only for this role.`}
+          className="rounded-2xl"
+        />
       ) : null}
 
       {error && (
-        <section className="rounded-2xl border border-red-200 bg-red-50 p-4">
-          <div className="text-sm text-red-700">{error}</div>
-        </section>
+        <AlertBanner tone="error" message={error} className="rounded-2xl p-4" />
       )}
 
       {info && (
-        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-          <div className="text-sm text-blue-700">{info}</div>
-        </section>
+        <AlertBanner tone="info" message={info} className="rounded-2xl p-4" />
       )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
@@ -552,9 +554,9 @@ export default function TrackerPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Jobs ({filteredJobs.length})</h2>
-          {showJobsList && (
+        <ListHeader
+          title={`Jobs (${filteredJobs.length})`}
+          action={showJobsList ? (
             <button
               type="button"
               onClick={() => setShowJobsList(false)}
@@ -562,15 +564,15 @@ export default function TrackerPage() {
             >
               Close
             </button>
-          )}
-        </div>
+          ) : null}
+        />
 
         {!searchTerm.trim() && !showJobsList ? (
-          <div className="p-5 text-sm text-slate-600">Search for a job or select one from the list to get started.</div>
+          <EmptyState message="Search for a job or select one from the list to get started." />
         ) : loading ? (
-          <div className="p-5 text-sm text-slate-600">Loading jobs...</div>
+          <EmptyState message="Loading jobs..." />
         ) : filteredJobs.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No jobs found.</div>
+          <EmptyState message="No jobs found." />
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -584,14 +586,10 @@ export default function TrackerPage() {
                     <span className={zoneBadge(job.zone)}>{job.zone}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-xs">
-                    <span
-                      className={`tracker-status-chip inline-flex items-center px-2 py-0.5 rounded-md font-semibold border ${job.tracker_completed
-                        ? "tracker-status-completed bg-green-100 text-green-700 border-green-200"
-                        : "tracker-status-pending bg-amber-100 text-amber-700 border-amber-200"
-                        }`}
-                    >
-                      {job.tracker_completed ? "COMPLETED" : "PENDING"}
-                    </span>
+                    <StatusBadge
+                      label={job.tracker_completed ? "COMPLETED" : "PENDING"}
+                      variant={job.tracker_completed ? "success" : "warning"}
+                    />
                     <span className="text-slate-600">{job.tracker_entries?.length || 0} entries</span>
                   </div>
                   <div className="mt-3 flex justify-end">
@@ -632,14 +630,10 @@ export default function TrackerPage() {
                         <span className={zoneBadge(job.zone)}>{job.zone}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`tracker-status-chip inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${job.tracker_completed
-                            ? "tracker-status-completed bg-green-100 text-green-700 border-green-200"
-                            : "tracker-status-pending bg-amber-100 text-amber-700 border-amber-200"
-                            }`}
-                        >
-                          {job.tracker_completed ? "COMPLETED" : "PENDING"}
-                        </span>
+                        <StatusBadge
+                          label={job.tracker_completed ? "COMPLETED" : "PENDING"}
+                          variant={job.tracker_completed ? "success" : "warning"}
+                        />
                       </td>
                       <td className="px-4 py-3 text-slate-600">{job.tracker_entries?.length || 0} entries</td>
                       <td className="px-4 py-3 text-right">
@@ -735,10 +729,10 @@ export default function TrackerPage() {
             {/* Modal body */}
             <div className="p-6 space-y-4">
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+                <AlertBanner tone="error" message={error} className="rounded-xl p-3" />
               )}
               {info && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">{info}</div>
+                <AlertBanner tone="info" message={info} className="rounded-xl p-3" />
               )}
 
               {!selectedJob.tracker_completed && canWriteTracker && (
@@ -813,9 +807,10 @@ export default function TrackerPage() {
               )}
 
               {sortedEntries.length === 0 ? (
-                <div className="p-4 text-sm text-slate-600 rounded-lg border border-slate-200 bg-slate-50">
-                  No entries yet. {!selectedJob.tracker_completed && canWriteTracker ? "Add one to get started." : ""}
-                </div>
+                <EmptyState
+                  message={`No entries yet.${!selectedJob.tracker_completed && canWriteTracker ? " Add one to get started." : ""}`}
+                  className="p-4 rounded-lg border border-slate-200 bg-slate-50"
+                />
               ) : (
                 <>
                   <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">

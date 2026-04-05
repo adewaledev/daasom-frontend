@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Client } from "../api/clients"
 import { createClient, listClients, updateClient } from "../api/clients"
+import AlertBanner from "../components/AlertBanner"
+import EmptyState from "../components/EmptyState"
+import ListHeader from "../components/ListHeader"
 import PaginationControls from "../components/PaginationControls"
+import StatusBadge from "../components/StatusBadge"
 import { useAuth } from "../state/auth"
 
 type ClientForm = {
@@ -174,17 +178,19 @@ export default function ClientsPage() {
       </div>
 
       {!canWriteClients ? (
-        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
-          Signed in as {roleLabel}. Clients are view-only for this role.
-        </div>
+        <AlertBanner
+          tone="neutral"
+          message={`Signed in as ${roleLabel}. Clients are view-only for this role.`}
+          className="rounded-lg bg-white"
+        />
       ) : null}
 
       {/* Form Card */}
       {canWriteClients ? (
         <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
-          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h2 className="font-semibold text-slate-900">{title}</h2>
-            {editing ? (
+          <ListHeader
+            title={title}
+            action={editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
@@ -193,13 +199,11 @@ export default function ClientsPage() {
                 Cancel
               </button>
             ) : null}
-          </div>
+          />
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {error ? (
-              <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
-                {error}
-              </div>
+              <AlertBanner tone="error" message={error} className="rounded-lg" />
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -302,15 +306,12 @@ export default function ClientsPage() {
 
       {/* Table Card */}
       <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Client Directory</h2>
-          <span className="text-sm text-slate-600">{clients.length} total</span>
-        </div>
+        <ListHeader title="Client Directory" meta={`${clients.length} total`} />
 
         {loading ? (
-          <div className="p-5 text-sm text-slate-600">Loading clients...</div>
+          <EmptyState message="Loading clients..." />
         ) : clients.length === 0 ? (
-          <div className="p-5 text-sm text-slate-600">No clients yet.</div>
+          <EmptyState message="No clients yet." />
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -318,16 +319,10 @@ export default function ClientsPage() {
                 <div key={c.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-semibold text-slate-900">{c.client_name}</div>
-                    <span
-                      className={[
-                        "client-status-chip inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
-                        c.is_active
-                          ? "client-status-active bg-blue-100 text-blue-700 border-blue-200"
-                          : "client-status-inactive bg-white text-slate-700 border-slate-200",
-                      ].join(" ")}
-                    >
-                      {c.is_active ? "Active" : "Inactive"}
-                    </span>
+                    <StatusBadge
+                      label={c.is_active ? "Active" : "Inactive"}
+                      variant={c.is_active ? "info" : "neutral"}
+                    />
                   </div>
                   <div className="mt-2 text-xs text-slate-600">{c.client_code} • {c.client_prefix}</div>
                   <div className="mt-3 flex justify-end">
@@ -362,16 +357,10 @@ export default function ClientsPage() {
                       <td className="px-4 py-3 text-slate-900">{c.client_prefix}</td>
                       <td className="px-4 py-3 text-slate-900">{c.client_name}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className={[
-                            "client-status-chip inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
-                            c.is_active
-                              ? "client-status-active bg-blue-100 text-blue-700 border-blue-200"
-                              : "client-status-inactive bg-white text-slate-700 border-slate-200",
-                          ].join(" ")}
-                        >
-                          {c.is_active ? "Active" : "Inactive"}
-                        </span>
+                        <StatusBadge
+                          label={c.is_active ? "Active" : "Inactive"}
+                          variant={c.is_active ? "info" : "neutral"}
+                        />
                       </td>
                       <td className="px-4 py-3 text-right">
                         {canWriteClients ? (

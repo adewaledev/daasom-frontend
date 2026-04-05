@@ -11,7 +11,11 @@ import type { Client } from "../api/clients"
 import { listClients } from "../api/clients"
 import type { TrackerJobRow } from "../api/tracker"
 import { listTrackerJobs } from "../api/tracker"
+import AlertBanner from "../components/AlertBanner"
+import PageHeader from "../components/PageHeader"
 import PaginationControls from "../components/PaginationControls"
+import SearchPanel from "../components/SearchPanel"
+import SurfaceCard from "../components/SurfaceCard"
 
 function extractErrorMessage(err: any): string {
   if (!err?.response?.status) return "Network error. Backend may be unavailable."
@@ -880,35 +884,30 @@ export default function ReportPage() {
   return (
     <div className="space-y-6 text-slate-800">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            <span className="text-blue-700">Reports & Analytics</span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Executive view of operating throughput, cash position, profitability, and receivables risk.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={refreshAll}
-          disabled={loading}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition disabled:opacity-50"
-        >
-          {loading ? "Loading…" : "Refresh"}
-        </button>
-      </div>
+      <PageHeader
+        title="Reports & Analytics"
+        description="Executive view of operating throughput, cash position, profitability, and receivables risk."
+        actions={(
+          <button
+            type="button"
+            onClick={refreshAll}
+            disabled={loading}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition disabled:opacity-50"
+          >
+            {loading ? "Loading…" : "Refresh"}
+          </button>
+        )}
+      />
 
       {error && (
-        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
-          {error}
-        </div>
+        <AlertBanner tone="error" message={error} className="rounded-lg" />
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5">
+      <SearchPanel className="p-5">
         <div className="relative">
           <input
             type="text"
+            aria-label="Search report by file number or client"
             placeholder="Search by file number or client..."
             value={searchTerm}
             onChange={(e) => {
@@ -956,7 +955,7 @@ export default function ReportPage() {
             Showing {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} matching "{searchTerm.trim()}".
           </p>
         ) : null}
-      </section>
+      </SearchPanel>
 
       <section className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-white/90 p-2 sm:top-3 sm:p-3 backdrop-blur-xl shadow-sm">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">

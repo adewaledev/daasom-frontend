@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
+import { listExpenses } from "../api/expenses"
+import type { Expense } from "../api/expenses"
+import { listInvoices } from "../api/invoices"
+import type { Invoice } from "../api/invoices"
+import { listReceipts } from "../api/receipts"
+import type { Receipt } from "../api/receipts"
 import { listTrackerJobs } from "../api/tracker"
 import type { TrackerJobRow } from "../api/tracker"
 
@@ -100,30 +106,41 @@ function AttentionCard({ title, value, note, to, cta, tone }: AttentionCardProps
 export default function HomePage() {
   const [pendingJobCount, setPendingJobCount] = useState<number>(0)
   const [totalTrackerJobs, setTotalTrackerJobs] = useState<number>(0)
-  const [trackerJobs, setTrackerJobs] = useState<TrackerJobRow[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [receipts, setReceipts] = useState<Receipt[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
 
   useEffect(() => {
     let alive = true
 
-    async function loadPending() {
+    async function loadSnapshot() {
       try {
-        const jobs = (await listTrackerJobs()) as TrackerJobRow[]
+        const [jobs, invoiceRows, receiptRows, expenseRows] = await Promise.all([
+          listTrackerJobs() as Promise<TrackerJobRow[]>,
+          listInvoices(),
+          listReceipts(),
+          listExpenses(),
+        ])
         const pendingCount = jobs.filter((job) => !job.tracker_completed).length
         if (alive) {
           setPendingJobCount(pendingCount)
           setTotalTrackerJobs(jobs.length)
-          setTrackerJobs(jobs)
+          setInvoices(invoiceRows)
+          setReceipts(receiptRows)
+          setExpenses(expenseRows)
         }
       } catch {
         if (alive) {
           setPendingJobCount(0)
           setTotalTrackerJobs(0)
-          setTrackerJobs([])
+          setInvoices([])
+          setReceipts([])
+          setExpenses([])
         }
       }
     }
 
-    loadPending()
+    loadSnapshot()
     return () => {
       alive = false
     }
@@ -135,31 +152,50 @@ export default function HomePage() {
   const completionRateText = totalTrackerJobs > 0
     ? `${Math.round((completedTrackerJobs / totalTrackerJobs) * 100)}%`
     : "0%"
-  const pendingWithoutEntriesCount = useMemo(
-    () =>
-      trackerJobs.filter((job) => !job.tracker_completed && (!job.tracker_entries || job.tracker_entries.length === 0)).length,
-    [trackerJobs]
-  )
-  const stalePendingCount = useMemo(() => {
-    const now = Date.now()
-    const staleAfterDays = 3
+  const overdueInvoiceCount = useMemo(() => {
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
 
-    return trackerJobs.filter((job) => {
-      if (job.tracker_completed) return false
-      const entries = job.tracker_entries || []
-      if (entries.length === 0) return false
+    const receiptTotalsByInvoice = new Map<string, number>()
+    for (const receipt of receipts) {
+      const invoiceId = String(receipt.invoice)
+      const amount = Number(receipt.amount ?? 0)
+      receiptTotalsByInvoice.set(invoiceId, (receiptTotalsByInvoice.get(invoiceId) ?? 0) + (Number.isFinite(amount) ? amount : 0))
+    }
 
-      const latestEntryTs = entries.reduce((latest, entry) => {
-        const ts = new Date(entry.entry_date).getTime()
-        if (!Number.isFinite(ts)) return latest
-        return Math.max(latest, ts)
-      }, 0)
+    return invoices.filter((invoice) => {
+      if (invoice.status === "PAID" || invoice.status === "VOID") return false
+      const due = invoice.due_date ? new Date(invoice.due_date) : null
+      if (!due || !Number.isFinite(due.getTime())) return false
 
-      if (!latestEntryTs) return false
-      const diffDays = (now - latestEntryTs) / (1000 * 60 * 60 * 24)
-      return diffDays >= staleAfterDays
+      const invoiceAmount = Number(invoice.invoice_amount ?? invoice.grand_total ?? 0)
+      const billed = Number.isFinite(invoiceAmount) ? invoiceAmount : 0
+      const received = receiptTotalsByInvoice.get(String(invoice.id)) ?? 0
+      const outstanding = billed - received
+
+      return due.getTime() < startOfToday.getTime() && outstanding > 0
     }).length
-  }, [trackerJobs])
+  }, [invoices, receipts])
+  const uncollectedInvoiceCount = useMemo(() => {
+    const receiptTotalsByInvoice = new Map<string, number>()
+    for (const receipt of receipts) {
+      const invoiceId = String(receipt.invoice)
+      const amount = Number(receipt.amount ?? 0)
+      receiptTotalsByInvoice.set(invoiceId, (receiptTotalsByInvoice.get(invoiceId) ?? 0) + (Number.isFinite(amount) ? amount : 0))
+    }
+
+    return invoices.filter((invoice) => {
+      if (!(invoice.status === "ISSUED" || invoice.status === "PARTIALLY_PAID")) return false
+      const invoiceAmount = Number(invoice.invoice_amount ?? invoice.grand_total ?? 0)
+      const billed = Number.isFinite(invoiceAmount) ? invoiceAmount : 0
+      const received = receiptTotalsByInvoice.get(String(invoice.id)) ?? 0
+      return billed - received > 0
+    }).length
+  }, [invoices, receipts])
+  const pendingExpenseApprovalsCount = useMemo(
+    () => expenses.filter((expense) => expense.status === "SUBMITTED").length,
+    [expenses]
+  )
   const snapshotTime = useMemo(
     () =>
       new Date().toLocaleString(undefined, {
@@ -240,7 +276,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <AttentionCard
             title="Pending Closures"
             value={String(pendingJobCount)}
@@ -252,24 +288,34 @@ export default function HomePage() {
             tone="amber"
           />
           <AttentionCard
-            title="No Progress Logged"
-            value={String(pendingWithoutEntriesCount)}
-            note={pendingWithoutEntriesCount > 0
-              ? "Pending jobs without any tracker entries yet. Add first updates to establish visibility."
-              : "Every pending job already has at least one tracker update."}
-            to="/tracker"
-            cta="Log first updates"
-            tone={pendingWithoutEntriesCount > 0 ? "amber" : "blue"}
+            title="Overdue Invoices"
+            value={String(overdueInvoiceCount)}
+            note={overdueInvoiceCount > 0
+              ? "Invoices past due date with unpaid balance still outstanding."
+              : "No overdue invoices currently detected."}
+            to="/invoices"
+            cta="Follow up collections"
+            tone={overdueInvoiceCount > 0 ? "amber" : "blue"}
           />
           <AttentionCard
-            title="Stale Updates (3+ Days)"
-            value={String(stalePendingCount)}
-            note={stalePendingCount > 0
-              ? "Pending jobs with no recent progress in the last three days."
-              : "No stale pending jobs identified in tracker."}
-            to="/tracker"
-            cta="Resume stalled workflows"
-            tone={stalePendingCount > 0 ? "amber" : "blue"}
+            title="Expense Approvals Pending"
+            value={String(pendingExpenseApprovalsCount)}
+            note={pendingExpenseApprovalsCount > 0
+              ? "Submitted expenses waiting for approval and posting."
+              : "No submitted expenses are awaiting approval."}
+            to="/expenses"
+            cta="Review expense queue"
+            tone={pendingExpenseApprovalsCount > 0 ? "amber" : "blue"}
+          />
+          <AttentionCard
+            title="Uncollected Invoices"
+            value={String(uncollectedInvoiceCount)}
+            note={uncollectedInvoiceCount > 0
+              ? "Issued invoices still carrying an unpaid balance."
+              : "All issued invoices are fully collected."}
+            to="/receipts"
+            cta="Post collections"
+            tone={uncollectedInvoiceCount > 0 ? "amber" : "blue"}
           />
         </div>
       </section>
