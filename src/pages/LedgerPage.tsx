@@ -27,14 +27,14 @@ function extractErrorMessage(err: any): string {
 
 function dirBadge(direction: LedgerDirection) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (direction === "CREDIT") return `${base} bg-green-500/10 text-green-200 border-green-500/20`
-  return `${base} bg-amber-500/10 text-amber-200 border-amber-500/20`
+  if (direction === "CREDIT") return `${base} bg-green-50 text-green-700 border-green-200`
+  return `${base} bg-amber-50 text-amber-700 border-amber-200`
 }
 
 function typeBadge(entryType: LedgerEntry["entry_type"]) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (entryType === "RECEIPT") return `${base} bg-blue-600/10 text-blue-200 border-blue-500/20`
-  return `${base} bg-white/5 text-white/75 border-white/10`
+  if (entryType === "RECEIPT") return `${base} bg-blue-50 text-blue-700 border-blue-200`
+  return `${base} bg-white text-slate-700 border-slate-200`
 }
 
 function money(n: number) {
@@ -162,11 +162,11 @@ export default function LedgerPage() {
   }, [currentPage, totalPages])
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-blue-300">Ledger</h1>
-          <p className="mt-1 text-sm text-white/60">Debits (expenses) and credits (receipts) per job.</p>
+          <h1 className="text-2xl font-semibold text-blue-700">Ledger</h1>
+          <p className="mt-1 text-sm text-slate-600">Debits (expenses) and credits (receipts) per job.</p>
         </div>
 
         <button
@@ -175,26 +175,26 @@ export default function LedgerPage() {
             refreshJobs()
             if (selectedJobId) refreshEntries(selectedJobId)
           }}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
         >
           Refresh
         </button>
       </div>
 
       {error ? (
-        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">{error}</div>
+        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">{error}</div>
       ) : null}
 
       {info ? (
-        <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">{info}</div>
+        <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">{info}</div>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div className="md:col-span-2">
-            <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Job</label>
             <select
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedJobId}
               onChange={(e) => {
                 const id = e.target.value
@@ -212,44 +212,44 @@ export default function LedgerPage() {
               ))}
             </select>
             {selectedJob ? (
-              <div className="mt-1 text-xs text-white/55">
+              <div className="mt-1 text-xs text-slate-600">
                 {selectedJob.file_number} • {selectedJob.zone}
               </div>
             ) : null}
           </div>
 
-          <div className="text-sm text-white/80">
-            <div className="text-xs text-white/60">Currency</div>
+          <div className="text-sm text-slate-700">
+            <div className="text-xs text-slate-600">Currency</div>
             <div className="mt-1 font-semibold">{totals.currency}</div>
-            <div className="mt-2 text-xs text-white/60">Rows</div>
+            <div className="mt-2 text-xs text-slate-600">Rows</div>
             <div className="mt-1 font-semibold">{entries.length}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-            <div className="text-xs text-white/60">Total Debit</div>
-            <div className="mt-1 text-base font-semibold text-white">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-600">Total Debit</div>
+            <div className="mt-1 text-base font-semibold text-slate-900">
               {totals.currency} {money(totals.debit)}
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-            <div className="text-xs text-white/60">Total Credit</div>
-            <div className="mt-1 text-base font-semibold text-white">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-600">Total Credit</div>
+            <div className="mt-1 text-base font-semibold text-slate-900">
               {totals.currency} {money(totals.credit)}
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3">
-            <div className="text-xs text-white/60">Profit / Loss</div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-600">Profit / Loss</div>
             <div
-              className={`mt-1 text-base font-semibold ${totals.balance >= 0 ? "text-green-300" : "text-red-300"
+              className={`mt-1 text-base font-semibold ${totals.balance >= 0 ? "text-green-700" : "text-red-300"
                 }`}
             >
               {totals.balance < 0 ? "-" : ""}{totals.currency} {money(Math.abs(totals.balance))}
             </div>
-            <div className="mt-0.5 text-xs text-white/50">
+            <div className="mt-0.5 text-xs text-slate-500">
               {totals.balance > 0
                 ? "Profit"
                 : totals.balance < 0
@@ -260,35 +260,35 @@ export default function LedgerPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Entries</h2>
-          {loadingEntries ? <span className="text-sm text-white/60">Loading…</span> : null}
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Entries</h2>
+          {loadingEntries ? <span className="text-sm text-slate-600">Loading…</span> : null}
         </div>
 
         {!selectedJobId ? (
-          <div className="p-5 text-sm text-white/60">Select a job.</div>
+          <div className="p-5 text-sm text-slate-600">Select a job.</div>
         ) : loadingEntries ? (
-          <div className="p-5 text-sm text-white/60">Loading…</div>
+          <div className="p-5 text-sm text-slate-600">Loading…</div>
         ) : entries.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No entries.</div>
+          <div className="p-5 text-sm text-slate-600">No entries.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
               {paginatedEntries.map((e) => (
-                <div key={e.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div key={e.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-sm font-semibold text-white">{e.event_date}</div>
+                      <div className="text-sm font-semibold text-slate-900">{e.event_date}</div>
                       <div className="mt-1 flex items-center gap-2">
                         <span className={typeBadge(e.entry_type)}>{e.entry_type}</span>
                         <span className={dirBadge(e.direction)}>{e.direction}</span>
                       </div>
                     </div>
-                    <div className="text-sm font-semibold text-white">{e.currency} {money(parseAmt(e.amount))}</div>
+                    <div className="text-sm font-semibold text-slate-900">{e.currency} {money(parseAmt(e.amount))}</div>
                   </div>
-                  {e.description ? <div className="mt-2 text-xs text-white/70">{e.description}</div> : null}
-                  <div className={`mt-2 text-xs font-semibold ${e._running >= 0 ? "text-green-300" : "text-red-300"}`}>
+                  {e.description ? <div className="mt-2 text-xs text-slate-700">{e.description}</div> : null}
+                  <div className={`mt-2 text-xs font-semibold ${e._running >= 0 ? "text-green-700" : "text-red-300"}`}>
                     Running P/L: {e._running < 0 ? "-" : ""}{e.currency} {money(Math.abs(e._running))}
                   </div>
                 </div>
@@ -296,35 +296,35 @@ export default function LedgerPage() {
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Type</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Direction</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Running P&amp;L</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Type</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Direction</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Description</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Invoice</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Amount</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Running P&amp;L</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {paginatedEntries.map((e) => (
-                    <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/80">{e.event_date}</td>
+                    <tr key={e.id} className="border-b border-slate-100 hover:bg-white transition">
+                      <td className="px-4 py-3 text-slate-700">{e.event_date}</td>
                       <td className="px-4 py-3">
                         <span className={typeBadge(e.entry_type)}>{e.entry_type}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={dirBadge(e.direction)}>{e.direction}</span>
                       </td>
-                      <td className="px-4 py-3 text-white/90">{e.description || ""}</td>
-                      <td className="px-4 py-3 text-white/70">{e.invoice_id ? String(e.invoice_id) : ""}</td>
-                      <td className="px-4 py-3 text-right text-white/90 font-semibold">
+                      <td className="px-4 py-3 text-slate-900">{e.description || ""}</td>
+                      <td className="px-4 py-3 text-slate-700">{e.invoice_id ? String(e.invoice_id) : ""}</td>
+                      <td className="px-4 py-3 text-right text-slate-900 font-semibold">
                         {e.currency} {money(parseAmt(e.amount))}
                       </td>
                       <td
-                        className={`px-4 py-3 text-right font-semibold ${e._running >= 0 ? "text-green-300" : "text-red-300"
+                        className={`px-4 py-3 text-right font-semibold ${e._running >= 0 ? "text-green-700" : "text-red-300"
                           }`}
                       >
                         {e._running < 0 ? "-" : ""}{e.currency} {money(Math.abs(e._running))}

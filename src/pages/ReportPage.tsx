@@ -56,11 +56,11 @@ function StatCard({
   onClick?: () => void
 }) {
   const colorMap = {
-    blue: "bg-blue-600/10 border-blue-500/20 text-blue-200",
-    green: "bg-green-600/10 border-green-500/20 text-green-200",
-    amber: "bg-amber-600/10 border-amber-500/20 text-amber-200",
-    purple: "bg-purple-600/10 border-purple-500/20 text-purple-200",
-    red: "bg-red-600/10 border-red-500/20 text-red-200",
+    blue: "bg-blue-50 border-blue-200 text-blue-700",
+    green: "bg-green-50 border-green-200 text-green-700",
+    amber: "bg-amber-50 border-amber-200 text-amber-700",
+    purple: "bg-violet-50 border-violet-200 text-violet-700",
+    red: "bg-red-50 border-red-200 text-red-700",
   }
 
   if (onClick) {
@@ -68,24 +68,24 @@ function StatCard({
       <button
         type="button"
         onClick={onClick}
-        className={`w-full text-left rounded-xl border border-white/10 ${colorMap[color]} px-4 py-3 hover:bg-white/10 transition`}
+        className={`w-full text-left rounded-xl border border-slate-200 ${colorMap[color]} px-4 py-3 hover:bg-slate-100 transition`}
       >
-        <div className="text-xs text-white/60">{label}</div>
-        <div className="mt-1 text-lg font-semibold text-white">
+        <div className="text-xs text-slate-600">{label}</div>
+        <div className="mt-1 text-lg font-semibold text-slate-900">
           {currency} {money(value)}
         </div>
-        {subtext && <div className="mt-1 text-xs text-white/50">{subtext}</div>}
+        {subtext && <div className="mt-1 text-xs text-slate-500">{subtext}</div>}
       </button>
     )
   }
 
   return (
-    <div className={`rounded-xl border border-white/10 ${colorMap[color]} px-4 py-3`}>
-      <div className="text-xs text-white/60">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-white">
+    <div className={`rounded-xl border border-slate-200 ${colorMap[color]} px-4 py-3`}>
+      <div className="text-xs text-slate-600">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-slate-900">
         {currency} {money(value)}
       </div>
-      {subtext && <div className="mt-1 text-xs text-white/50">{subtext}</div>}
+      {subtext && <div className="mt-1 text-xs text-slate-500">{subtext}</div>}
     </div>
   )
 }
@@ -110,18 +110,18 @@ function SectionHeader({
   onToggle?: () => void
 }) {
   const toneClass = {
-    neutral: "text-white/80 border-white/10 bg-white/5",
-    good: "text-green-200 border-green-500/20 bg-green-600/10",
-    warn: "text-amber-200 border-amber-500/20 bg-amber-600/10",
-    risk: "text-red-200 border-red-500/20 bg-red-600/10",
+    neutral: "text-slate-700 border-slate-200 bg-white",
+    good: "text-green-700 border-green-200 bg-green-50",
+    warn: "text-amber-700 border-amber-200 bg-amber-50",
+    risk: "text-red-700 border-red-200 bg-red-50",
   }
 
   return (
     <div className="group flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div className="space-y-1">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300/80">{step}</div>
-        <h2 className="font-semibold text-white">{title}</h2>
-        {description ? <p className="text-xs text-white/55 max-w-3xl">{description}</p> : null}
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700/80">{step}</div>
+        <h2 className="font-semibold text-slate-900">{title}</h2>
+        {description ? <p className="text-xs text-slate-600 max-w-3xl">{description}</p> : null}
       </div>
       <div className="flex items-center gap-2 self-start">
         {verdict ? (
@@ -133,7 +133,7 @@ function SectionHeader({
           <button
             type="button"
             onClick={onToggle}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             {open ? "Collapse" : "Expand"}
           </button>
@@ -257,25 +257,25 @@ function TrendLineCard({
   }
 
   const pctText = `${pctChange >= 0 ? "+" : ""}${pctChange.toFixed(1)}%`
-  const pctTone = pctChange > 0 ? "text-green-300" : pctChange < 0 ? "text-red-300" : "text-white/60"
+  const pctTone = pctChange > 0 ? "text-green-700" : pctChange < 0 ? "text-red-300" : "text-slate-600"
   const latestValueText =
     valueType === "count" ? String(Math.round(latest)) : `${valuePrefix} ${money(latest)}`
 
   return (
-    <article className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-3">
+    <article className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="text-xs text-white/55">{title}</div>
-          <div className="mt-1 text-lg font-semibold text-white">{latestValueText}</div>
+          <div className="text-xs text-slate-600">{title}</div>
+          <div className="mt-1 text-lg font-semibold text-slate-900">{latestValueText}</div>
         </div>
         <div className={`text-xs font-semibold ${pctTone}`}>{pctText} vs prev month</div>
       </div>
 
       {points.length === 0 ? (
-        <div className="text-sm text-white/60 py-3">No trend data.</div>
+        <div className="text-sm text-slate-600 py-3">No trend data.</div>
       ) : (
         <>
-          <div className="rounded-lg border border-white/10 bg-black/40 p-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-2">
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-28" preserveAspectRatio="none">
               {[0.25, 0.5, 0.75, 1].map((tick) => (
                 <line
@@ -301,7 +301,7 @@ function TrendLineCard({
               })}
             </svg>
           </div>
-          <div className="flex items-center justify-between text-[11px] text-white/55">
+          <div className="flex items-center justify-between text-[11px] text-slate-600">
             <span>{points[0]?.label || "-"}</span>
             <span>{points[points.length - 1]?.label || "-"}</span>
           </div>
@@ -877,12 +877,12 @@ export default function ReportPage() {
   }, [])
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-blue-300">Reports & Analytics</h1>
-          <p className="mt-1 text-sm text-white/60">
+          <h1 className="text-2xl font-semibold text-blue-700">Reports & Analytics</h1>
+          <p className="mt-1 text-sm text-slate-600">
             Executive dashboard — financial flow, job lifecycle, profitability, and receivables.
           </p>
         </div>
@@ -890,19 +890,19 @@ export default function ReportPage() {
           type="button"
           onClick={refreshAll}
           disabled={loading}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition disabled:opacity-50"
+          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition disabled:opacity-50"
         >
           {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
 
       {error && (
-        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
           {error}
         </div>
       )}
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5">
         <div className="relative">
           <input
             type="text"
@@ -914,7 +914,7 @@ export default function ReportPage() {
             }}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => window.setTimeout(() => setShowSuggestions(false), 150)}
-            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-4 pr-10 py-3 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-4 pr-10 py-3 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {searchTerm ? (
             <button
@@ -923,7 +923,7 @@ export default function ReportPage() {
                 setSearchTerm("")
                 setShowSuggestions(false)
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition text-lg leading-none"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition text-lg leading-none"
               aria-label="Clear search"
             >
               ×
@@ -931,7 +931,7 @@ export default function ReportPage() {
           ) : null}
 
           {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
               {searchSuggestions.map((s) => (
                 <button
                   key={s.key}
@@ -940,7 +940,7 @@ export default function ReportPage() {
                     setSearchTerm(s.value)
                     setShowSuggestions(false)
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                  className="w-full px-4 py-2.5 text-left text-sm text-slate-800 hover:bg-slate-100 transition"
                 >
                   {s.label}
                 </button>
@@ -949,13 +949,13 @@ export default function ReportPage() {
           ) : null}
         </div>
         {searchTerm.trim() ? (
-          <p className="mt-2 text-xs text-white/55">
+          <p className="mt-2 text-xs text-slate-600">
             Showing {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} matching "{searchTerm.trim()}".
           </p>
         ) : null}
       </section>
 
-      <section className="sticky top-2 z-20 rounded-2xl border border-white/10 bg-[#0b0f16]/85 p-2 sm:top-3 sm:p-3 backdrop-blur-xl">
+      <section className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-[#0b0f16]/85 p-2 sm:top-3 sm:p-3 backdrop-blur-xl">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {walkthroughSteps.map((item) => {
             const isActive = activeSection === item.id
@@ -966,7 +966,7 @@ export default function ReportPage() {
                 onClick={() => jumpToSection(item.id)}
                 className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition sm:px-3 sm:py-2 sm:text-xs ${isActive
                   ? "border-blue-500/30 bg-blue-600 text-white"
-                  : "border-white/10 bg-white/5 text-white/65 hover:bg-white/10"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
                   }`}
               >
                 {item.short}
@@ -976,7 +976,7 @@ export default function ReportPage() {
           <button
             type="button"
             onClick={() => setShowDetailText((prev) => !prev)}
-            className="w-full sm:w-auto sm:ml-auto rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/75 transition hover:bg-white/10"
+            className="w-full sm:w-auto sm:ml-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             {showDetailText ? "Hide details" : "Show details"}
           </button>
@@ -994,30 +994,30 @@ export default function ReportPage() {
         />
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Total Jobs</div>
-              <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Current scope.</div> : null}
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Total Jobs</div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">{metrics.jobCount}</div>
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Current scope.</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Pending Jobs</div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Pending Jobs</div>
               <div className="mt-1 text-lg font-semibold text-amber-300">{pendingJobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Still open.</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Still open.</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Completed Jobs</div>
-              <div className="mt-1 text-lg font-semibold text-green-300">{completedJobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Tracker complete.</div> : null}
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Completed Jobs</div>
+              <div className="mt-1 text-lg font-semibold text-green-700">{completedJobCount}</div>
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Tracker complete.</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Completion Rate</div>
-              <div className={`mt-1 text-lg font-semibold ${completionRate >= 75 ? "text-green-300" : completionRate >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(completionRate)}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Completed/total.</div> : null}
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Completion Rate</div>
+              <div className={`mt-1 text-lg font-semibold ${completionRate >= 75 ? "text-green-700" : completionRate >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(completionRate)}</div>
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Completed/total.</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Unbilled Jobs</div>
-              <div className={`mt-1 text-lg font-semibold ${unbilledJobCount > 0 ? "text-red-300" : "text-green-300"}`}>{unbilledJobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">No invoice yet.</div> : null}
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Unbilled Jobs</div>
+              <div className={`mt-1 text-lg font-semibold ${unbilledJobCount > 0 ? "text-red-300" : "text-green-700"}`}>{unbilledJobCount}</div>
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">No invoice yet.</div> : null}
             </div>
           </div>
         </>
@@ -1072,31 +1072,31 @@ export default function ReportPage() {
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Gross Margin</div>
-              <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-300" : "text-red-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Gross Margin</div>
+              <div className={`mt-1 text-lg font-semibold ${metrics.grossMargin >= 0 ? "text-green-700" : "text-red-300"}`}>
                 {pct(metrics.grossMargin)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">(Expected − Expenses) ÷ Expected</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">(Expected − Expenses) ÷ Expected</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Collection Rate</div>
-              <div className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80 ? "text-green-300" : metrics.collectionRate >= 50 ? "text-amber-300" : "text-red-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Collection Rate</div>
+              <div className={`mt-1 text-lg font-semibold ${metrics.collectionRate >= 80 ? "text-green-700" : metrics.collectionRate >= 50 ? "text-amber-300" : "text-red-300"}`}>
                 {pct(metrics.collectionRate)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Actual ÷ Expected</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Actual ÷ Expected</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Total Jobs</div>
-              <div className="mt-1 text-lg font-semibold text-white">{metrics.jobCount}</div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">{pendingJobCount} pending · {completedJobCount} complete</div> : null}
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Total Jobs</div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">{metrics.jobCount}</div>
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">{pendingJobCount} pending · {completedJobCount} complete</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Net Profit</div>
-              <div className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-300" : "text-red-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Net Profit</div>
+              <div className={`mt-1 text-lg font-semibold ${metrics.netRevenue >= 0 ? "text-green-700" : "text-red-300"}`}>
                 {currency0} {money(metrics.netRevenue)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Actual Revenue − Expenses</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Actual Revenue − Expenses</div> : null}
             </div>
           </div>
         </>
@@ -1112,10 +1112,10 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
-              <h3 className="font-semibold text-white">Financial Flow Trend</h3>
-              {showDetailText ? <p className="text-xs text-white/55 mt-1">Monthly billed, received, and spent.</p> : null}
+              <h3 className="font-semibold text-slate-900">Financial Flow Trend</h3>
+              {showDetailText ? <p className="text-xs text-slate-600 mt-1">Monthly billed, received, and spent.</p> : null}
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <TrendLineCard title="Expenses" color="#f59e0b" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.expenses }))} />
@@ -1123,10 +1123,10 @@ export default function ReportPage() {
               <TrendLineCard title="Received" color="#22c55e" valuePrefix={currency0} points={monthlyTrend.map((p) => ({ label: p.label, value: p.received }))} />
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
-              <h3 className="font-semibold text-white">Cash Health Trend</h3>
-              {showDetailText ? <p className="text-xs text-white/55 mt-1">Billed vs received, plus net cash flow.</p> : null}
+              <h3 className="font-semibold text-slate-900">Cash Health Trend</h3>
+              {showDetailText ? <p className="text-xs text-slate-600 mt-1">Billed vs received, plus net cash flow.</p> : null}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <TrendLineCard title="Revenue Billed" color="#f59e0b" valuePrefix={currency0} points={monthlyCashHealth.map((p) => ({ label: p.label, value: p.revenueBilled }))} />
@@ -1148,97 +1148,97 @@ export default function ReportPage() {
         />
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Overdue 61+ Days</div>
-              <div className={`mt-1 text-lg font-semibold ${overdue61Plus > 0 ? "text-red-300" : "text-green-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Overdue 61+ Days</div>
+              <div className={`mt-1 text-lg font-semibold ${overdue61Plus > 0 ? "text-red-300" : "text-green-700"}`}>
                 {arAging.currency} {money(overdue61Plus)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">{overdue61PlusCount} invoice{overdue61PlusCount !== 1 ? "s" : ""} overdue</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">{overdue61PlusCount} invoice{overdue61PlusCount !== 1 ? "s" : ""} overdue</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Client Concentration</div>
-              <div className={`mt-1 text-lg font-semibold ${topClientShare > 50 ? "text-red-300" : topClientShare > 30 ? "text-amber-300" : "text-green-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Client Concentration</div>
+              <div className={`mt-1 text-lg font-semibold ${topClientShare > 50 ? "text-red-300" : topClientShare > 30 ? "text-amber-300" : "text-green-700"}`}>
                 {pct(topClientShare)}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Top client's revenue share</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Top client's revenue share</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Jobs at Loss</div>
-              <div className={`mt-1 text-lg font-semibold ${jobsAtLoss > 0 ? "text-red-300" : "text-green-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Jobs at Loss</div>
+              <div className={`mt-1 text-lg font-semibold ${jobsAtLoss > 0 ? "text-red-300" : "text-green-700"}`}>
                 {jobsAtLoss}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Expenses exceed invoiced</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Expenses exceed invoiced</div> : null}
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-              <div className="text-xs text-white/60">Uncollected Jobs</div>
-              <div className={`mt-1 text-lg font-semibold ${zeroCollectionJobs > 0 ? "text-amber-300" : "text-green-300"}`}>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="text-xs text-slate-600">Uncollected Jobs</div>
+              <div className={`mt-1 text-lg font-semibold ${zeroCollectionJobs > 0 ? "text-amber-300" : "text-green-700"}`}>
                 {zeroCollectionJobs}
               </div>
-              {showDetailText ? <div className="mt-1 text-xs text-white/45">Invoiced, nothing received</div> : null}
+              {showDetailText ? <div className="mt-1 text-xs text-slate-500">Invoiced, nothing received</div> : null}
             </div>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
+            <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
               <div>
-                <h3 className="font-semibold text-white">Receivables Aging</h3>
-                {showDetailText ? <p className="text-xs text-white/55 mt-1">Outstanding invoices grouped by age.</p> : null}
+                <h3 className="font-semibold text-slate-900">Receivables Aging</h3>
+                {showDetailText ? <p className="text-xs text-slate-600 mt-1">Outstanding invoices grouped by age.</p> : null}
               </div>
               <div className="space-y-2 md:hidden">
                 {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
-                  <div key={label} className="rounded-xl border border-white/10 bg-black/20 p-3">
-                    <div className="text-xs text-white/55">{label}</div>
-                    <div className="mt-1 text-sm font-semibold text-white">{arAging.currency} {money(amount)}</div>
-                    <div className="mt-2 flex items-center justify-between text-xs text-white/70">
+                  <div key={label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs text-slate-600">{label}</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">{arAging.currency} {money(amount)}</div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-slate-700">
                       <span>{count} invoice{count !== 1 ? "s" : ""}</span>
                       <span>{arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}</span>
                     </div>
                   </div>
                 ))}
-                <div className="rounded-xl border border-white/15 bg-white/5 p-3">
-                  <div className="text-xs text-white/60">Total Outstanding</div>
+                <div className="rounded-xl border border-white/15 bg-white p-3">
+                  <div className="text-xs text-slate-600">Total Outstanding</div>
                   <div className="mt-1 text-sm font-semibold text-red-300">{arAging.currency} {money(arAging.totalOutstanding)}</div>
                 </div>
               </div>
               <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                 <table className="min-w-[680px] w-full text-xs sm:text-sm">
-                  <thead className="bg-black/60">
-                    <tr className="border-b border-white/10">
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Age</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Invoices</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Amount Due</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Share</th>
+                  <thead className="bg-slate-100">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Age</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-900">Invoices</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-900">Amount Due</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-900">Share</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(arAging.buckets).map(([label, { count, amount }]) => (
-                      <tr key={label} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 text-white/85">{label}</td>
-                        <td className="px-4 py-3 text-right text-white/80">{count}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-white">{arAging.currency} {money(amount)}</td>
-                        <td className="px-4 py-3 text-right text-white/70">{arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}</td>
+                      <tr key={label} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 text-slate-800">{label}</td>
+                        <td className="px-4 py-3 text-right text-slate-700">{count}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-slate-900">{arAging.currency} {money(amount)}</td>
+                        <td className="px-4 py-3 text-right text-slate-700">{arAging.totalOutstanding > 0 ? pct((amount / arAging.totalOutstanding) * 100) : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t border-white/20 bg-white/5">
-                      <td className="px-4 py-3 font-semibold text-white">Total</td>
-                      <td className="px-4 py-3 text-right font-semibold text-white">{Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}</td>
+                    <tr className="border-t border-white/20 bg-white">
+                      <td className="px-4 py-3 font-semibold text-slate-900">Total</td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">{Object.values(arAging.buckets).reduce((s, b) => s + b.count, 0)}</td>
                       <td className="px-4 py-3 text-right font-bold text-red-300">{arAging.currency} {money(arAging.totalOutstanding)}</td>
-                      <td className="px-4 py-3 text-right text-white/70">100%</td>
+                      <td className="px-4 py-3 text-right text-slate-700">100%</td>
                     </tr>
                   </tfoot>
                 </table>
               </div>
             </section>
 
-            <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
+            <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
               <div>
-                <h3 className="font-semibold text-white">Client Concentration</h3>
-                {showDetailText ? <p className="text-xs text-white/55 mt-1">Revenue share per client — high concentration = dependency risk.</p> : null}
+                <h3 className="font-semibold text-slate-900">Client Concentration</h3>
+                {showDetailText ? <p className="text-xs text-slate-600 mt-1">Revenue share per client — high concentration = dependency risk.</p> : null}
               </div>
               {topClients.length === 0 ? (
-                <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
+                <div className="text-sm text-slate-600 py-4">No client revenue data yet.</div>
               ) : (
                 <>
                   <div className="space-y-2 md:hidden">
@@ -1246,19 +1246,19 @@ export default function ReportPage() {
                       const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
                       const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
                       return (
-                        <div key={clientName} className="rounded-xl border border-white/10 bg-black/20 p-3">
-                          <div className="text-sm font-semibold text-white">{clientName}</div>
-                          <div className="mt-2 flex items-center justify-between text-xs text-white/65">
+                        <div key={clientName} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="text-sm font-semibold text-slate-900">{clientName}</div>
+                          <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
                             <span>Invoiced</span>
-                            <span className="text-white/85">{currency} {money(invoiced)}</span>
+                            <span className="text-slate-800">{currency} {money(invoiced)}</span>
                           </div>
-                          <div className="mt-1 flex items-center justify-between text-xs text-white/65">
+                          <div className="mt-1 flex items-center justify-between text-xs text-slate-600">
                             <span>Collected</span>
-                            <span className={`${collected >= 80 ? "text-green-300" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(collected)}</span>
+                            <span className={`${collected >= 80 ? "text-green-700" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>{pct(collected)}</span>
                           </div>
-                          <div className="mt-1 flex items-center justify-between text-xs text-white/65">
+                          <div className="mt-1 flex items-center justify-between text-xs text-slate-600">
                             <span>Revenue Share</span>
-                            <span className={`${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-white/75"}`}>{pct(share)}</span>
+                            <span className={`${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-slate-700"}`}>{pct(share)}</span>
                           </div>
                         </div>
                       )
@@ -1266,12 +1266,12 @@ export default function ReportPage() {
                   </div>
                   <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                     <table className="min-w-[680px] w-full text-xs sm:text-sm">
-                      <thead className="bg-black/60">
-                        <tr className="border-b border-white/10">
-                          <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                          <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                          <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
-                          <th className="px-4 py-3 text-right font-semibold text-white/90">Revenue Share</th>
+                      <thead className="bg-slate-100">
+                        <tr className="border-b border-slate-200">
+                          <th className="px-4 py-3 text-left font-semibold text-slate-900">Client</th>
+                          <th className="px-4 py-3 text-right font-semibold text-slate-900">Invoiced</th>
+                          <th className="px-4 py-3 text-right font-semibold text-slate-900">Collected</th>
+                          <th className="px-4 py-3 text-right font-semibold text-slate-900">Revenue Share</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1279,13 +1279,13 @@ export default function ReportPage() {
                           const share = metrics.totalInvoiceAmount > 0 ? (invoiced / metrics.totalInvoiceAmount) * 100 : 0
                           const collected = invoiced > 0 ? (received / invoiced) * 100 : 0
                           return (
-                            <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
-                              <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
-                              <td className="px-4 py-3 text-right text-white/85">{currency} {money(invoiced)}</td>
-                              <td className={`px-4 py-3 text-right font-semibold ${collected >= 80 ? "text-green-300" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>
+                            <tr key={clientName} className="border-b border-slate-100 hover:bg-white transition">
+                              <td className="px-4 py-3 font-semibold text-slate-900">{clientName}</td>
+                              <td className="px-4 py-3 text-right text-slate-800">{currency} {money(invoiced)}</td>
+                              <td className={`px-4 py-3 text-right font-semibold ${collected >= 80 ? "text-green-700" : collected >= 40 ? "text-amber-300" : "text-red-300"}`}>
                                 {pct(collected)}
                               </td>
-                              <td className={`px-4 py-3 text-right font-semibold ${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-white/70"}`}>
+                              <td className={`px-4 py-3 text-right font-semibold ${share > 50 ? "text-red-300" : share > 30 ? "text-amber-300" : "text-slate-700"}`}>
                                 {pct(share)}
                               </td>
                             </tr>
@@ -1320,41 +1320,41 @@ export default function ReportPage() {
           compact={!showDetailText}
         />
         <>
-          <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
+          <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
-              <h3 className="font-semibold text-white">Profitability by Job</h3>
-              {showDetailText ? <p className="text-xs text-white/55 mt-1">Jobs with activity, sorted by invoiced amount.</p> : null}
+              <h3 className="font-semibold text-slate-900">Profitability by Job</h3>
+              {showDetailText ? <p className="text-xs text-slate-600 mt-1">Jobs with activity, sorted by invoiced amount.</p> : null}
             </div>
             {profitabilityRows.length === 0 ? (
-              <div className="text-sm text-white/60 py-4">No jobs with financial activity yet.</div>
+              <div className="text-sm text-slate-600 py-4">No jobs with financial activity yet.</div>
             ) : (
               <>
                 <div className="space-y-2 md:hidden">
                   {paginatedProfitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
-                    <div key={job.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div key={job.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <div className="text-sm font-semibold text-white">{job.file_number}</div>
-                          <div className="text-xs text-white/60">{clientName} · {job.zone}</div>
+                          <div className="text-sm font-semibold text-slate-900">{job.file_number}</div>
+                          <div className="text-xs text-slate-600">{clientName} · {job.zone}</div>
                         </div>
-                        <div className={`text-sm font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>{currency} {money(net)}</div>
+                        <div className={`text-sm font-semibold ${net >= 0 ? "text-green-700" : "text-red-700"}`}>{currency} {money(net)}</div>
                       </div>
                       <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                          <div className="text-white/55">Invoiced</div>
-                          <div className="mt-0.5 text-white/90">{currency} {money(invoiced)}</div>
+                        <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                          <div className="text-slate-600">Invoiced</div>
+                          <div className="mt-0.5 text-slate-900">{currency} {money(invoiced)}</div>
                         </div>
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                          <div className="text-white/55">Expenses</div>
-                          <div className="mt-0.5 text-amber-200">{currency} {money(expenseTotal)}</div>
+                        <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                          <div className="text-slate-600">Expenses</div>
+                          <div className="mt-0.5 text-amber-700">{currency} {money(expenseTotal)}</div>
                         </div>
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                          <div className="text-white/55">Margin</div>
-                          <div className={`mt-0.5 ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"}`}>{pct(margin)}</div>
+                        <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                          <div className="text-slate-600">Margin</div>
+                          <div className={`mt-0.5 ${margin >= 30 ? "text-green-700" : margin >= 0 ? "text-amber-300" : "text-red-300"}`}>{pct(margin)}</div>
                         </div>
-                        <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                          <div className="text-white/55">Collected</div>
-                          <div className={`mt-0.5 ${collectionRate >= 100 ? "text-green-300" : collectionRate > 0 ? "text-amber-300" : "text-white/40"}`}>{pct(collectionRate)}</div>
+                        <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                          <div className="text-slate-600">Collected</div>
+                          <div className={`mt-0.5 ${collectionRate >= 100 ? "text-green-700" : collectionRate > 0 ? "text-amber-300" : "text-slate-500"}`}>{pct(collectionRate)}</div>
                         </div>
                       </div>
                     </div>
@@ -1362,41 +1362,41 @@ export default function ReportPage() {
                 </div>
                 <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                   <table className="min-w-[760px] w-full text-xs sm:text-sm">
-                    <thead className="bg-black/60">
-                      <tr className="border-b border-white/10">
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Expenses</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Net</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Margin</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collected</th>
+                    <thead className="bg-slate-100">
+                      <tr className="border-b border-slate-200">
+                        <th className="px-4 py-3 text-left font-semibold text-slate-900">File #</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-900">Client</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-900">Zone</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Invoiced</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Expenses</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Net</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Margin</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Collected</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedProfitabilityRows.map(({ job, clientName, invoiced, expenseTotal, net, margin, collectionRate, currency }) => (
-                        <tr key={job.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                          <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                          <td className="px-4 py-3 text-white/80">{clientName}</td>
-                          <td className="px-4 py-3 text-white/70">{job.zone}</td>
-                          <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
-                          <td className="px-4 py-3 text-right text-amber-200">{currency} {money(expenseTotal)}</td>
-                          <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-200" : "text-red-200"}`}>
+                        <tr key={job.id} className="border-b border-slate-100 hover:bg-white transition">
+                          <td className="px-4 py-3 font-semibold text-slate-900">{job.file_number}</td>
+                          <td className="px-4 py-3 text-slate-700">{clientName}</td>
+                          <td className="px-4 py-3 text-slate-700">{job.zone}</td>
+                          <td className="px-4 py-3 text-right text-slate-900">{currency} {money(invoiced)}</td>
+                          <td className="px-4 py-3 text-right text-amber-700">{currency} {money(expenseTotal)}</td>
+                          <td className={`px-4 py-3 text-right font-semibold ${net >= 0 ? "text-green-700" : "text-red-700"}`}>
                             {currency} {money(net)}
                           </td>
                           <td
-                            className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-300" : margin >= 0 ? "text-amber-300" : "text-red-300"
+                            className={`px-4 py-3 text-right font-semibold ${margin >= 30 ? "text-green-700" : margin >= 0 ? "text-amber-300" : "text-red-300"
                               }`}
                           >
                             {pct(margin)}
                           </td>
                           <td
                             className={`px-4 py-3 text-right font-semibold ${collectionRate >= 100
-                              ? "text-green-300"
+                              ? "text-green-700"
                               : collectionRate > 0
                                 ? "text-amber-300"
-                                : "text-white/40"
+                                : "text-slate-500"
                               }`}
                           >
                             {pct(collectionRate)}
@@ -1419,13 +1419,13 @@ export default function ReportPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 sm:p-5 space-y-4">
+          <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 sm:p-5 space-y-4">
             <div>
-              <h3 className="font-semibold text-white">Top Clients by Revenue</h3>
-              {showDetailText ? <p className="text-xs text-white/55 mt-1">Clients ranked by invoiced amount.</p> : null}
+              <h3 className="font-semibold text-slate-900">Top Clients by Revenue</h3>
+              {showDetailText ? <p className="text-xs text-slate-600 mt-1">Clients ranked by invoiced amount.</p> : null}
             </div>
             {topClients.length === 0 ? (
-              <div className="text-sm text-white/60 py-4">No client revenue data yet.</div>
+              <div className="text-sm text-slate-600 py-4">No client revenue data yet.</div>
             ) : (
               <>
                 <div className="space-y-2 md:hidden">
@@ -1434,27 +1434,27 @@ export default function ReportPage() {
                     const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
                     const rank = (topClientsPage - 1) * itemsPerPage + i + 1
                     return (
-                      <div key={clientName} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div key={clientName} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm font-semibold text-white">{rank}. {clientName}</div>
-                          <div className="text-xs text-white/60">{jobCount} jobs</div>
+                          <div className="text-sm font-semibold text-slate-900">{rank}. {clientName}</div>
+                          <div className="text-xs text-slate-600">{jobCount} jobs</div>
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                            <div className="text-white/55">Invoiced</div>
-                            <div className="mt-0.5 text-white/90">{currency} {money(invoiced)}</div>
+                          <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                            <div className="text-slate-600">Invoiced</div>
+                            <div className="mt-0.5 text-slate-900">{currency} {money(invoiced)}</div>
                           </div>
-                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                            <div className="text-white/55">Received</div>
-                            <div className="mt-0.5 text-green-200">{currency} {money(received)}</div>
+                          <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                            <div className="text-slate-600">Received</div>
+                            <div className="mt-0.5 text-green-700">{currency} {money(received)}</div>
                           </div>
-                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                            <div className="text-white/55">Outstanding</div>
-                            <div className="mt-0.5 text-red-200">{currency} {money(outstanding)}</div>
+                          <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                            <div className="text-slate-600">Outstanding</div>
+                            <div className="mt-0.5 text-red-700">{currency} {money(outstanding)}</div>
                           </div>
-                          <div className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2">
-                            <div className="text-white/55">Collection</div>
-                            <div className={`mt-0.5 ${collection >= 100 ? "text-green-300" : collection >= 50 ? "text-amber-300" : "text-red-300"}`}>{pct(collection)}</div>
+                          <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                            <div className="text-slate-600">Collection</div>
+                            <div className={`mt-0.5 ${collection >= 100 ? "text-green-700" : collection >= 50 ? "text-amber-300" : "text-red-300"}`}>{pct(collection)}</div>
                           </div>
                         </div>
                       </div>
@@ -1463,15 +1463,15 @@ export default function ReportPage() {
                 </div>
                 <div className="hidden md:block overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                   <table className="min-w-[760px] w-full text-xs sm:text-sm">
-                    <thead className="bg-black/60">
-                      <tr className="border-b border-white/10">
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">#</th>
-                        <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Jobs</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Invoiced</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Received</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Outstanding</th>
-                        <th className="px-4 py-3 text-right font-semibold text-white/90">Collection</th>
+                    <thead className="bg-slate-100">
+                      <tr className="border-b border-slate-200">
+                        <th className="px-4 py-3 text-left font-semibold text-slate-900">#</th>
+                        <th className="px-4 py-3 text-left font-semibold text-slate-900">Client</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Jobs</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Invoiced</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Received</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Outstanding</th>
+                        <th className="px-4 py-3 text-right font-semibold text-slate-900">Collection</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1480,16 +1480,16 @@ export default function ReportPage() {
                         const collection = invoiced > 0 ? (received / invoiced) * 100 : 0
                         const rank = (topClientsPage - 1) * itemsPerPage + i + 1
                         return (
-                          <tr key={clientName} className="border-b border-white/5 hover:bg-white/5 transition">
-                            <td className="px-4 py-3 text-white/40">{rank}</td>
-                            <td className="px-4 py-3 font-semibold text-white">{clientName}</td>
-                            <td className="px-4 py-3 text-right text-white/80">{jobCount}</td>
-                            <td className="px-4 py-3 text-right text-white/90">{currency} {money(invoiced)}</td>
-                            <td className="px-4 py-3 text-right text-green-200">{currency} {money(received)}</td>
-                            <td className="px-4 py-3 text-right text-red-200">{currency} {money(outstanding)}</td>
+                          <tr key={clientName} className="border-b border-slate-100 hover:bg-white transition">
+                            <td className="px-4 py-3 text-slate-500">{rank}</td>
+                            <td className="px-4 py-3 font-semibold text-slate-900">{clientName}</td>
+                            <td className="px-4 py-3 text-right text-slate-700">{jobCount}</td>
+                            <td className="px-4 py-3 text-right text-slate-900">{currency} {money(invoiced)}</td>
+                            <td className="px-4 py-3 text-right text-green-700">{currency} {money(received)}</td>
+                            <td className="px-4 py-3 text-right text-red-700">{currency} {money(outstanding)}</td>
                             <td
                               className={`px-4 py-3 text-right font-semibold ${collection >= 100
-                                ? "text-green-300"
+                                ? "text-green-700"
                                 : collection >= 50
                                   ? "text-amber-300"
                                   : "text-red-300"
@@ -1521,48 +1521,48 @@ export default function ReportPage() {
       {/* Expense Breakdown Modal */}
       {showExpenseBreakdown && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-          <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
-            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-white/10 flex items-start gap-3 justify-between">
+          <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900">
+            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-start gap-3 justify-between">
               <div>
-                <h2 className="font-semibold text-white">Expenses Breakdown</h2>
-                <p className="text-xs text-white/60 mt-1">
+                <h2 className="font-semibold text-slate-900">Expenses Breakdown</h2>
+                <p className="text-xs text-slate-600 mt-1">
                   Total: {currency0} {money(metrics.totalExpenseAmount)} · {metrics.expenseCount} records
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowExpenseBreakdown(false)}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
               >
                 Close
               </button>
             </div>
             {expenseBreakdownRows.length === 0 ? (
-              <div className="p-5 text-sm text-white/60">No expenses to display.</div>
+              <div className="p-5 text-sm text-slate-600">No expenses to display.</div>
             ) : (
               <div className="overflow-auto max-h-[74vh] p-4 space-y-4">
                 <table className="min-w-[900px] w-full text-xs sm:text-sm">
-                  <thead className="bg-black/80 text-white sticky top-0">
-                    <tr className="border-b border-white/10">
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Description</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                  <thead className="bg-white text-slate-900 sticky top-0">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Date</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">File #</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Zone</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Category</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Description</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Status</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-900">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedExpenseBreakdownRows.map((row) => (
-                      <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 text-white/80">{row.expense_date}</td>
-                        <td className="px-4 py-3 text-white font-semibold">{row.fileNumber}</td>
-                        <td className="px-4 py-3 text-white/70">{row.zone}</td>
-                        <td className="px-4 py-3 text-white/85">{row.category}</td>
-                        <td className="px-4 py-3 text-white/70">{row.description || ""}</td>
-                        <td className="px-4 py-3 text-white/80">{row.status}</td>
-                        <td className="px-4 py-3 text-right text-white font-semibold">
+                      <tr key={row.id} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 text-slate-700">{row.expense_date}</td>
+                        <td className="px-4 py-3 text-slate-900 font-semibold">{row.fileNumber}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.zone}</td>
+                        <td className="px-4 py-3 text-slate-800">{row.category}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.description || ""}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.status}</td>
+                        <td className="px-4 py-3 text-right text-slate-900 font-semibold">
                           {row.currency} {money(row.amount)}
                         </td>
                       </tr>
@@ -1587,48 +1587,48 @@ export default function ReportPage() {
       {/* Receipt Breakdown Modal */}
       {showReceiptBreakdown && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-          <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
-            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-white/10 flex items-start gap-3 justify-between">
+          <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900">
+            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-start gap-3 justify-between">
               <div>
-                <h2 className="font-semibold text-white">Receipts Breakdown</h2>
-                <p className="text-xs text-white/60 mt-1">
+                <h2 className="font-semibold text-slate-900">Receipts Breakdown</h2>
+                <p className="text-xs text-slate-600 mt-1">
                   Total: {currency0} {money(metrics.totalReceiptAmount)} · {metrics.receiptCount} records
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowReceiptBreakdown(false)}
-                className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
               >
                 Close
               </button>
             </div>
             {receiptBreakdownRows.length === 0 ? (
-              <div className="p-5 text-sm text-white/60">No receipts to display.</div>
+              <div className="p-5 text-sm text-slate-600">No receipts to display.</div>
             ) : (
               <div className="overflow-auto max-h-[74vh] p-4 space-y-4">
                 <table className="min-w-[900px] w-full text-xs sm:text-sm">
-                  <thead className="bg-black/80 text-white sticky top-0">
-                    <tr className="border-b border-white/10">
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">File #</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Method</th>
-                      <th className="px-4 py-3 text-left font-semibold text-white/90">Reference</th>
-                      <th className="px-4 py-3 text-right font-semibold text-white/90">Amount</th>
+                  <thead className="bg-white text-slate-900 sticky top-0">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Date</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">File #</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Zone</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Invoice</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Method</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-900">Reference</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-900">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedReceiptBreakdownRows.map((row) => (
-                      <tr key={row.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 text-white/80">{row.payment_date}</td>
-                        <td className="px-4 py-3 text-white font-semibold">{row.fileNumber}</td>
-                        <td className="px-4 py-3 text-white/70">{row.zone}</td>
-                        <td className="px-4 py-3 text-white/85">{row.invoiceNumber}</td>
-                        <td className="px-4 py-3 text-white/70">{row.method || ""}</td>
-                        <td className="px-4 py-3 text-white/70">{row.reference || ""}</td>
-                        <td className="px-4 py-3 text-right text-white font-semibold">
+                      <tr key={row.id} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 text-slate-700">{row.payment_date}</td>
+                        <td className="px-4 py-3 text-slate-900 font-semibold">{row.fileNumber}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.zone}</td>
+                        <td className="px-4 py-3 text-slate-800">{row.invoiceNumber}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.method || ""}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.reference || ""}</td>
+                        <td className="px-4 py-3 text-right text-slate-900 font-semibold">
                           {row.currency} {money(row.amount)}
                         </td>
                       </tr>

@@ -84,9 +84,9 @@ function extractErrorMessage(err: any): string {
 
 function zoneBadge(zone: JobZone) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (zone === "DUTY") return `${base} bg-blue-600/15 text-blue-200 border-blue-500/20`
-  if (zone === "FREE") return `${base} bg-white/5 text-white/80 border-white/10`
-  return `${base} bg-black/40 text-white/80 border-white/10`
+  if (zone === "DUTY") return `${base} bg-blue-100 text-blue-700 border-blue-200`
+  if (zone === "FREE") return `${base} bg-white text-slate-700 border-slate-200`
+  return `${base} bg-white text-slate-700 border-slate-200`
 }
 
 type ViewZone = "ALL" | JobZone
@@ -450,18 +450,18 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
         <div>
           <h1 className="text-2xl font-semibold">
-            <span className="text-blue-300">Jobs</span>
+            <span className="text-blue-700">Jobs</span>
           </h1>
-          <p className="mt-1 text-sm text-white/60">Create jobs linked to clients. Zones: DUTY, FREE, EXPORT.</p>
+          <p className="mt-1 text-sm text-slate-600">Create jobs linked to clients. Zones: DUTY, FREE, EXPORT.</p>
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
           <select
-            className="w-full sm:w-auto bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="w-full sm:w-auto bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={viewZone}
             onChange={(e) => setViewZone(e.target.value as ViewZone)}
           >
@@ -474,7 +474,7 @@ export default function JobsPage() {
           <button
             type="button"
             onClick={refreshAll}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             Refresh
           </button>
@@ -482,7 +482,7 @@ export default function JobsPage() {
           <button
             type="button"
             onClick={() => setShowJobsList((prev) => !prev)}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             {showJobsList ? "Hide Jobs" : "View Jobs"}
           </button>
@@ -500,21 +500,21 @@ export default function JobsPage() {
       </div>
 
       {!canWriteJobs ? (
-        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
           Signed in as {roleLabel}. Jobs are view-only for this role.
         </div>
       ) : null}
 
       {/* Search Section */}
-      <section className="relative z-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
+      <section className="relative z-20 rounded-2xl border border-slate-200 bg-white backdrop-blur p-4">
         <div className="relative z-20">
-          <label className="block text-sm font-semibold text-white/80 mb-2">
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
             Search Jobs
           </label>
           <div className="relative">
             <input
               type="text"
-              className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Search by file number or client name..."
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -522,7 +522,7 @@ export default function JobsPage() {
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -536,7 +536,7 @@ export default function JobsPage() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
               >
                 <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
                   <path d="M6 18L18 6M6 6l12 12"></path>
@@ -547,7 +547,7 @@ export default function JobsPage() {
 
           {/* Autocomplete Suggestions */}
           {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="absolute z-30 w-full mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg overflow-hidden">
+            <div className="absolute z-30 w-full mt-1 bg-white/95 border border-slate-200 rounded-lg shadow-lg overflow-hidden">
               {searchSuggestions.map((suggestion, idx) => (
                 <button
                   key={idx}
@@ -556,22 +556,22 @@ export default function JobsPage() {
                     e.preventDefault()
                     selectSuggestion(suggestion.value)
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition flex items-center gap-2"
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 transition flex items-center gap-2"
                 >
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
-                    ? "bg-blue-600/20 text-blue-300"
-                    : "bg-green-600/20 text-green-300"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-green-100 text-green-700"
                     }`}>
                     {suggestion.type === "file" ? "FILE" : "CLIENT"}
                   </span>
-                  <span className="text-white/90">{suggestion.label}</span>
+                  <span className="text-slate-900">{suggestion.label}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
         {searchTerm && (
-          <p className="mt-2 text-xs text-white/50">
+          <p className="mt-2 text-xs text-slate-500">
             Showing matches for "{searchTerm}"
           </p>
         )}
@@ -579,14 +579,14 @@ export default function JobsPage() {
 
       {/* Form */}
       {canWriteJobs && (showCreateForm || editing) ? (
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-white">{title}</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">{title}</h2>
             {editing || showCreateForm ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-sm font-semibold text-white/70 hover:text-white transition"
+                className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
               >
                 Cancel
               </button>
@@ -595,16 +595,16 @@ export default function JobsPage() {
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {error ? (
-              <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+              <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
                 {error}
               </div>
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Client</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Client</label>
                 <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.client}
                   onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
                   required
@@ -619,9 +619,9 @@ export default function JobsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Zone</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Zone</label>
                 <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.zone}
                   onChange={(e) => onZoneChange(e.target.value as JobZone)}
                   required
@@ -633,19 +633,19 @@ export default function JobsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Date</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
                 <input
                   type="date"
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">File Number</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">File Number</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.file_number}
                   onChange={(e) => setForm((f) => ({ ...f, file_number: e.target.value }))}
                   required
@@ -655,9 +655,9 @@ export default function JobsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Quantity</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Quantity</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.quantity}
                   onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
                   inputMode="numeric"
@@ -665,18 +665,18 @@ export default function JobsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">BL/AWB</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">BL/AWB</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.bl_awb}
                   onChange={(e) => setForm((f) => ({ ...f, bl_awb: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Weight (kg)</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Weight (kg)</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.weight_kg}
                   onChange={(e) => setForm((f) => ({ ...f, weight_kg: e.target.value }))}
                 />
@@ -685,7 +685,7 @@ export default function JobsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Container Type</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Container Type</label>
                 <div className="flex flex-col gap-3 mt-1">
                   <div className="flex items-center gap-2">
                     <input
@@ -694,12 +694,12 @@ export default function JobsPage() {
                       checked={form.qty_20ft !== ""}
                       onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.checked ? "1" : "" }))}
                     />
-                    <span className="text-sm text-white/80 w-14">20FT</span>
+                    <span className="text-sm text-slate-700 w-14">20FT</span>
                     {form.qty_20ft !== "" && (
                       <input
                         type="number"
                         min="1"
-                        className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        className="w-20 bg-white text-slate-900 border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={form.qty_20ft}
                         onChange={(e) => setForm((f) => ({ ...f, qty_20ft: e.target.value }))}
                       />
@@ -712,12 +712,12 @@ export default function JobsPage() {
                       checked={form.qty_40ft !== ""}
                       onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.checked ? "1" : "" }))}
                     />
-                    <span className="text-sm text-white/80 w-14">40FT</span>
+                    <span className="text-sm text-slate-700 w-14">40FT</span>
                     {form.qty_40ft !== "" && (
                       <input
                         type="number"
                         min="1"
-                        className="w-20 bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        className="w-20 bg-white text-slate-900 border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={form.qty_40ft}
                         onChange={(e) => setForm((f) => ({ ...f, qty_40ft: e.target.value }))}
                       />
@@ -730,55 +730,55 @@ export default function JobsPage() {
                       checked={form.has_others}
                       onChange={(e) => setForm((f) => ({ ...f, has_others: e.target.checked }))}
                     />
-                    <span className="text-sm text-white/80">Others</span>
+                    <span className="text-sm text-slate-700">Others</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Container No.</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Container No.</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.container_number}
                   onChange={(e) => setForm((f) => ({ ...f, container_number: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Transit Days</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Transit Days</label>
                 <input
                   readOnly
-                  className="w-full bg-black/30 text-white/70 border border-white/10 rounded-lg px-3 py-2 focus:outline-none"
+                  className="w-full bg-slate-50 text-slate-700 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none"
                   value={formatTransitDays(editing ? getTransitDays(editing.id) : null)}
                   placeholder="Calculated from tracker dates"
                 />
-                <p className="mt-1 text-xs text-white/45">Calculated automatically from the oldest and newest tracker entry dates for this file.</p>
+                <p className="mt-1 text-xs text-slate-500">Calculated automatically from the oldest and newest tracker entry dates for this file.</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Port</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Port</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.port}
                   onChange={(e) => setForm((f) => ({ ...f, port: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Vessel</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Vessel</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.vessel}
                   onChange={(e) => setForm((f) => ({ ...f, vessel: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
@@ -788,9 +788,9 @@ export default function JobsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {showDutyFields ? (
                 <div>
-                  <label className="block text-sm font-semibold text-white/80 mb-1">Duty Amount</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Duty Amount</label>
                   <input
-                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.duty_amount}
                     onChange={(e) => setForm((f) => ({ ...f, duty_amount: e.target.value }))}
                   />
@@ -800,16 +800,16 @@ export default function JobsPage() {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Refund Amount</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Refund Amount</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.refund_amount}
                   onChange={(e) => setForm((f) => ({ ...f, refund_amount: e.target.value }))}
                 />
               </div>
 
               <div className="flex items-end">
-                <label className="flex items-center gap-3 text-sm font-semibold text-white/80">
+                <label className="flex items-center gap-3 text-sm font-semibold text-slate-700">
                   <input
                     type="checkbox"
                     className="h-4 w-4 accent-blue-600"
@@ -821,7 +821,7 @@ export default function JobsPage() {
               </div>
             </div>
 
-            <div className="sticky bottom-0 -mx-5 px-5 py-3 border-t border-white/10 bg-[#0f1117]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1117]/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
+            <div className="sticky bottom-0 -mx-5 px-5 py-3 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
               <div className="flex items-center gap-3">
                 <button
                   type="submit"
@@ -837,18 +837,18 @@ export default function JobsPage() {
       ) : null}
 
       {/* Table */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Jobs List</h2>
-          <span className="text-sm text-white/60">{filteredJobs.length} total</span>
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Jobs List</h2>
+          <span className="text-sm text-slate-600">{filteredJobs.length} total</span>
         </div>
 
         {!showJobsList && !searchTerm.trim() ? (
-          <div className="p-5 text-sm text-white/60">Click View Jobs to open the jobs list.</div>
+          <div className="p-5 text-sm text-slate-600">Click View Jobs to open the jobs list.</div>
         ) : loading ? (
-          <div className="p-5 text-sm text-white/60">Loading jobs...</div>
+          <div className="p-5 text-sm text-slate-600">Loading jobs...</div>
         ) : filteredJobs.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No jobs for this view.</div>
+          <div className="p-5 text-sm text-slate-600">No jobs for this view.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -859,19 +859,19 @@ export default function JobsPage() {
                   : `Client ${String(j.client)}`
 
                 return (
-                  <div key={j.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div key={j.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-sm font-semibold text-white">{j.file_number}</div>
-                        <div className="text-xs text-white/65 mt-0.5">{clientLabel}</div>
-                        <div className="text-xs text-white/55 mt-1">{formatDate(getJobDate(j))} • {formatTransitDays(getTransitDays(j.id))}</div>
+                        <div className="text-sm font-semibold text-slate-900">{j.file_number}</div>
+                        <div className="text-xs text-slate-600 mt-0.5">{clientLabel}</div>
+                        <div className="text-xs text-slate-600 mt-1">{formatDate(getJobDate(j))} • {formatTransitDays(getTransitDays(j.id))}</div>
                       </div>
                       <span className={zoneBadge(j.zone)}>{j.zone}</span>
                     </div>
                     <div className="mt-3 flex items-center justify-end gap-3 text-sm font-semibold">
-                      <button type="button" onClick={() => setViewingJob(j)} className="text-white/70 hover:text-white">View</button>
+                      <button type="button" onClick={() => setViewingJob(j)} className="text-slate-700 hover:text-slate-900">View</button>
                       {canWriteJobs ? (
-                        <button type="button" onClick={() => startEdit(j)} className="text-blue-300 hover:text-blue-200">Edit</button>
+                        <button type="button" onClick={() => startEdit(j)} className="text-blue-700 hover:text-blue-800">Edit</button>
                       ) : null}
                     </div>
                   </div>
@@ -880,14 +880,14 @@ export default function JobsPage() {
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Transit</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">File No.</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Client</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Zone</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Transit</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -898,19 +898,19 @@ export default function JobsPage() {
                       : `Client ${String(j.client)}`
 
                     return (
-                      <tr key={j.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 font-semibold text-white">{j.file_number}</td>
-                        <td className="px-4 py-3 text-white/80">{clientLabel}</td>
-                        <td className="px-4 py-3 text-white/70 text-xs">{formatDate(getJobDate(j))}</td>
+                      <tr key={j.id} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 font-semibold text-slate-900">{j.file_number}</td>
+                        <td className="px-4 py-3 text-slate-700">{clientLabel}</td>
+                        <td className="px-4 py-3 text-slate-700 text-xs">{formatDate(getJobDate(j))}</td>
                         <td className="px-4 py-3">
                           <span className={zoneBadge(j.zone)}>{j.zone}</span>
                         </td>
-                        <td className="px-4 py-3 text-white/70">{formatTransitDays(getTransitDays(j.id))}</td>
+                        <td className="px-4 py-3 text-slate-700">{formatTransitDays(getTransitDays(j.id))}</td>
                         <td className="px-4 py-3 text-right flex gap-3 justify-end">
                           <button
                             type="button"
                             onClick={() => setViewingJob(j)}
-                            className="text-white/60 hover:text-white font-semibold"
+                            className="text-slate-600 hover:text-slate-900 font-semibold"
                           >
                             View
                           </button>
@@ -918,7 +918,7 @@ export default function JobsPage() {
                             <button
                               type="button"
                               onClick={() => startEdit(j)}
-                              className="text-blue-300 hover:text-blue-200 font-semibold"
+                              className="text-blue-700 hover:text-blue-800 font-semibold"
                             >
                               Edit
                             </button>
@@ -949,12 +949,12 @@ export default function JobsPage() {
           className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setViewingJob(null) }}
         >
-          <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f1117] shadow-2xl text-white">
+          <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl text-slate-900">
             {/* Header */}
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 bg-[#0f1117] border-b border-white/10 px-4 sm:px-6 py-4">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 bg-white border-b border-slate-200 px-4 sm:px-6 py-4">
               <div>
-                <h2 className="font-semibold text-white text-lg">{viewingJob.file_number}</h2>
-                <p className="text-xs text-white/55 mt-0.5">
+                <h2 className="font-semibold text-slate-900 text-lg">{viewingJob.file_number}</h2>
+                <p className="text-xs text-slate-600 mt-0.5">
                   {viewingClient ? `${(viewingClient as any).client_code} — ${(viewingClient as any).client_name}` : `Client ${String(viewingJob.client)}`}
                   {" · "}{formatDate(getJobDate(viewingJob))}
                 </p>
@@ -972,7 +972,7 @@ export default function JobsPage() {
                 <button
                   type="button"
                   onClick={() => setViewingJob(null)}
-                  className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition text-lg leading-none"
+                  className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition text-lg leading-none"
                   aria-label="Close"
                 >
                   ✕
@@ -987,7 +987,7 @@ export default function JobsPage() {
                 <span className={zoneBadge(viewingJob.zone)}>{viewingJob.zone}</span>
                 <span className={[
                   "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
-                  viewingJob.is_active ? "bg-blue-600/15 text-blue-200 border-blue-500/20" : "bg-white/5 text-white/70 border-white/10"
+                  viewingJob.is_active ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-white text-slate-700 border-slate-200"
                 ].join(" ")}>
                   {viewingJob.is_active ? "Active" : "Inactive"}
                 </span>
@@ -1018,8 +1018,8 @@ export default function JobsPage() {
                   ["Refund Amount", viewingJob.refund_amount ?? "—"],
                 ] as [string, unknown][]).map(([label, value]) => (
                   <div key={label}>
-                    <p className="text-white/50 text-xs mb-0.5">{label}</p>
-                    <p className="text-white/90 font-medium">{String(value)}</p>
+                    <p className="text-slate-500 text-xs mb-0.5">{label}</p>
+                    <p className="text-slate-900 font-medium">{String(value)}</p>
                   </div>
                 ))}
               </div>

@@ -60,11 +60,11 @@ function extractErrorMessage(err: any): string {
 
 function statusBadge(status: InvoiceStatus) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (status === "PAID") return `${base} bg-green-500/10 text-green-200 border-green-500/20`
-  if (status === "PARTIALLY_PAID") return `${base} bg-amber-500/10 text-amber-200 border-amber-500/20`
-  if (status === "ISSUED") return `${base} bg-blue-600/10 text-blue-200 border-blue-500/20`
-  if (status === "VOID") return `${base} bg-white/5 text-white/60 border-white/10`
-  return `${base} bg-white/5 text-white/80 border-white/10` // DRAFT
+  if (status === "PAID") return `${base} bg-green-50 text-green-700 border-green-200`
+  if (status === "PARTIALLY_PAID") return `${base} bg-amber-50 text-amber-700 border-amber-200`
+  if (status === "ISSUED") return `${base} bg-blue-50 text-blue-700 border-blue-200`
+  if (status === "VOID") return `${base} bg-white text-slate-600 border-slate-200`
+  return `${base} bg-white text-slate-700 border-slate-200` // DRAFT
 }
 
 function canEditInvoiceFields(status: InvoiceStatus) {
@@ -451,20 +451,20 @@ export default function InvoicesPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div>
         <h1 className="text-2xl font-semibold">
-          <span className="text-blue-300">Invoices</span>
+          <span className="text-blue-700">Invoices</span>
         </h1>
-        <p className="mt-1 text-sm text-white/60">
+        <p className="mt-1 text-sm text-slate-600">
           One invoice per job. Use actions to issue, mark paid/partial, refresh totals, or void.
         </p>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 space-y-3">
         <div className="relative w-full md:max-w-xl">
           <input
-            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -482,7 +482,7 @@ export default function InvoicesPage() {
                 setSearch("")
                 setShowSuggestions(false)
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
               aria-label="Clear invoice search"
             >
               ×
@@ -490,7 +490,7 @@ export default function InvoicesPage() {
           ) : null}
 
           {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
               {searchSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}
@@ -499,7 +499,7 @@ export default function InvoicesPage() {
                     setSearch(suggestion)
                     setShowSuggestions(false)
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-100 transition"
                 >
                   {suggestion}
                 </button>
@@ -522,7 +522,7 @@ export default function InvoicesPage() {
           <button
             type="button"
             onClick={() => setShowInvoiceList((v) => !v)}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             {showInvoiceList ? "Hide Invoice List" : "Show Invoice List"}
           </button>
@@ -530,7 +530,7 @@ export default function InvoicesPage() {
           <button
             type="button"
             onClick={refreshAll}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             Refresh
           </button>
@@ -539,33 +539,33 @@ export default function InvoicesPage() {
 
       {/* Alerts */}
       {error ? (
-        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
           {error}
         </div>
       ) : null}
 
       {info ? (
-        <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">
           {info}
         </div>
       ) : null}
 
       {!canWriteInvoices ? (
-        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
           Signed in as {roleLabel}. Invoices are view-only for this role.
         </div>
       ) : null}
 
       {/* Form */}
       {showForm && canWriteInvoices ? (
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-white">{title}</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">{title}</h2>
             {editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-sm font-semibold text-white/70 hover:text-white transition"
+                className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
               >
                 Cancel
               </button>
@@ -574,17 +574,17 @@ export default function InvoicesPage() {
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {editing && !canEditInvoiceFields(editing.status) ? (
-              <div className="text-sm bg-amber-500/10 text-amber-200 border border-amber-500/20 px-3 py-2 rounded-lg">
+              <div className="text-sm bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg">
                 This invoice is <span className="font-semibold">{editing.status}</span>. Only DRAFT invoices can be edited.
               </div>
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Job</label>
                 <input
                   list="invoice-job-options"
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-60"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                   value={jobSearch}
                   onChange={(e) => handleJobSearchChange(e.target.value)}
                   placeholder="Search and select job..."
@@ -598,9 +598,9 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Currency</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.currency}
                   onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
                 />
@@ -609,9 +609,9 @@ export default function InvoicesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Number</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Invoice Number</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.invoice_number}
                   onChange={(e) => setForm((f) => ({ ...f, invoice_number: e.target.value }))}
                   required
@@ -620,9 +620,9 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Issued Date</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Issued Date</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   type="date"
                   value={form.issued_date}
                   onChange={(e) => setForm((f) => ({ ...f, issued_date: e.target.value }))}
@@ -631,9 +631,9 @@ export default function InvoicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Due Date</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Due Date</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   type="date"
                   value={form.due_date}
                   onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
@@ -643,9 +643,9 @@ export default function InvoicesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Notes</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
               <textarea
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 min-h-[88px]"
+                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[88px]"
                 value={form.notes}
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 disabled={!!editing && !canEditInvoiceFields(editing.status)}
@@ -654,9 +654,9 @@ export default function InvoicesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice Amount</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Invoice Amount</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.invoice_amount}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -685,7 +685,7 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                  className="px-4 py-2 rounded-lg font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
                 >
                   Cancel
                 </button>
@@ -696,45 +696,45 @@ export default function InvoicesPage() {
       ) : null}
 
       {/* List */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Invoices List</h2>
-          <span className="text-sm text-white/60">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Invoices List</h2>
+          <span className="text-sm text-slate-600">
             {showInvoiceList ? `${filteredInvoices.length} of ${invoices.length}` : `Hidden • ${invoices.length} total`}
           </span>
         </div>
 
         {!showInvoiceList ? (
-          <div className="p-5 text-sm text-white/60">Invoice list is hidden. Click "Show Invoice List" to view entries.</div>
+          <div className="p-5 text-sm text-slate-600">Invoice list is hidden. Click "Show Invoice List" to view entries.</div>
         ) : loading ? (
-          <div className="p-5 text-sm text-white/60">Loading invoices...</div>
+          <div className="p-5 text-sm text-slate-600">Loading invoices...</div>
         ) : invoices.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No invoices yet.</div>
+          <div className="p-5 text-sm text-slate-600">No invoices yet.</div>
         ) : filteredInvoices.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No invoices match your search.</div>
+          <div className="p-5 text-sm text-slate-600">No invoices match your search.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
               {paginatedInvoices.map((x) => {
                 const isBusy = busyActionId === x.id
                 return (
-                  <div key={x.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div key={x.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-sm font-semibold text-white">{x.invoice_number}</div>
-                        <div className="text-xs text-white/65 mt-0.5">{jobLabel(String(x.job))}</div>
-                        <div className="text-xs text-white/55 mt-1">{x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}</div>
+                        <div className="text-sm font-semibold text-slate-900">{x.invoice_number}</div>
+                        <div className="text-xs text-slate-600 mt-0.5">{jobLabel(String(x.job))}</div>
+                        <div className="text-xs text-slate-600 mt-1">{x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}</div>
                       </div>
                       <span className={statusBadge(x.status)}>{x.status}</span>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-sm font-semibold">
                       {canWriteInvoices ? (
                         <>
-                          <button type="button" onClick={() => startEdit(x)} className="text-blue-300 hover:text-blue-200">Edit</button>
-                          <button type="button" onClick={() => onDelete(x)} className="text-white/60 hover:text-red-200">Delete</button>
+                          <button type="button" onClick={() => startEdit(x)} className="text-blue-700 hover:text-blue-800">Edit</button>
+                          <button type="button" onClick={() => onDelete(x)} className="text-slate-600 hover:text-red-700">Delete</button>
                         </>
-                      ) : <span className="text-white/40">View only</span>}
-                      {isBusy ? <span className="text-xs text-white/50">Working…</span> : null}
+                      ) : <span className="text-slate-500">View only</span>}
+                      {isBusy ? <span className="text-xs text-slate-500">Working…</span> : null}
                     </div>
                   </div>
                 )
@@ -742,13 +742,13 @@ export default function InvoicesPage() {
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Invoice</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Job</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Amount</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Actions</th>
                   </tr>
                 </thead>
 
@@ -757,14 +757,14 @@ export default function InvoicesPage() {
                     const isBusy = busyActionId === x.id
 
                     return (
-                      <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 text-white/90 font-semibold">{x.invoice_number}</td>
-                        <td className="px-4 py-3 text-white/80">{jobLabel(String(x.job))}</td>
-                        <td className="px-4 py-3 text-white/80">
-                          <div className="text-sm font-semibold text-white/90">
+                      <tr key={x.id} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 text-slate-900 font-semibold">{x.invoice_number}</td>
+                        <td className="px-4 py-3 text-slate-700">{jobLabel(String(x.job))}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          <div className="text-sm font-semibold text-slate-900">
                             {x.currency} {formatAmountWithCommas(pickInvoiceAmount(x)) || "—"}
                           </div>
-                          <div className="text-xs text-white/50 mt-0.5">
+                          <div className="text-xs text-slate-500 mt-0.5">
                             Total Expenses: {formatAmountWithCommas(getExpenseTotalForInvoice(x))}
                           </div>
                         </td>
@@ -779,7 +779,7 @@ export default function InvoicesPage() {
                                 <button
                                   type="button"
                                   onClick={() => startEdit(x)}
-                                  className="text-blue-300 hover:text-blue-200 font-semibold"
+                                  className="text-blue-700 hover:text-blue-800 font-semibold"
                                 >
                                   Edit
                                 </button>
@@ -787,7 +787,7 @@ export default function InvoicesPage() {
                                 <button
                                   type="button"
                                   onClick={() => onDelete(x)}
-                                  className="text-white/60 hover:text-red-200 font-semibold"
+                                  className="text-slate-600 hover:text-red-700 font-semibold"
                                 >
                                   Delete
                                 </button>
@@ -797,7 +797,7 @@ export default function InvoicesPage() {
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => runAction(x.id, () => refreshInvoiceTotals(x.id), "Totals refreshed.")}
-                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-60"
                                   >
                                     Refresh
                                   </button>
@@ -806,7 +806,7 @@ export default function InvoicesPage() {
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => runAction(x.id, () => issueInvoice(x.id), "Invoice issued.")}
-                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-60"
                                   >
                                     Issue
                                   </button>
@@ -815,7 +815,7 @@ export default function InvoicesPage() {
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => runAction(x.id, () => markInvoicePartial(x.id), "Marked partially paid.")}
-                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-60"
                                   >
                                     Partial
                                   </button>
@@ -824,7 +824,7 @@ export default function InvoicesPage() {
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => runAction(x.id, () => markInvoicePaid(x.id), "Marked paid.")}
-                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-60"
                                   >
                                     Paid
                                   </button>
@@ -833,16 +833,16 @@ export default function InvoicesPage() {
                                     type="button"
                                     disabled={isBusy}
                                     onClick={() => runAction(x.id, () => voidInvoice(x.id), "Invoice voided.")}
-                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60"
+                                    className="px-2 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-60"
                                   >
                                     Void
                                   </button>
                                 </div>
                               </>
-                            ) : <span className="text-white/40">View only</span>}
+                            ) : <span className="text-slate-500">View only</span>}
                           </div>
 
-                          {isBusy ? <div className="text-xs text-white/50 mt-2">Working…</div> : null}
+                          {isBusy ? <div className="text-xs text-slate-500 mt-2">Working…</div> : null}
                         </td>
                       </tr>
                     )

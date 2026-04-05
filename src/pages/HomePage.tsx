@@ -16,24 +16,24 @@ type TileProps = {
 
 function badgeClass(tone: BadgeTone) {
   const base = "text-xs font-semibold px-2 py-1 rounded-lg border"
-  if (tone === "amber") return `${base} bg-amber-500/10 text-amber-200 border-amber-500/20`
-  return `${base} bg-blue-600/15 text-blue-200 border-blue-500/20`
+  if (tone === "amber") return `${base} bg-amber-100 text-amber-700 border-amber-200`
+  return `${base} bg-blue-100 text-blue-700 border-blue-200`
 }
 
 function Tile({ title, description, to, badge, badgeTone = "blue", disabled }: TileProps) {
-  const base = "block rounded-2xl border border-white/10 bg-white/5 backdrop-blur px-5 py-5 transition"
+  const base = "block rounded-2xl border border-slate-200 bg-white backdrop-blur px-5 py-5 transition"
   const enabled =
-    "hover:border-blue-500/40 hover:bg-white/7 hover:shadow-[0_0_0_1px_rgba(59,130,246,0.15)]"
+    "hover:border-blue-500/40 hover:bg-slate-100 hover:shadow-[0_0_0_1px_rgba(59,130,246,0.15)]"
   const disabledCls = "opacity-60 pointer-events-none"
 
   return (
     <Link to={to} className={[base, disabled ? disabledCls : enabled].join(" ")}>
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
         {badge ? <span className={badgeClass(badgeTone)}>{badge}</span> : null}
       </div>
-      <p className="mt-2 text-sm text-white/70 leading-relaxed">{description}</p>
-      <div className="mt-4 text-sm font-semibold text-blue-300">Open</div>
+      <p className="mt-2 text-sm text-slate-700 leading-relaxed">{description}</p>
+      <div className="mt-4 text-sm font-semibold text-blue-700">Open</div>
     </Link>
   )
 }
@@ -65,12 +65,12 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-black via-black to-blue-950/40 p-6">
+      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 via-white to-blue-50 p-6">
         <div className="flex items-center gap-3">
           <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
-          <h1 className="text-2xl font-semibold text-white tracking-wide">DAASOM</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-wide">DAASOM</h1>
         </div>
-        <p className="mt-2 text-sm text-white/70 max-w-2xl leading-relaxed">
+        <p className="mt-2 text-sm text-slate-700 max-w-2xl leading-relaxed">
           Operations dashboard — select a module to continue.
         </p>
       </section>

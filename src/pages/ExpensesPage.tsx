@@ -49,9 +49,9 @@ function extractErrorMessage(err: any): string {
 
 function statusBadge(status: ExpenseStatus) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (status === "APPROVED") return `${base} bg-green-500/10 text-green-200 border-green-500/20`
-  if (status === "SUBMITTED") return `${base} bg-blue-600/10 text-blue-200 border-blue-500/20`
-  return `${base} bg-white/5 text-white/75 border-white/10` // DRAFT
+  if (status === "APPROVED") return `${base} bg-green-50 text-green-700 border-green-200`
+  if (status === "SUBMITTED") return `${base} bg-blue-50 text-blue-700 border-blue-200`
+  return `${base} bg-white text-slate-700 border-slate-200` // DRAFT
 }
 
 function formatAmountWithCommas(value: string): string {
@@ -337,18 +337,18 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div>
         <h1 className="text-2xl font-semibold">
-          <span className="text-blue-300">Expenses</span>
+          <span className="text-blue-700">Expenses</span>
         </h1>
-        <p className="mt-1 text-sm text-white/60">Create and track expenses per job. Status: Draft → Submitted → Approved.</p>
+        <p className="mt-1 text-sm text-slate-600">Create and track expenses per job. Status: Draft → Submitted → Approved.</p>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 space-y-3">
         <div className="relative w-full md:max-w-xl">
           <input
-            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -366,7 +366,7 @@ export default function ExpensesPage() {
                 setSearch("")
                 setShowSuggestions(false)
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
               aria-label="Clear expense search"
             >
               ×
@@ -374,7 +374,7 @@ export default function ExpensesPage() {
           ) : null}
 
           {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
               {searchSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}
@@ -383,7 +383,7 @@ export default function ExpensesPage() {
                     setSearch(suggestion)
                     setShowSuggestions(false)
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-100 transition"
                 >
                   {suggestion}
                 </button>
@@ -406,7 +406,7 @@ export default function ExpensesPage() {
           <button
             type="button"
             onClick={() => setShowExpenseList((v) => !v)}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             {showExpenseList ? "Hide Expense List" : "Show Expense List"}
           </button>
@@ -414,7 +414,7 @@ export default function ExpensesPage() {
           <button
             type="button"
             onClick={refreshAll}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             Refresh
           </button>
@@ -422,21 +422,21 @@ export default function ExpensesPage() {
       </section>
 
       {!canWriteExpenses ? (
-        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
           Signed in as {roleLabel}. Expenses are view-only for this role.
         </div>
       ) : null}
 
       {/* Form */}
       {showForm && canWriteExpenses ? (
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-white">{title}</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">{title}</h2>
             {editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-sm font-semibold text-white/70 hover:text-white transition"
+                className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
               >
                 Cancel
               </button>
@@ -445,22 +445,22 @@ export default function ExpensesPage() {
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {error ? (
-              <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+              <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
                 {error}
               </div>
             ) : null}
 
             {info ? (
-              <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">
+              <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">
                 {info}
               </div>
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Job</label>
                 <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.job}
                   onChange={(e) => setForm((f) => ({ ...f, job: e.target.value }))}
                   required
@@ -475,9 +475,9 @@ export default function ExpensesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Status</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
                 <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.status}
                   onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ExpenseStatus }))}
                 >
@@ -490,9 +490,9 @@ export default function ExpensesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Category</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
                 <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   required
@@ -537,9 +537,9 @@ export default function ExpensesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Amount</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.amount}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -554,9 +554,9 @@ export default function ExpensesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Currency</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.currency}
                   onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
                 />
@@ -565,18 +565,18 @@ export default function ExpensesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-3">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Description</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Expense Date</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Expense Date</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   type="date"
                   value={form.expense_date}
                   onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
@@ -598,7 +598,7 @@ export default function ExpensesPage() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                  className="px-4 py-2 rounded-lg font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
                 >
                   Cancel
                 </button>
@@ -609,22 +609,22 @@ export default function ExpensesPage() {
       ) : null}
 
       {/* List */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Expenses List</h2>
-          <span className="text-sm text-white/60">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Expenses List</h2>
+          <span className="text-sm text-slate-600">
             {showExpenseList ? `${filteredExpenses.length} of ${expenses.length}` : `Hidden • ${expenses.length} total`}
           </span>
         </div>
 
         {!showExpenseList ? (
-          <div className="p-5 text-sm text-white/60">Expense list is hidden. Click "Show Expense List" to view entries.</div>
+          <div className="p-5 text-sm text-slate-600">Expense list is hidden. Click "Show Expense List" to view entries.</div>
         ) : loading ? (
-          <div className="p-5 text-sm text-white/60">Loading expenses...</div>
+          <div className="p-5 text-sm text-slate-600">Loading expenses...</div>
         ) : expenses.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No expenses yet.</div>
+          <div className="p-5 text-sm text-slate-600">No expenses yet.</div>
         ) : filteredExpenses.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No expenses match your search.</div>
+          <div className="p-5 text-sm text-slate-600">No expenses match your search.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
@@ -632,23 +632,23 @@ export default function ExpensesPage() {
                 const j = jobMap.get(String(x.job))
                 const jobLabel = j ? `${j.file_number} • ${j.zone}` : `Job ${String(x.job)}`
                 return (
-                  <div key={x.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div key={x.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-sm font-semibold text-white">{x.category}</div>
-                        <div className="text-xs text-white/65 mt-0.5">{jobLabel}</div>
-                        <div className="text-xs text-white/55 mt-1">{x.expense_date}</div>
+                        <div className="text-sm font-semibold text-slate-900">{x.category}</div>
+                        <div className="text-xs text-slate-600 mt-0.5">{jobLabel}</div>
+                        <div className="text-xs text-slate-600 mt-1">{x.expense_date}</div>
                       </div>
                       <span className={statusBadge(x.status)}>{x.status}</span>
                     </div>
-                    <div className="mt-2 text-sm font-semibold text-white">{x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}</div>
+                    <div className="mt-2 text-sm font-semibold text-slate-900">{x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}</div>
                     <div className="mt-3 flex items-center justify-end gap-3 text-sm font-semibold">
                       {canWriteExpenses ? (
                         <>
-                          <button type="button" onClick={() => startEdit(x)} className="text-blue-300 hover:text-blue-200">Edit</button>
-                          <button type="button" onClick={() => onDelete(x)} className="text-white/60 hover:text-red-200">Delete</button>
+                          <button type="button" onClick={() => startEdit(x)} className="text-blue-700 hover:text-blue-800">Edit</button>
+                          <button type="button" onClick={() => onDelete(x)} className="text-slate-600 hover:text-red-700">Delete</button>
                         </>
-                      ) : <span className="text-white/40">View only</span>}
+                      ) : <span className="text-slate-500">View only</span>}
                     </div>
                   </div>
                 )
@@ -656,14 +656,14 @@ export default function ExpensesPage() {
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Job</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Category</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Job</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Category</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Amount</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Actions</th>
                   </tr>
                 </thead>
 
@@ -673,13 +673,13 @@ export default function ExpensesPage() {
                     const jobLabel = j ? `${j.file_number} • ${j.zone}` : `Job ${String(x.job)}`
 
                     return (
-                      <tr key={x.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 text-white/85">{jobLabel}</td>
-                        <td className="px-4 py-3 text-white/90">{x.category}</td>
-                        <td className="px-4 py-3 text-white/90">
+                      <tr key={x.id} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 text-slate-800">{jobLabel}</td>
+                        <td className="px-4 py-3 text-slate-900">{x.category}</td>
+                        <td className="px-4 py-3 text-slate-900">
                           {x.currency} {formatAmountWithCommas(String(x.amount ?? ""))}
                         </td>
-                        <td className="px-4 py-3 text-white/80">{x.expense_date}</td>
+                        <td className="px-4 py-3 text-slate-700">{x.expense_date}</td>
                         <td className="px-4 py-3">
                           <span className={statusBadge(x.status)}>{x.status}</span>
                         </td>
@@ -690,19 +690,19 @@ export default function ExpensesPage() {
                                 <button
                                   type="button"
                                   onClick={() => startEdit(x)}
-                                  className="text-blue-300 hover:text-blue-200 font-semibold"
+                                  className="text-blue-700 hover:text-blue-800 font-semibold"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => onDelete(x)}
-                                  className="text-white/60 hover:text-red-200 font-semibold"
+                                  className="text-slate-600 hover:text-red-700 font-semibold"
                                 >
                                   Delete
                                 </button>
                               </>
-                            ) : <span className="text-white/40">View only</span>}
+                            ) : <span className="text-slate-500">View only</span>}
                           </div>
                         </td>
                       </tr>

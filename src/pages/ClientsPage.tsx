@@ -152,14 +152,14 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">
-            <span className="text-blue-300">Clients</span>
+            <span className="text-blue-700">Clients</span>
           </h1>
-          <p className="mt-1 text-sm text-white/60">
+          <p className="mt-1 text-sm text-slate-600">
             Manage client codes, prefixes, and names. Keep records consistent for job linkage.
           </p>
         </div>
@@ -167,28 +167,28 @@ export default function ClientsPage() {
         <button
           type="button"
           onClick={refresh}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
         >
           Refresh
         </button>
       </div>
 
       {!canWriteClients ? (
-        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
           Signed in as {roleLabel}. Clients are view-only for this role.
         </div>
       ) : null}
 
       {/* Form Card */}
       {canWriteClients ? (
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-white">{title}</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">{title}</h2>
             {editing ? (
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-sm font-semibold text-white/70 hover:text-white transition"
+                className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition"
               >
                 Cancel
               </button>
@@ -197,16 +197,16 @@ export default function ClientsPage() {
 
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             {error ? (
-              <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">
+              <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
                 {error}
               </div>
             ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Client Code</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Client Code</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.client_code}
                   onChange={(e) => setForm((f) => ({ ...f, client_code: e.target.value }))}
                   required
@@ -214,9 +214,9 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Client Prefix</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Client Prefix</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.client_prefix}
                   onChange={(e) => setForm((f) => ({ ...f, client_prefix: e.target.value }))}
                   required
@@ -224,9 +224,9 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Client Name</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Client Name</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.client_name}
                   onChange={(e) => setForm((f) => ({ ...f, client_name: e.target.value }))}
                   required
@@ -236,9 +236,9 @@ export default function ClientsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Email</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   type="email"
@@ -246,18 +246,18 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Phone</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Phone</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Address</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Address</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.address}
                   onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                 />
@@ -272,7 +272,7 @@ export default function ClientsPage() {
                 checked={form.is_active}
                 onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
               />
-              <label htmlFor="is_active" className="text-sm font-semibold text-white/80">
+              <label htmlFor="is_active" className="text-sm font-semibold text-slate-700">
                 Active
               </label>
             </div>
@@ -290,7 +290,7 @@ export default function ClientsPage() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                  className="px-4 py-2 rounded-lg font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
                 >
                   Cancel
                 </button>
@@ -301,73 +301,73 @@ export default function ClientsPage() {
       ) : null}
 
       {/* Table Card */}
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Client Directory</h2>
-          <span className="text-sm text-white/60">{clients.length} total</span>
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Client Directory</h2>
+          <span className="text-sm text-slate-600">{clients.length} total</span>
         </div>
 
         {loading ? (
-          <div className="p-5 text-sm text-white/60">Loading clients...</div>
+          <div className="p-5 text-sm text-slate-600">Loading clients...</div>
         ) : clients.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No clients yet.</div>
+          <div className="p-5 text-sm text-slate-600">No clients yet.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
               {paginatedClients.map((c) => (
-                <div key={c.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div key={c.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-white">{c.client_name}</div>
+                    <div className="text-sm font-semibold text-slate-900">{c.client_name}</div>
                     <span
                       className={[
                         "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
                         c.is_active
-                          ? "bg-blue-600/15 text-blue-200 border-blue-500/20"
-                          : "bg-white/5 text-white/70 border-white/10",
+                          ? "bg-blue-100 text-blue-700 border-blue-200"
+                          : "bg-white text-slate-700 border-slate-200",
                       ].join(" ")}
                     >
                       {c.is_active ? "Active" : "Inactive"}
                     </span>
                   </div>
-                  <div className="mt-2 text-xs text-white/65">{c.client_code} • {c.client_prefix}</div>
+                  <div className="mt-2 text-xs text-slate-600">{c.client_code} • {c.client_prefix}</div>
                   <div className="mt-3 flex justify-end">
                     {canWriteClients ? (
                       <button
                         type="button"
                         onClick={() => startEdit(c)}
-                        className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                        className="text-blue-700 hover:text-blue-800 font-semibold text-sm"
                       >
                         Edit
                       </button>
-                    ) : <span className="text-white/40 text-sm">View only</span>}
+                    ) : <span className="text-slate-500 text-sm">View only</span>}
                   </div>
                 </div>
               ))}
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Code</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Prefix</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Name</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Code</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Prefix</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Name</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Status</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedClients.map((c) => (
-                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                      <td className="px-4 py-3 text-white/90">{c.client_code}</td>
-                      <td className="px-4 py-3 text-white/90">{c.client_prefix}</td>
-                      <td className="px-4 py-3 text-white/90">{c.client_name}</td>
+                    <tr key={c.id} className="border-b border-slate-100 hover:bg-white transition">
+                      <td className="px-4 py-3 text-slate-900">{c.client_code}</td>
+                      <td className="px-4 py-3 text-slate-900">{c.client_prefix}</td>
+                      <td className="px-4 py-3 text-slate-900">{c.client_name}</td>
                       <td className="px-4 py-3">
                         <span
                           className={[
                             "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border",
                             c.is_active
-                              ? "bg-blue-600/15 text-blue-200 border-blue-500/20"
-                              : "bg-white/5 text-white/70 border-white/10",
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-white text-slate-700 border-slate-200",
                           ].join(" ")}
                         >
                           {c.is_active ? "Active" : "Inactive"}
@@ -378,11 +378,11 @@ export default function ClientsPage() {
                           <button
                             type="button"
                             onClick={() => startEdit(c)}
-                            className="text-blue-300 hover:text-blue-200 font-semibold"
+                            className="text-blue-700 hover:text-blue-800 font-semibold"
                           >
                             Edit
                           </button>
-                        ) : <span className="text-white/40">View only</span>}
+                        ) : <span className="text-slate-500">View only</span>}
                       </td>
                     </tr>
                   ))}

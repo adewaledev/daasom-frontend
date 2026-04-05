@@ -58,9 +58,9 @@ function formatBytes(bytes: number) {
 
 function typeBadge(t: DocumentType) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (t === "INVOICE") return `${base} bg-blue-600/10 text-blue-200 border-blue-500/20`
-  if (t === "RECEIPT") return `${base} bg-white/5 text-white/70 border-white/10`
-  return `${base} bg-white/5 text-white/85 border-white/10`
+  if (t === "INVOICE") return `${base} bg-blue-50 text-blue-700 border-blue-200`
+  if (t === "RECEIPT") return `${base} bg-white text-slate-700 border-slate-200`
+  return `${base} bg-white text-slate-800 border-slate-200`
 }
 
 export default function DocumentsPage() {
@@ -342,11 +342,11 @@ export default function DocumentsPage() {
   }, [currentPage, totalPages])
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-blue-300">Documents</h1>
-          <p className="mt-1 text-sm text-white/60">Upload files linked to jobs, invoices, or receipts.</p>
+          <h1 className="text-2xl font-semibold text-blue-700">Documents</h1>
+          <p className="mt-1 text-sm text-slate-600">Upload files linked to jobs, invoices, or receipts.</p>
         </div>
 
         <button
@@ -355,31 +355,31 @@ export default function DocumentsPage() {
             await refreshRefs()
             if (selectedJobId) await refreshDocs(selectedJobId)
           }}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
         >
           Refresh
         </button>
       </div>
 
       {error ? (
-        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">{error}</div>
+        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">{error}</div>
       ) : null}
 
       {info ? (
-        <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">{info}</div>
+        <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">{info}</div>
       ) : null}
 
       {!canWriteDocuments ? (
-        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
           Signed in as {roleLabel}. Document uploads and deletes are view-only for this role.
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-        <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-5">
+        <label className="block text-sm font-semibold text-slate-700 mb-1">Job</label>
         <input
           list="documents-job-options"
-          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={jobSearch}
           onChange={(e) => {
             const value = e.target.value
@@ -396,17 +396,17 @@ export default function DocumentsPage() {
             <option key={j.id} value={`${j.file_number} — ${j.zone}`} />
           ))}
         </datalist>
-        {selectedJobLabel ? <div className="mt-1 text-xs text-white/55">{selectedJobLabel}</div> : null}
+        {selectedJobLabel ? <div className="mt-1 text-xs text-slate-600">{selectedJobLabel}</div> : null}
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Upload</h2>
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Upload</h2>
           {canWriteDocuments ? (
             <button
               type="button"
               onClick={() => setShowUploadForm((v) => !v)}
-              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
             >
               {showUploadForm ? "Hide upload" : "Upload document"}
             </button>
@@ -417,9 +417,9 @@ export default function DocumentsPage() {
           <form onSubmit={onUpload} className="p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Type</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Type</label>
                 <select
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.doc_type}
                   onChange={(e) => onDocTypeChange(e.target.value as DocumentType)}
                   disabled={busy}
@@ -432,9 +432,9 @@ export default function DocumentsPage() {
 
               {form.doc_type === "JOB" ? (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-white/80 mb-1">Job</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Job</label>
                   <select
-                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.job_id}
                     onChange={(e) => setForm((f) => ({ ...f, job_id: e.target.value }))}
                     disabled={busy}
@@ -451,9 +451,9 @@ export default function DocumentsPage() {
 
               {form.doc_type === "INVOICE" ? (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Invoice</label>
                   <select
-                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.invoice_id}
                     onChange={(e) => setForm((f) => ({ ...f, invoice_id: e.target.value }))}
                     disabled={busy}
@@ -470,9 +470,9 @@ export default function DocumentsPage() {
 
               {form.doc_type === "RECEIPT" ? (
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-white/80 mb-1">Receipt</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Receipt</label>
                   <select
-                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.receipt_id}
                     onChange={(e) => setForm((f) => ({ ...f, receipt_id: e.target.value }))}
                     disabled={busy}
@@ -491,12 +491,12 @@ export default function DocumentsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="md:col-span-2">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-semibold text-white/80">Files</label>
+                  <label className="block text-sm font-semibold text-slate-700">Files</label>
                   <button
                     type="button"
                     onClick={onAddMoreFileInput}
                     disabled={busy}
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition disabled:opacity-60"
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition disabled:opacity-60"
                   >
                     + Add more
                   </button>
@@ -504,10 +504,10 @@ export default function DocumentsPage() {
 
                 <div className="space-y-2">
                   {uploadFiles.map((file, index) => (
-                    <div key={index} className="rounded-lg border border-white/10 bg-black/20 p-2">
+                    <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
                       <div className="flex items-center gap-2">
                         <input
-                          className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white file:font-semibold hover:file:bg-white/15"
+                          className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-slate-900 file:font-semibold hover:file:bg-white/15"
                           type="file"
                           onChange={(e) => onFileAtChange(index, e.target.files?.[0] ?? null)}
                           disabled={busy}
@@ -516,13 +516,13 @@ export default function DocumentsPage() {
                           type="button"
                           onClick={() => onRemoveFileInput(index)}
                           disabled={busy || uploadFiles.length <= 1}
-                          className="px-2 py-1 rounded text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50"
+                          className="px-2 py-1 rounded text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-50"
                         >
                           Remove
                         </button>
                       </div>
                       {file ? (
-                        <div className="mt-1 text-xs text-white/55">
+                        <div className="mt-1 text-xs text-slate-600">
                           {file.name} • {formatBytes(file.size)}
                         </div>
                       ) : null}
@@ -541,78 +541,78 @@ export default function DocumentsPage() {
             </div>
           </form>
         ) : (
-          <div className="p-5 text-sm text-white/60">
+          <div className="p-5 text-sm text-slate-600">
             {canWriteDocuments ? 'Click "Upload document" to add a file.' : "Uploads are disabled for this role."}
           </div>
         )}
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold text-white">Documents</h2>
-            <span className="text-sm text-white/60">{selectedJobId ? docs.length : ""}</span>
+            <h2 className="font-semibold text-slate-900">Documents</h2>
+            <span className="text-sm text-slate-600">{selectedJobId ? docs.length : ""}</span>
           </div>
         </div>
 
         {!selectedJobId ? (
-          <div className="p-5 text-sm text-white/60">Select a job.</div>
+          <div className="p-5 text-sm text-slate-600">Select a job.</div>
         ) : loadingDocs ? (
-          <div className="p-5 text-sm text-white/60">Loading…</div>
+          <div className="p-5 text-sm text-slate-600">Loading…</div>
         ) : docs.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No documents.</div>
+          <div className="p-5 text-sm text-slate-600">No documents.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
               {paginatedDocs.map((d) => (
-                <div key={d.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div key={d.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className={typeBadge(d.doc_type)}>{d.doc_type}</span>
-                      <div className="mt-2 text-sm font-semibold text-white break-all">{d.filename}</div>
-                      <div className="text-xs text-white/60 mt-0.5">{formatBytes(d.size_bytes)} • {String(d.uploaded_at).slice(0, 19).replace("T", " ")}</div>
+                      <div className="mt-2 text-sm font-semibold text-slate-900 break-all">{d.filename}</div>
+                      <div className="text-xs text-slate-600 mt-0.5">{formatBytes(d.size_bytes)} • {String(d.uploaded_at).slice(0, 19).replace("T", " ")}</div>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-sm font-semibold">
-                    <button type="button" onClick={() => onPreview(d)} className="text-green-300 hover:text-green-200">Preview</button>
-                    <button type="button" onClick={() => onDownload(d)} disabled={busy} className="text-blue-300 hover:text-blue-200 disabled:opacity-60">Download</button>
-                    <button type="button" onClick={() => onDelete(d)} disabled={busy || !canWriteDocuments} className="text-white/60 hover:text-red-200 disabled:opacity-60">Delete</button>
+                    <button type="button" onClick={() => onPreview(d)} className="text-green-700 hover:text-green-700">Preview</button>
+                    <button type="button" onClick={() => onDownload(d)} disabled={busy} className="text-blue-700 hover:text-blue-800 disabled:opacity-60">Download</button>
+                    <button type="button" onClick={() => onDelete(d)} disabled={busy || !canWriteDocuments} className="text-slate-600 hover:text-red-700 disabled:opacity-60">Delete</button>
                   </div>
                 </div>
               ))}
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Type</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Link</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">File</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Size</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Uploaded</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Type</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Link</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">File</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Size</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Uploaded</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Actions</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {paginatedDocs.map((d) => (
-                    <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                    <tr key={d.id} className="border-b border-slate-100 hover:bg-white transition">
                       <td className="px-4 py-3">
                         <span className={typeBadge(d.doc_type)}>{d.doc_type}</span>
                       </td>
-                      <td className="px-4 py-3 text-white/80">{linkPreview(d)}</td>
-                      <td className="px-4 py-3 text-white/90">
+                      <td className="px-4 py-3 text-slate-700">{linkPreview(d)}</td>
+                      <td className="px-4 py-3 text-slate-900">
                         <div className="font-semibold">{d.filename}</div>
-                        <div className="text-xs text-white/60">{d.content_type || ""}</div>
+                        <div className="text-xs text-slate-600">{d.content_type || ""}</div>
                       </td>
-                      <td className="px-4 py-3 text-white/70">{formatBytes(d.size_bytes)}</td>
-                      <td className="px-4 py-3 text-white/70">{String(d.uploaded_at).slice(0, 19).replace("T", " ")}</td>
+                      <td className="px-4 py-3 text-slate-700">{formatBytes(d.size_bytes)}</td>
+                      <td className="px-4 py-3 text-slate-700">{String(d.uploaded_at).slice(0, 19).replace("T", " ")}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => onPreview(d)}
-                            className="text-green-300 hover:text-green-200 font-semibold"
+                            className="text-green-700 hover:text-green-700 font-semibold"
                           >
                             Preview
                           </button>
@@ -620,7 +620,7 @@ export default function DocumentsPage() {
                             type="button"
                             onClick={() => onDownload(d)}
                             disabled={busy}
-                            className="text-blue-300 hover:text-blue-200 font-semibold disabled:opacity-60"
+                            className="text-blue-700 hover:text-blue-800 font-semibold disabled:opacity-60"
                           >
                             Download
                           </button>
@@ -628,7 +628,7 @@ export default function DocumentsPage() {
                             type="button"
                             onClick={() => onDelete(d)}
                             disabled={busy || !canWriteDocuments}
-                            className="text-white/60 hover:text-red-200 font-semibold disabled:opacity-60"
+                            className="text-slate-600 hover:text-red-700 font-semibold disabled:opacity-60"
                           >
                             Delete
                           </button>

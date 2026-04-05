@@ -35,9 +35,9 @@ function extractErrorMessage(err: any): string {
 
 function zoneBadge(zone: string) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border"
-  if (zone === "DUTY") return `${base} bg-blue-600/15 text-blue-200 border-blue-500/20`
-  if (zone === "FREE") return `${base} bg-white/5 text-white/80 border-white/10`
-  return `${base} bg-black/40 text-white/80 border-white/10`
+  if (zone === "DUTY") return `${base} bg-blue-50 text-blue-700 border-blue-200`
+  if (zone === "FREE") return `${base} bg-emerald-50 text-emerald-700 border-emerald-200`
+  return `${base} bg-slate-100 text-slate-700 border-slate-200`
 }
 
 type NewEntryForm = {
@@ -424,42 +424,42 @@ export default function TrackerPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-blue-300">Tracker</h1>
-          <p className="mt-1 text-sm text-white/60">Track job progress with daily entries and completion status.</p>
+          <h1 className="text-2xl font-semibold text-slate-900">Tracker</h1>
+          <p className="mt-1 text-sm text-slate-600">Track job progress with daily entries and completion status.</p>
         </div>
 
         <button
           type="button"
           onClick={refreshJobs}
           disabled={loading}
-          className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition disabled:opacity-50"
+          className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition disabled:opacity-50"
         >
           Refresh
         </button>
       </div>
 
       {!canWriteTracker ? (
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
-          <div className="text-sm text-white/75">Signed in as {roleLabel}. Tracker updates are view-only for this role.</div>
+        <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="text-sm text-slate-700">Signed in as {roleLabel}. Tracker updates are view-only for this role.</div>
         </section>
       ) : null}
 
       {error && (
-        <section className="rounded-2xl border border-red-500/20 bg-red-500/10 backdrop-blur p-4">
-          <div className="text-sm text-red-200">{error}</div>
+        <section className="rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="text-sm text-red-700">{error}</div>
         </section>
       )}
 
       {info && (
-        <section className="rounded-2xl border border-blue-500/20 bg-blue-600/10 backdrop-blur p-4">
-          <div className="text-sm text-blue-200">{info}</div>
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <div className="text-sm text-blue-700">{info}</div>
         </section>
       )}
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 space-y-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
         <div className="flex gap-3 items-center relative">
           <input
             type="text"
@@ -468,11 +468,11 @@ export default function TrackerPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            className="flex-1 bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="flex-1 bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-black/80 border border-white/10 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
               {searchSuggestions.map((suggestion, idx) => (
                 <button
                   key={idx}
@@ -481,19 +481,19 @@ export default function TrackerPage() {
                     e.preventDefault()
                     openJob(suggestion.job.job_id)
                   }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 transition border-b border-white/5 last:border-b-0"
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0"
                 >
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${suggestion.type === "file"
-                      ? "bg-blue-600/20 text-blue-200"
+                      ? "bg-blue-100 text-blue-700"
                       : suggestion.type === "client_code"
-                        ? "bg-purple-600/20 text-purple-200"
-                        : "bg-green-600/20 text-green-200"
+                        ? "bg-violet-100 text-violet-700"
+                        : "bg-green-100 text-green-700"
                       }`}>
                       {suggestion.type === "file" ? "FILE" : suggestion.type === "client_code" ? "CODE" : "NAME"}
                     </span>
-                    <span className="text-white/90">{suggestion.value}</span>
-                    <span className="text-white/40 text-xs ml-auto">{suggestion.job.file_number}</span>
+                    <span className="text-slate-800">{suggestion.value}</span>
+                    <span className="text-slate-500 text-xs ml-auto">{suggestion.job.file_number}</span>
                   </div>
                 </button>
               ))}
@@ -510,7 +510,7 @@ export default function TrackerPage() {
             }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${trackerStatusFilter === "all"
               ? "bg-blue-600 text-white"
-              : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+              : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
               }`}
           >
             All Jobs
@@ -523,7 +523,7 @@ export default function TrackerPage() {
             }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition inline-flex items-center gap-2 ${trackerStatusFilter === "pending"
               ? "bg-amber-600 text-white"
-              : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+              : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
               }`}
           >
             Pending
@@ -541,7 +541,7 @@ export default function TrackerPage() {
             }}
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${trackerStatusFilter === "completed"
               ? "bg-green-600 text-white"
-              : "bg-white/5 text-white/60 border border-white/10 hover:bg-white/10"
+              : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
               }`}
           >
             Completed
@@ -549,14 +549,14 @@ export default function TrackerPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Jobs ({filteredJobs.length})</h2>
+      <section className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Jobs ({filteredJobs.length})</h2>
           {showJobsList && (
             <button
               type="button"
               onClick={() => setShowJobsList(false)}
-              className="text-white/60 hover:text-white/80 transition text-sm font-semibold"
+              className="text-slate-500 hover:text-slate-700 transition text-sm font-semibold"
             >
               Close
             </button>
@@ -564,39 +564,39 @@ export default function TrackerPage() {
         </div>
 
         {!searchTerm.trim() && !showJobsList ? (
-          <div className="p-5 text-sm text-white/60">Search for a job or select one from the list to get started.</div>
+          <div className="p-5 text-sm text-slate-600">Search for a job or select one from the list to get started.</div>
         ) : loading ? (
-          <div className="p-5 text-sm text-white/60">Loading jobs...</div>
+          <div className="p-5 text-sm text-slate-600">Loading jobs...</div>
         ) : filteredJobs.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No jobs found.</div>
+          <div className="p-5 text-sm text-slate-600">No jobs found.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
               {paginatedJobs.map((job) => (
-                <div key={job.job_id} className={`rounded-xl border p-3 ${selectedJobId === job.job_id ? "border-blue-500/30 bg-blue-600/10" : "border-white/10 bg-black/20"}`}>
+                <div key={job.job_id} className={`rounded-xl border p-3 ${selectedJobId === job.job_id ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-slate-50"}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-sm font-semibold text-white">{job.file_number}</div>
-                      <div className="text-xs text-white/65 mt-0.5">{job.client_code} • {job.client_name}</div>
+                      <div className="text-sm font-semibold text-slate-900">{job.file_number}</div>
+                      <div className="text-xs text-slate-600 mt-0.5">{job.client_code} • {job.client_name}</div>
                     </div>
                     <span className={zoneBadge(job.zone)}>{job.zone}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold border ${job.tracker_completed
-                        ? "bg-green-500/10 text-green-200 border-green-500/20"
-                        : "bg-amber-500/10 text-amber-200 border-amber-500/20"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : "bg-amber-100 text-amber-700 border-amber-200"
                         }`}
                     >
                       {job.tracker_completed ? "COMPLETED" : "PENDING"}
                     </span>
-                    <span className="text-white/60">{job.tracker_entries?.length || 0} entries</span>
+                    <span className="text-slate-500">{job.tracker_entries?.length || 0} entries</span>
                   </div>
                   <div className="mt-3 flex justify-end">
                     <button
                       type="button"
                       onClick={() => openJob(job.job_id)}
-                      className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                      className="text-blue-700 hover:text-blue-800 font-semibold text-sm"
                     >
                       View
                     </button>
@@ -606,45 +606,45 @@ export default function TrackerPage() {
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">File No.</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client Code</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Client Name</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Zone</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Status</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Entries</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Action</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold">File No.</th>
+                    <th className="px-4 py-3 text-left font-semibold">Client Code</th>
+                    <th className="px-4 py-3 text-left font-semibold">Client Name</th>
+                    <th className="px-4 py-3 text-left font-semibold">Zone</th>
+                    <th className="px-4 py-3 text-left font-semibold">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold">Entries</th>
+                    <th className="px-4 py-3 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedJobs.map((job) => (
                     <tr
                       key={job.job_id}
-                      className={`border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${selectedJobId === job.job_id ? "bg-white/10" : ""}`}
+                      className={`border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer ${selectedJobId === job.job_id ? "bg-blue-50" : ""}`}
                     >
-                      <td className="px-4 py-3 font-semibold text-white">{job.file_number}</td>
-                      <td className="px-4 py-3 text-white/80">{job.client_code}</td>
-                      <td className="px-4 py-3 text-white/80">{job.client_name}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">{job.file_number}</td>
+                      <td className="px-4 py-3 text-slate-700">{job.client_code}</td>
+                      <td className="px-4 py-3 text-slate-700">{job.client_name}</td>
                       <td className="px-4 py-3">
                         <span className={zoneBadge(job.zone)}>{job.zone}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${job.tracker_completed
-                            ? "bg-green-500/10 text-green-200 border-green-500/20"
-                            : "bg-amber-500/10 text-amber-200 border-amber-500/20"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : "bg-amber-100 text-amber-700 border-amber-200"
                             }`}
                         >
                           {job.tracker_completed ? "COMPLETED" : "PENDING"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-white/70">{job.tracker_entries?.length || 0} entries</td>
+                      <td className="px-4 py-3 text-slate-600">{job.tracker_entries?.length || 0} entries</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
                           onClick={() => openJob(job.job_id)}
-                          className="text-blue-300 hover:text-blue-200 font-semibold text-sm"
+                          className="text-blue-700 hover:text-blue-800 font-semibold text-sm"
                         >
                           View
                         </button>
@@ -669,7 +669,7 @@ export default function TrackerPage() {
 
       {selectedJob && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setSelectedJobId("")
@@ -678,14 +678,14 @@ export default function TrackerPage() {
             }
           }}
         >
-          <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f1117] shadow-2xl text-white">
+          <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl text-slate-800">
             {/* Modal header */}
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-[#0f1117] border-b border-white/10 px-6 py-4">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 bg-white border-b border-slate-200 px-6 py-4">
               <div>
-                <h2 className="font-semibold text-white text-lg">
+                <h2 className="font-semibold text-slate-900 text-lg">
                   {selectedJob.file_number} — {selectedJob.client_name}
                 </h2>
-                <p className="text-xs text-white/55 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   {selectedJob.tracker_completed
                     ? `Completed on ${selectedJob.tracker_completed_at ? new Date(selectedJob.tracker_completed_at).toLocaleDateString() : "N/A"} by ${selectedJob.tracker_completed_by || "unknown"}`
                     : "Tracker is active"}
@@ -722,7 +722,7 @@ export default function TrackerPage() {
                     setShowNewEntryForm(false)
                     setEditingEntryId(null)
                   }}
-                  className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition text-lg leading-none"
+                  className="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition text-lg leading-none"
                   aria-label="Close"
                 >
                   ✕
@@ -733,10 +733,10 @@ export default function TrackerPage() {
             {/* Modal body */}
             <div className="p-6 space-y-4">
               {error && (
-                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
               )}
               {info && (
-                <div className="rounded-xl border border-blue-500/20 bg-blue-600/10 p-3 text-sm text-blue-200">{info}</div>
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">{info}</div>
               )}
 
               {!selectedJob.tracker_completed && canWriteTracker && (
@@ -752,22 +752,22 @@ export default function TrackerPage() {
               )}
 
               {showNewEntryForm && !selectedJob.tracker_completed && canWriteTracker && (
-                <div className="rounded-xl border border-white/10 bg-black/30 p-4 space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                   <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Date</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
                     <input
                       type="date"
                       value={newEntryForm.entry_date}
                       onChange={(e) => setNewEntryForm((f) => ({ ...f, entry_date: e.target.value }))}
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Progress Made</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Progress Made</label>
                     <select
                       value={newEntryForm.progress_report}
                       onChange={(e) => setNewEntryForm((f) => ({ ...f, progress_report: e.target.value }))}
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select progress made…</option>
                       {progressOptions.map((option) => (
@@ -776,16 +776,16 @@ export default function TrackerPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-white/80 mb-1">Notes (optional)</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Notes (optional)</label>
                     <textarea
                       value={newEntryForm.notes}
                       onChange={(e) => setNewEntryForm((f) => ({ ...f, notes: e.target.value }))}
                       rows={4}
                       placeholder="Add any context, blockers, follow-up details, or handover notes..."
-                      className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <div className="sticky bottom-0 -mx-4 px-4 py-3 border-t border-white/10 bg-[#0f1117]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1117]/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
+                  <div className="sticky bottom-0 -mx-4 px-4 py-3 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 md:static md:mx-0 md:px-0 md:py-0 md:border-0 md:bg-transparent">
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
@@ -793,7 +793,7 @@ export default function TrackerPage() {
                           setShowNewEntryForm(false)
                           setNewEntryForm(emptyForm)
                         }}
-                        className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                        className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
                       >
                         Cancel
                       </button>
@@ -811,24 +811,24 @@ export default function TrackerPage() {
               )}
 
               {sortedEntries.length === 0 ? (
-                <div className="p-4 text-sm text-white/60 rounded-lg border border-white/10 bg-black/20">
+                <div className="p-4 text-sm text-slate-600 rounded-lg border border-slate-200 bg-slate-50">
                   No entries yet. {!selectedJob.tracker_completed && canWriteTracker ? "Add one to get started." : ""}
                 </div>
               ) : (
                 <>
                   <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
                     <table className="min-w-[1100px] w-full text-sm table-fixed">
-                      <thead className="bg-black/60 text-white">
-                        <tr className="border-b border-white/10">
-                          <th className="w-40 px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                          <th className="w-80 px-4 py-3 text-left font-semibold text-white/90">Progress Made</th>
-                          <th className="px-4 py-3 text-left font-semibold text-white/90">Notes</th>
-                          {canWriteTracker && <th className="w-32 px-4 py-3 text-right font-semibold text-white/90">Action</th>}
+                      <thead className="bg-slate-100 text-slate-700">
+                        <tr className="border-b border-slate-200">
+                          <th className="w-40 px-4 py-3 text-left font-semibold">Date</th>
+                          <th className="w-80 px-4 py-3 text-left font-semibold">Progress Made</th>
+                          <th className="px-4 py-3 text-left font-semibold">Notes</th>
+                          {canWriteTracker && <th className="w-32 px-4 py-3 text-right font-semibold">Action</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {paginatedEntries.map((entry) => (
-                          <tr key={entry.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <tr key={entry.id} className="border-b border-slate-100 hover:bg-slate-50 transition">
                             {editingEntryId === entry.id ? (
                               <>
                                 <td className="px-4 py-3 align-top">
@@ -836,14 +836,14 @@ export default function TrackerPage() {
                                     type="date"
                                     value={editingForm.entry_date}
                                     onChange={(e) => setEditingForm((f) => ({ ...f, entry_date: e.target.value }))}
-                                    className="bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                    className="bg-white text-slate-900 border border-slate-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </td>
                                 <td className="px-4 py-3 align-top">
                                   <select
                                     value={editingForm.progress_report}
                                     onChange={(e) => setEditingForm((f) => ({ ...f, progress_report: e.target.value }))}
-                                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   >
                                     <option value="">Select progress made…</option>
                                     {mergeOptions(progressOptions, editingForm.progress_report).map((option) => (
@@ -857,7 +857,7 @@ export default function TrackerPage() {
                                     onChange={(e) => setEditingForm((f) => ({ ...f, notes: e.target.value }))}
                                     rows={4}
                                     placeholder="Optional notes..."
-                                    className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-2 py-1 text-xs placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-2 py-1 text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </td>
                                 <td className="px-4 py-3 align-top">
@@ -866,7 +866,7 @@ export default function TrackerPage() {
                                       type="button"
                                       onClick={() => updateEntry(entry.id)}
                                       disabled={saving}
-                                      className="text-green-300 hover:text-green-200 font-semibold text-xs"
+                                      className="text-green-700 hover:text-green-700 font-semibold text-xs"
                                     >
                                       Save
                                     </button>
@@ -876,7 +876,7 @@ export default function TrackerPage() {
                                         setEditingEntryId(null)
                                         setEditingForm(emptyForm)
                                       }}
-                                      className="text-white/60 hover:text-white/80 font-semibold text-xs"
+                                      className="text-slate-500 hover:text-slate-700 font-semibold text-xs"
                                     >
                                       Cancel
                                     </button>
@@ -885,9 +885,9 @@ export default function TrackerPage() {
                               </>
                             ) : (
                               <>
-                                <td className="px-4 py-3 align-top text-white/80 whitespace-nowrap">{entry.entry_date}</td>
-                                <td className="px-4 py-3 align-top text-white/70 whitespace-normal break-words">{entry.progress_report ? formatTrackerOptionLabel(entry.progress_report) : "—"}</td>
-                                <td className="px-4 py-3 align-top text-white/70 whitespace-pre-wrap break-words">{entry.next_step || "—"}</td>
+                                <td className="px-4 py-3 align-top text-slate-700 whitespace-nowrap">{entry.entry_date}</td>
+                                <td className="px-4 py-3 align-top text-slate-700 whitespace-normal break-words">{entry.progress_report ? formatTrackerOptionLabel(entry.progress_report) : "—"}</td>
+                                <td className="px-4 py-3 align-top text-slate-700 whitespace-pre-wrap break-words">{entry.next_step || "—"}</td>
                                 {canWriteTracker && (
                                   <td className="px-4 py-3 align-top">
                                     <div className="flex gap-2 justify-end whitespace-nowrap">
@@ -901,14 +901,14 @@ export default function TrackerPage() {
                                             notes: entry.next_step,
                                           })
                                         }}
-                                        className="text-blue-300 hover:text-blue-200 font-semibold text-xs"
+                                        className="text-blue-700 hover:text-blue-800 font-semibold text-xs"
                                       >
                                         Edit
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => deleteEntry(entry.id)}
-                                        className="text-red-300 hover:text-red-200 font-semibold text-xs"
+                                        className="text-red-700 hover:text-red-800 font-semibold text-xs"
                                       >
                                         Delete
                                       </button>

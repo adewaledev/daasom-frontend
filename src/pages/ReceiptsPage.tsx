@@ -409,16 +409,16 @@ export default function ReceiptsPage() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-slate-800">
       <div>
-        <h1 className="text-2xl font-semibold text-blue-300">Receipts</h1>
-        <p className="mt-1 text-sm text-white/60">Record payments against invoices.</p>
+        <h1 className="text-2xl font-semibold text-blue-700">Receipts</h1>
+        <p className="mt-1 text-sm text-slate-600">Record payments against invoices.</p>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4 space-y-3">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur p-4 space-y-3">
         <div className="relative w-full md:max-w-xl">
           <input
-            className="w-full bg-black/40 text-white border border-white/10 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
@@ -436,7 +436,7 @@ export default function ReceiptsPage() {
                 setSearch("")
                 setShowSuggestions(false)
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition"
               aria-label="Clear receipt search"
             >
               ×
@@ -444,7 +444,7 @@ export default function ReceiptsPage() {
           ) : null}
 
           {showSuggestions && searchSuggestions.length > 0 ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-xl">
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
               {searchSuggestions.map((suggestion) => (
                 <button
                   key={suggestion}
@@ -453,7 +453,7 @@ export default function ReceiptsPage() {
                     setSearch(suggestion)
                     setShowSuggestions(false)
                   }}
-                  className="w-full px-3 py-2 text-left text-sm text-white/85 hover:bg-white/10 transition"
+                  className="w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-100 transition"
                 >
                   {suggestion}
                 </button>
@@ -476,7 +476,7 @@ export default function ReceiptsPage() {
           <button
             type="button"
             onClick={() => setShowReceiptList((v) => !v)}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             {showReceiptList ? "Hide Receipt List" : "Show Receipt List"}
           </button>
@@ -484,7 +484,7 @@ export default function ReceiptsPage() {
           <button
             type="button"
             onClick={refreshAll}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
           >
             Refresh
           </button>
@@ -492,25 +492,25 @@ export default function ReceiptsPage() {
       </section>
 
       {error ? (
-        <div className="text-sm bg-red-500/10 text-red-200 border border-red-500/20 px-3 py-2 rounded-lg">{error}</div>
+        <div className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">{error}</div>
       ) : null}
 
       {info ? (
-        <div className="text-sm bg-blue-600/10 text-blue-200 border border-blue-500/20 px-3 py-2 rounded-lg">{info}</div>
+        <div className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-2 rounded-lg">{info}</div>
       ) : null}
 
       {!canWriteReceipts ? (
-        <div className="text-sm bg-white/5 text-white/75 border border-white/10 px-3 py-2 rounded-lg">
+        <div className="text-sm bg-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg">
           Signed in as {roleLabel}. Receipts are view-only for this role.
         </div>
       ) : null}
 
       {showForm && canWriteReceipts ? (
-        <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <h2 className="font-semibold text-white">{title}</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">{title}</h2>
             {editing ? (
-              <button type="button" onClick={cancelEdit} className="text-sm font-semibold text-white/70 hover:text-white transition">
+              <button type="button" onClick={cancelEdit} className="text-sm font-semibold text-slate-700 hover:text-slate-900 transition">
                 Cancel
               </button>
             ) : null}
@@ -519,10 +519,10 @@ export default function ReceiptsPage() {
           <form onSubmit={onSubmit} className="p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-white/80 mb-1">Invoice</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Invoice</label>
                 <input
                   list="receipt-invoice-options"
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={invoiceSearch}
                   onChange={(e) => handleInvoiceSearchChange(e.target.value)}
                   placeholder="Search and select invoice..."
@@ -534,7 +534,7 @@ export default function ReceiptsPage() {
                   ))}
                 </datalist>
                 {form.invoice ? (
-                  <div className="mt-1 text-xs text-white/55">
+                  <div className="mt-1 text-xs text-slate-600">
                     {(() => {
                       const inv = invoiceMap.get(String(form.invoice))
                       return inv
@@ -546,9 +546,9 @@ export default function ReceiptsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Payment Date</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Payment Date</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   type="date"
                   value={form.payment_date}
                   onChange={(e) => setForm((f) => ({ ...f, payment_date: e.target.value }))}
@@ -559,9 +559,9 @@ export default function ReceiptsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Amount</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Amount</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.amount}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -576,27 +576,27 @@ export default function ReceiptsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Currency</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Currency</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.currency}
                   onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Method</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Method</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.method}
                   onChange={(e) => setForm((f) => ({ ...f, method: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-white/80 mb-1">Reference</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Reference</label>
                 <input
-                  className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.reference}
                   onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
                 />
@@ -604,9 +604,9 @@ export default function ReceiptsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1">Notes</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
               <input
-                className="w-full bg-black/40 text-white border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={form.notes}
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               />
@@ -625,7 +625,7 @@ export default function ReceiptsPage() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 rounded-lg font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition"
+                  className="px-4 py-2 rounded-lg font-semibold bg-white border border-slate-200 hover:bg-slate-100 transition"
                 >
                   Cancel
                 </button>
@@ -635,40 +635,40 @@ export default function ReceiptsPage() {
         </section>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Receipts</h2>
-          <span className="text-sm text-white/60">
+      <section className="rounded-2xl border border-slate-200 bg-white backdrop-blur overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">Receipts</h2>
+          <span className="text-sm text-slate-600">
             {showReceiptList ? `${filteredReceipts.length} of ${receipts.length}` : `Hidden • ${receipts.length} total`}
           </span>
         </div>
 
         {!showReceiptList ? (
-          <div className="p-5 text-sm text-white/60">Receipt list is hidden. Click "Show Receipt List" to view entries.</div>
+          <div className="p-5 text-sm text-slate-600">Receipt list is hidden. Click "Show Receipt List" to view entries.</div>
         ) : loading ? (
-          <div className="p-5 text-sm text-white/60">Loading...</div>
+          <div className="p-5 text-sm text-slate-600">Loading...</div>
         ) : receipts.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No receipts.</div>
+          <div className="p-5 text-sm text-slate-600">No receipts.</div>
         ) : filteredReceipts.length === 0 ? (
-          <div className="p-5 text-sm text-white/60">No receipts match your search.</div>
+          <div className="p-5 text-sm text-slate-600">No receipts match your search.</div>
         ) : (
           <>
             <div className="space-y-2 p-3 sm:hidden">
               {paginatedReceipts.map((r) => {
                 const inv = invoiceMap.get(String(r.invoice))
                 return (
-                  <div key={r.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
-                    <div className="text-sm font-semibold text-white">{inv ? inv.invoice_number : String(r.invoice)}</div>
-                    <div className="mt-1 text-xs text-white/65">{r.payment_date} • {r.method || "No method"}</div>
-                    <div className="mt-2 text-sm font-semibold text-white">{r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}</div>
-                    {r.reference ? <div className="mt-1 text-xs text-white/60">Ref: {r.reference}</div> : null}
+                  <div key={r.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-sm font-semibold text-slate-900">{inv ? inv.invoice_number : String(r.invoice)}</div>
+                    <div className="mt-1 text-xs text-slate-600">{r.payment_date} • {r.method || "No method"}</div>
+                    <div className="mt-2 text-sm font-semibold text-slate-900">{r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}</div>
+                    {r.reference ? <div className="mt-1 text-xs text-slate-600">Ref: {r.reference}</div> : null}
                     <div className="mt-3 flex items-center justify-end gap-3 text-sm font-semibold">
                       {canWriteReceipts ? (
                         <>
-                          <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200">Edit</button>
-                          <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200">Delete</button>
+                          <button type="button" onClick={() => startEdit(r)} className="text-blue-700 hover:text-blue-800">Edit</button>
+                          <button type="button" onClick={() => onDelete(r)} className="text-slate-600 hover:text-red-700">Delete</button>
                         </>
-                      ) : <span className="text-white/40">View only</span>}
+                      ) : <span className="text-slate-500">View only</span>}
                     </div>
                   </div>
                 )
@@ -676,15 +676,15 @@ export default function ReceiptsPage() {
             </div>
             <div className="hidden sm:block overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
               <table className="min-w-[720px] w-full text-xs sm:text-sm">
-                <thead className="bg-black/60 text-white">
-                  <tr className="border-b border-white/10">
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Invoice</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Amount</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Date</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Method</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Balance</th>
-                    <th className="px-4 py-3 text-left font-semibold text-white/90">Reference</th>
-                    <th className="px-4 py-3 text-right font-semibold text-white/90">Actions</th>
+                <thead className="bg-slate-100 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Invoice</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Amount</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Method</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Balance</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-900">Reference</th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900">Actions</th>
                   </tr>
                 </thead>
 
@@ -692,29 +692,29 @@ export default function ReceiptsPage() {
                   {paginatedReceipts.map((r) => {
                     const inv = invoiceMap.get(String(r.invoice))
                     return (
-                      <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3 text-white/85">{inv ? inv.invoice_number : String(r.invoice)}</td>
-                        <td className="px-4 py-3 text-white/90">
+                      <tr key={r.id} className="border-b border-slate-100 hover:bg-white transition">
+                        <td className="px-4 py-3 text-slate-800">{inv ? inv.invoice_number : String(r.invoice)}</td>
+                        <td className="px-4 py-3 text-slate-900">
                           {r.currency} {formatAmountWithCommas(String(r.amount ?? ""))}
                         </td>
-                        <td className="px-4 py-3 text-white/80">{r.payment_date}</td>
-                        <td className="px-4 py-3 text-white/80">{r.method || ""}</td>
-                        <td className="px-4 py-3 text-white/80">
+                        <td className="px-4 py-3 text-slate-700">{r.payment_date}</td>
+                        <td className="px-4 py-3 text-slate-700">{r.method || ""}</td>
+                        <td className="px-4 py-3 text-slate-700">
                           {inv ? `${inv.currency} ${formatAmountWithCommas(String(getInvoiceBalance(inv)))}` : ""}
                         </td>
-                        <td className="px-4 py-3 text-white/80">{r.reference || ""}</td>
+                        <td className="px-4 py-3 text-slate-700">{r.reference || ""}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex items-center gap-3">
                             {canWriteReceipts ? (
                               <>
-                                <button type="button" onClick={() => startEdit(r)} className="text-blue-300 hover:text-blue-200 font-semibold">
+                                <button type="button" onClick={() => startEdit(r)} className="text-blue-700 hover:text-blue-800 font-semibold">
                                   Edit
                                 </button>
-                                <button type="button" onClick={() => onDelete(r)} className="text-white/60 hover:text-red-200 font-semibold">
+                                <button type="button" onClick={() => onDelete(r)} className="text-slate-600 hover:text-red-700 font-semibold">
                                   Delete
                                 </button>
                               </>
-                            ) : <span className="text-white/40">View only</span>}
+                            ) : <span className="text-slate-500">View only</span>}
                           </div>
                         </td>
                       </tr>

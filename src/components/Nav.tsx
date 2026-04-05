@@ -6,8 +6,8 @@ function navClass({ isActive }: { isActive: boolean }) {
   return [
     "px-3 py-2 rounded-lg text-sm font-semibold transition",
     isActive
-      ? "bg-blue-600/20 text-white border border-blue-500/30"
-      : "text-white/80 hover:text-white hover:bg-white/10 border border-transparent",
+      ? "bg-blue-100 text-blue-700 border border-blue-200"
+      : "text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent",
   ].join(" ")
 }
 
@@ -15,8 +15,8 @@ function mobileNavClass({ isActive }: { isActive: boolean }) {
   return [
     "w-full px-3 py-2.5 rounded-lg text-sm font-semibold transition text-left",
     isActive
-      ? "bg-blue-600/20 text-white border border-blue-500/30"
-      : "text-white/85 hover:text-white hover:bg-white/10 border border-white/10",
+      ? "bg-blue-100 text-blue-700 border border-blue-200"
+      : "text-slate-800 hover:text-slate-900 hover:bg-slate-100 border border-slate-200",
   ].join(" ")
 }
 
@@ -36,7 +36,7 @@ export default function Nav() {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-black/90 text-white border-b border-white/10 backdrop-blur overflow-x-clip">
+    <header className="sticky top-0 z-40 bg-white/95 text-slate-900 border-b border-slate-200 backdrop-blur overflow-x-clip">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
         <Link to="/" className="flex items-center gap-2 min-w-0">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-600" />
@@ -47,7 +47,7 @@ export default function Nav() {
           <button
             type="button"
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition"
+            className="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-100 transition"
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
           >
@@ -98,7 +98,7 @@ export default function Nav() {
 
           <button
             onClick={onLogout}
-            className="ml-2 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition"
+            className="ml-2 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
             type="button"
           >
             Logout
@@ -107,7 +107,7 @@ export default function Nav() {
       </div>
 
       {mobileOpen ? (
-        <div className="md:hidden border-t border-white/10 bg-black/95">
+        <div className="md:hidden border-t border-slate-200 bg-white">
           <nav className="max-w-6xl mx-auto px-3 py-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <NavLink to="/" className={mobileNavClass} end onClick={closeMobileMenu}>Home</NavLink>
             <NavLink to="/clients" className={mobileNavClass} onClick={closeMobileMenu}>Clients</NavLink>
@@ -123,7 +123,7 @@ export default function Nav() {
           <div className="max-w-6xl mx-auto px-3 pb-3">
             <button
               onClick={onLogout}
-              className="w-full px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition"
+              className="w-full px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
               type="button"
             >
               Logout
