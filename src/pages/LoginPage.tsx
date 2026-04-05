@@ -57,10 +57,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex items-center justify-center px-4 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h2]:tracking-tight [&_h2]:leading-tight [&_p]:leading-relaxed [&_p]:text-slate-700">
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 overflow-hidden rounded-2xl border border-slate-200 bg-white backdrop-blur shadow-sm">
+    <div className="login-page min-h-screen bg-slate-100 text-slate-900 flex items-center justify-center px-4 [&_h1]:tracking-tight [&_h1]:leading-tight [&_h2]:tracking-tight [&_h2]:leading-tight [&_p]:leading-relaxed [&_p]:text-slate-700">
+      <div className="login-shell w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 overflow-hidden rounded-2xl border border-slate-200 bg-white backdrop-blur shadow-sm">
         {/* Left: Brand */}
-        <div className="hidden md:flex p-10 flex-col justify-between bg-gradient-to-br from-slate-100 via-white to-blue-50 border-r border-slate-200">
+        <div className="login-brand hidden md:flex p-10 flex-col justify-between bg-gradient-to-br from-slate-100 via-white to-blue-50 border-r border-slate-200">
           <div className="flex items-center gap-3">
             <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
             <span className="text-lg font-semibold tracking-normal">DAASOM</span>
@@ -82,7 +82,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right: Form */}
-        <div className="p-8 md:p-10">
+        <div className="login-form p-8 md:p-10">
           <div className="md:hidden flex items-center gap-2 mb-6">
             <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
             <span className="text-lg font-semibold">DAASOM</span>
@@ -92,7 +92,7 @@ export default function LoginPage() {
           <p className="text-sm text-slate-600 mt-1">Enter your credentials to continue.</p>
 
           {error ? (
-            <div className="mt-5 text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
+            <div className="login-error mt-5 text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg">
               {error}
             </div>
           ) : null}
@@ -101,7 +101,7 @@ export default function LoginPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Username</label>
               <input
-                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="login-input w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
@@ -112,7 +112,7 @@ export default function LoginPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
               <input
-                className="w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="login-input w-full bg-white text-slate-900 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -123,7 +123,7 @@ export default function LoginPage() {
 
             <button
               disabled={submitting}
-              className="w-full bg-blue-600 text-white rounded-lg py-2.5 font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+              className="login-submit w-full bg-blue-600 text-white rounded-lg py-2.5 font-semibold hover:bg-blue-700 transition disabled:opacity-60"
               type="submit"
             >
               {submitting ? "Signing in..." : "Sign In"}

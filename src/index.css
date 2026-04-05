@@ -191,6 +191,58 @@ html.dark .nav-active-chip {
   color: #eff6ff !important;
 }
 
+html.dark .login-page {
+  background: radial-gradient(circle at top left, #172554 0%, #0b1220 45%, #090f1a 100%) !important;
+}
+
+html.dark .login-shell {
+  border-color: #334155 !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.6) !important;
+}
+
+html.dark .login-brand {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1e3a8a 100%) !important;
+  border-color: #334155 !important;
+}
+
+html.dark .login-form {
+  background-color: #0f172a !important;
+}
+
+html.dark .login-input {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+html.dark .login-input:focus {
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5) !important;
+}
+
+html.dark .login-error {
+  background-color: rgba(127, 29, 29, 0.35) !important;
+  border-color: rgba(248, 113, 113, 0.6) !important;
+  color: #fecaca !important;
+}
+
+html.dark .login-submit {
+  background-color: #2563eb !important;
+  color: #eff6ff !important;
+}
+
+html.dark .login-submit:hover {
+  background-color: #1d4ed8 !important;
+}
+
+html.dark .home-tracker-count {
+  background-color: #a16207 !important;
+  border-color: #f59e0b !important;
+  color: #fffbeb !important;
+  font-weight: 700 !important;
+  min-width: 1.6rem;
+  text-align: center;
+}
+
 @media (max-width: 767px) {
   html {
     font-size: 16px;
